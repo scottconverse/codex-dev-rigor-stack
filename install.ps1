@@ -34,10 +34,12 @@ Write-Host "Installing dev-rigor-stack skills -> $Dest`n"
 
 $installed = 0
 foreach ($src in Get-ChildItem -Directory $SkillsSrc) {
-  $target = Join-Path $Dest $src.Name
-  if (Test-Path $target) { Remove-Item -Recurse -Force $target }
-  Copy-Item -Recurse $src.FullName $target
-  if (Test-Path (Join-Path $target 'SKILL.md')) {
+  # NOTE: not $target — PowerShell variable names are case-insensitive, so $target would
+  # alias the $Target param and the loop would clobber it (breaking the reflex-hook check below).
+  $skillDest = Join-Path $Dest $src.Name
+  if (Test-Path $skillDest) { Remove-Item -Recurse -Force $skillDest }
+  Copy-Item -Recurse $src.FullName $skillDest
+  if (Test-Path (Join-Path $skillDest 'SKILL.md')) {
     Write-Host "  ok    $($src.Name)"
     $installed++
   } else {
