@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>dev-rigor-stack — make "done" mean proven</title>
-<meta name="description" content="A six-gate delivery discipline for AI coding agents, plus the skills it runs. Model-agnostic, tool-agnostic, MIT.">
+<meta name="description" content="A six-gate delivery discipline for AI coding agents, the skills it runs, and an always-on rigor reflex. Model-agnostic, tool-agnostic, MIT.">
 <style>
   :root{
     --bg:#ffffff; --fg:#1a1c20; --muted:#5b6470; --card:#f6f7f9; --border:#e4e7ec;
@@ -17,30 +17,39 @@
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--fg);
     font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
-  .wrap{max-width:860px;margin:0 auto;padding:0 20px}
-  header{padding:64px 0 32px;text-align:center}
+  .wrap{max-width:880px;margin:0 auto;padding:0 20px}
+  header{padding:64px 0 24px;text-align:center}
   h1{font-size:2.6rem;margin:0 0 .3em;letter-spacing:-.02em}
-  .tag{font-size:1.25rem;color:var(--muted);margin:0 auto;max-width:36ch}
+  .tag{font-size:1.25rem;color:var(--muted);margin:0 auto;max-width:40ch}
   .cta{margin-top:28px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
   a.btn{display:inline-block;padding:11px 20px;border-radius:8px;text-decoration:none;font-weight:600}
   a.btn.primary{background:var(--accent);color:var(--accent-fg)}
   a.btn.ghost{border:1px solid var(--border);color:var(--fg)}
-  h2{font-size:1.5rem;margin:48px 0 12px;letter-spacing:-.01em}
+  h2{font-size:1.5rem;margin:52px 0 12px;letter-spacing:-.01em}
+  h3{font-size:1.12rem;margin:26px 0 8px}
   p{margin:0 0 1em}
   .muted{color:var(--muted)}
-  .loop{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0 4px;font-weight:600}
-  .loop .step{background:var(--card);border:1px solid var(--border);border-radius:7px;padding:7px 12px}
-  .loop .arrow{color:var(--muted)}
-  table{width:100%;border-collapse:collapse;margin:8px 0 4px;font-size:.96rem}
-  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:top}
-  th{color:var(--muted);font-weight:600}
   code,pre{background:var(--code);border-radius:6px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
   code{padding:2px 6px;font-size:.9em}
   pre{padding:14px 16px;overflow-x:auto;font-size:.9rem;line-height:1.5}
+  table{width:100%;border-collapse:collapse;margin:8px 0 4px;font-size:.96rem}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+  th{color:var(--muted);font-weight:600}
   .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
   @media (max-width:640px){.cols{grid-template-columns:1fr}}
-  .cols div{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+  .cols>div{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
   .cols h3{margin:0 0 .4em;font-size:1.05rem}
+  .gates{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0 4px}
+  @media (max-width:640px){.gates{grid-template-columns:1fr}}
+  .gates>div{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:12px 14px;font-size:.95rem}
+  .gates b{display:block;margin-bottom:2px}
+  .callout{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--accent);
+    border-radius:9px;padding:16px 18px;margin:16px 0}
+  figure{margin:18px 0 6px}
+  .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  figure svg{display:block;height:auto;min-width:660px;max-width:100%}
+  figure svg text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  figcaption{color:var(--muted);font-size:.9rem;margin-top:8px;text-align:center}
   footer{margin:56px 0 40px;padding-top:20px;border-top:1px solid var(--border);color:var(--muted);font-size:.9rem}
   a{color:var(--accent)}
 </style>
@@ -60,37 +69,193 @@
 <h2>What it is</h2>
 <p>AI coding agents are confident, and confidence isn't correctness. An agent says "done"
 when it means "I wrote code that looks right" — a different claim from "I proved it runs,"
-different again from "I proved it's correct." This stack is a discipline that closes that
-gap: every change is exercised the way a real user hits it before anyone calls it finished,
-and the call to make a release <em>real</em> stays with a human.</p>
+different again from "I proved it's correct." This stack closes that gap: every change is
+exercised the way a real user hits it before anyone calls it finished, and the call to make
+a release <em>real</em> stays with a human. It ships as a set of Claude Code skills plus an
+always-on <strong>reflex</strong>, and it exports to any other agent as plain text.</p>
 
-<h2>The loop</h2>
-<p class="muted">Every unit of work walks the same line. Nothing advances on a claim — only on evidence.</p>
-<div class="loop">
-  <span class="step">PLAN</span><span class="arrow">→</span>
-  <span class="step">BUILD</span><span class="arrow">→</span>
-  <span class="step">VERIFY</span><span class="arrow">→</span>
-  <span class="step">REVIEW</span><span class="arrow">→</span>
-  <span class="step">MERGE</span>
+<h2>How it works</h2>
+<p>Two altitudes, one rule: <strong>nothing advances on a claim, only on evidence.</strong>
+Every unit of work — a fix, a feature, a refactor — walks a five-gate loop. Once per version,
+a heavier release gate runs over everything that merged, and ends at a human's go/no-go on the
+tag. An always-on reflex primes every session; a continuity bookend keeps decisions from being
+lost across days and machines.</p>
+
+<figure>
+  <div class="scroll">
+  <svg viewBox="0 0 920 474" role="img" aria-label="The delivery flow: an always-on reflex primes a five-gate loop (PLAN, BUILD, VERIFY, REVIEW, MERGE); merges feed a release gate driven to zero findings, then an owner decides the tag; a continuity bookend wraps the whole effort.">
+    <defs>
+      <marker id="ar" markerWidth="9" markerHeight="9" refX="7.5" refY="4.5" orient="auto">
+        <path d="M0,0 L9,4.5 L0,9 z" fill="var(--muted)"/></marker>
+      <marker id="arA" markerWidth="9" markerHeight="9" refX="7.5" refY="4.5" orient="auto">
+        <path d="M0,0 L9,4.5 L0,9 z" fill="var(--accent)"/></marker>
+    </defs>
+    <style>
+      .b{fill:var(--card);stroke:var(--border);stroke-width:1.5}
+      .g{fill:var(--accent);fill-opacity:.10;stroke:var(--accent);stroke-width:1.5}
+      .t{fill:var(--fg);font-weight:600;font-size:14px}
+      .s{fill:var(--muted);font-size:12px}
+      .f{stroke:var(--muted);stroke-width:1.6;fill:none}
+      .fa{stroke:var(--accent);stroke-width:1.6;fill:none;stroke-dasharray:5 4}
+      .cont{fill:none;stroke:var(--border);stroke-width:1.5;stroke-dasharray:6 5}
+    </style>
+
+    <!-- reflex band -->
+    <rect class="g" x="36" y="12" width="848" height="50" rx="10"/>
+    <text class="t" x="460" y="34" text-anchor="middle">ALWAYS-ON REFLEX — injected into every session and subagent</text>
+    <text class="s" x="460" y="52" text-anchor="middle">the proof ladder (rigor sized to blast radius) · the never-shrink rules · a one-line evidence receipt</text>
+    <path class="fa" d="M285,64 L285,86" marker-end="url(#arA)"/>
+    <path class="fa" d="M460,64 L460,86" marker-end="url(#arA)"/>
+    <path class="fa" d="M635,64 L635,86" marker-end="url(#arA)"/>
+
+    <!-- pipeline -->
+    <rect class="b" x="36"  y="90" width="148" height="54" rx="8"/>
+    <rect class="b" x="211" y="90" width="148" height="54" rx="8"/>
+    <rect class="b" x="386" y="90" width="148" height="54" rx="8"/>
+    <rect class="b" x="561" y="90" width="148" height="54" rx="8"/>
+    <rect class="b" x="736" y="90" width="148" height="54" rx="8"/>
+    <text class="t" x="110" y="122" text-anchor="middle">1 · PLAN</text>
+    <text class="t" x="285" y="122" text-anchor="middle">2 · BUILD</text>
+    <text class="t" x="460" y="122" text-anchor="middle">3 · VERIFY</text>
+    <text class="t" x="635" y="122" text-anchor="middle">4 · REVIEW</text>
+    <text class="t" x="810" y="122" text-anchor="middle">5 · MERGE</text>
+    <text class="s" x="110" y="162" text-anchor="middle">blast radius + test list</text>
+    <text class="s" x="285" y="162" text-anchor="middle">/coder-tdd-qa</text>
+    <text class="s" x="460" y="162" text-anchor="middle">/proof-gate</text>
+    <text class="s" x="635" y="162" text-anchor="middle">/audit-lite · -team · gauntletgate</text>
+    <text class="s" x="810" y="162" text-anchor="middle">green PR → main</text>
+    <path class="f" d="M184,117 L207,117" marker-end="url(#ar)"/>
+    <path class="f" d="M359,117 L382,117" marker-end="url(#ar)"/>
+    <path class="f" d="M534,117 L557,117" marker-end="url(#ar)"/>
+    <path class="f" d="M709,117 L732,117" marker-end="url(#ar)"/>
+
+    <!-- feedback loop -->
+    <path class="fa" d="M635,180 C635,214 285,214 285,182" marker-end="url(#arA)"/>
+    <text class="s" x="460" y="206" text-anchor="middle" fill="var(--accent)">a real finding → back to BUILD until it's gone</text>
+
+    <!-- merge down to release -->
+    <path class="f" d="M810,172 L810,236" marker-end="url(#ar)"/>
+
+    <!-- release gate band -->
+    <rect class="b" x="36" y="240" width="848" height="56" rx="10"/>
+    <text class="t" x="460" y="264" text-anchor="middle">RELEASE GATE — once per version, before the tag</text>
+    <text class="s" x="460" y="283" text-anchor="middle">/gauntletgate all → 0/0/0/0/0 · claim-refutation on the docs · real deliverable docs · rollback named</text>
+
+    <!-- release to owner -->
+    <path class="f" d="M460,296 L460,320" marker-end="url(#ar)"/>
+
+    <!-- owner diamond + tag -->
+    <polygon class="g" points="460,318 520,352 460,386 400,352"/>
+    <text class="t" x="460" y="349" text-anchor="middle">OWNER</text>
+    <text class="s" x="460" y="366" text-anchor="middle">go / no-go</text>
+    <path class="f" d="M520,352 L616,352" marker-end="url(#ar)"/>
+    <rect class="g" x="620" y="335" width="150" height="34" rx="17"/>
+    <text class="t" x="695" y="357" text-anchor="middle">tag · release</text>
+    <!-- owner no -> loop -->
+    <path class="fa" d="M400,352 C300,352 300,150 300,150" marker-end="url(#arA)" opacity=".8"/>
+    <text class="s" x="250" y="250" text-anchor="middle" fill="var(--accent)">no ↺</text>
+
+    <!-- continuity bookend -->
+    <rect class="cont" x="36" y="410" width="848" height="48" rx="10"/>
+    <text class="t" x="460" y="431" text-anchor="middle">SESSION &amp; MACHINE CONTINUITY</text>
+    <text class="s" x="460" y="449" text-anchor="middle">pull decisions at start · append as you go · push + confirm at end — multi-day, multi-machine work never loses its decisions</text>
+  </svg>
+  </div>
+  <figcaption>The delivery flow. Findings loop back until they're gone; only a human tags the release.</figcaption>
+</figure>
+
+<div class="gates">
+  <div><b>1 · PLAN</b>Trace the real code, write the test list and done-criteria, and classify <em>blast radius</em> — a one-line auth change is small in lines and large in blast, and gets the deep treatment.</div>
+  <div><b>2 · BUILD — <code>/coder-tdd-qa</code></b>Test-first. Write the failing test and <em>watch it fail</em> before making it pass; that, not a coverage number, is what proves the test is real.</div>
+  <div><b>3 · VERIFY — <code>/proof-gate</code></b>Adversarially try to <em>break</em> the claim. It survives only if it can't be refuted — killing checks that can't fail and "done" that outruns the evidence.</div>
+  <div><b>4 · REVIEW</b>A review sized to the change: <code>/audit-lite</code> for a small diff, <code>/audit-team</code> for high blast, <code>gauntletgate</code> walkthrough for anything a user clicks.</div>
+  <div><b>5 · MERGE</b>Green-path only — a reviewed PR to <code>main</code>. No <code>--admin</code>, no override, no bypassing branch protection. One bad red merge undoes every green one after it.</div>
+  <div><b>Release gate</b>Over the whole version: the full gauntlet driven to <em>zero</em> findings, the docs checked for overclaiming, a rollback plan named — then the owner's go/no-go on the tag.</div>
 </div>
-<p class="muted">Then, once per version, a release gate: the full gauntlet driven to zero
-findings, the docs checked for overclaiming, a rollback plan named — and the owner's
-go/no-go on the tag.</p>
+
+<h2>The always-on reflex</h2>
+<p>The six skills are <strong>pull-based</strong> — the agent invokes them when it judges a
+task needs them. The reflex is <strong>push-based</strong>: it's injected into every session
+and every subagent, so the discipline is present by default instead of waiting to be summoned.
+It's a single page — a persona, the proof ladder, the never-shrink rules, and a one-line
+evidence receipt — and it delegates the heavy mechanics back to the skills. A convenience
+layer, not a dependency: the full discipline lives in the <code>dev-rigor-stack</code> skill.</p>
+
+<p>Its core idea is <strong>proportion</strong> — spend exactly the rigor a change earns.
+Climb the ladder only as far as the blast radius demands, and stop at the first rung that
+covers it. No ceremony on a one-liner; no shortcuts on the auth path.</p>
+
+<figure>
+  <div class="scroll">
+  <svg viewBox="0 0 760 300" role="img" aria-label="The proof ladder: five rising rungs from Trivial (one check) to Release (full gauntlet plus owner go/no-go), showing rigor rising with blast radius.">
+    <defs>
+      <marker id="arL" markerWidth="9" markerHeight="9" refX="7.5" refY="4.5" orient="auto">
+        <path d="M0,0 L9,4.5 L0,9 z" fill="var(--accent)"/></marker>
+    </defs>
+    <style>
+      .rb{fill:var(--card);stroke:var(--border);stroke-width:1.5}
+      .rg{fill:var(--accent);fill-opacity:.12;stroke:var(--accent);stroke-width:1.5}
+      .rt{fill:var(--fg);font-weight:600;font-size:13px}
+      .rs{fill:var(--muted);font-size:10.5px}
+      .ax{fill:var(--muted);font-size:11px;font-weight:600}
+      .climb{stroke:var(--accent);stroke-width:1.8;fill:none;stroke-dasharray:5 4}
+    </style>
+    <!-- axes -->
+    <line x1="34" y1="272" x2="740" y2="272" stroke="var(--border)" stroke-width="1.5"/>
+    <line x1="34" y1="272" x2="34" y2="34" stroke="var(--border)" stroke-width="1.5"/>
+    <text class="ax" x="386" y="292" text-anchor="middle">blast radius →</text>
+    <text class="ax" x="20" y="150" text-anchor="middle" transform="rotate(-90 20 150)">rigor →</text>
+
+    <!-- rungs -->
+    <rect class="rb" x="46"  y="228" width="120" height="42"/>
+    <rect class="rb" x="186" y="190" width="120" height="80"/>
+    <rect class="rb" x="326" y="150" width="120" height="120"/>
+    <rect class="rb" x="466" y="110" width="120" height="160"/>
+    <rect class="rg" x="606" y="60"  width="120" height="210"/>
+
+    <text class="rt" x="106" y="248" text-anchor="middle">0 · Trivial</text>
+    <text class="rs" x="106" y="263" text-anchor="middle">one check, done</text>
+
+    <text class="rt" x="246" y="210" text-anchor="middle">1 · Low</text>
+    <text class="rs" x="246" y="226" text-anchor="middle">build +</text>
+    <text class="rs" x="246" y="239" text-anchor="middle">1 adversarial pass</text>
+
+    <text class="rt" x="386" y="170" text-anchor="middle">2 · Medium</text>
+    <text class="rs" x="386" y="186" text-anchor="middle">full loop →</text>
+    <text class="rs" x="386" y="199" text-anchor="middle">green merge</text>
+
+    <text class="rt" x="526" y="130" text-anchor="middle">3 · High</text>
+    <text class="rs" x="526" y="146" text-anchor="middle">+ audit-team ·</text>
+    <text class="rs" x="526" y="159" text-anchor="middle">fan-out · walkthrough</text>
+
+    <text class="rt" x="666" y="80" text-anchor="middle">4 · Release</text>
+    <text class="rs" x="666" y="96" text-anchor="middle">gauntlet → 0 ·</text>
+    <text class="rs" x="666" y="109" text-anchor="middle">owner go/no-go</text>
+
+    <!-- climb line -->
+    <path class="climb" d="M106,224 L246,186 L386,146 L526,106 L666,56" marker-end="url(#arL)"/>
+  </svg>
+  </div>
+  <figcaption>Climb only as far as the blast radius earns — stop at the first rung that covers it.</figcaption>
+</figure>
+
+<p class="muted">Some rules never shrink, no matter how small the change: watch a test fail
+before trusting it, never merge red or with <code>--admin</code>, never review your own work,
+never claim beyond the check you actually ran, and owner decisions (tag, publish, deploy,
+spend, delete) stay the owner's.</p>
 
 <h2>What's in the box</h2>
 <table>
-  <tr><th>Skill</th><th>Role</th></tr>
+  <tr><th>Component</th><th>Role</th></tr>
   <tr><td><code>dev-rigor-stack</code></td><td>the stack — orchestrates the loop + release gate</td></tr>
   <tr><td><code>coder-tdd-qa</code></td><td>BUILD — test-first engineering + QA standards</td></tr>
   <tr><td><code>proof-gate</code></td><td>VERIFY — adversarial build-and-verify, anti-theater</td></tr>
   <tr><td><code>audit-lite</code></td><td>REVIEW — fast single-pass audit of a small change</td></tr>
   <tr><td><code>audit-team</code></td><td>REVIEW — multi-role deep audit for high-blast units</td></tr>
   <tr><td><code>gauntletgate</code></td><td>REVIEW + release — adversarial stage-gate</td></tr>
+  <tr><td><code>dev-rigor reflex</code></td><td><em>always-on hook</em> — primes every session with the proof ladder + never-shrink rules; delegates to the six skills</td></tr>
 </table>
-<p class="muted">All six are MIT and authored by the repo owner. Alongside them, an always-on
-<strong>dev-rigor reflex</strong> — a one-page distillation of the discipline — installs as a
-SessionStart hook and primes every coding session; it delegates the heavy mechanics back to
-these skills.</p>
+<p class="muted">All six skills and the reflex are MIT and authored by the repo owner.</p>
 
 <h2>Get started</h2>
 <p><strong>As Claude Code skills:</strong></p>
@@ -98,8 +263,9 @@ these skills.</p>
 cd dev-rigor-stack
 ./install.sh                            # macOS / Linux / Git Bash  (./install.ps1 on Windows)
 ./install.sh --target ~/.codex/skills   # install the skills elsewhere, e.g. Codex</pre>
-<p>Installs the six skills <strong>and</strong> wires the always-on reflex hook (needs
-Node.js; without it the skills still install and the installer says so).</p>
+<p>Installs the six skills <strong>and</strong> wires the always-on reflex hook into your
+<code>settings.json</code> (needs Node.js; without it the skills still install and the
+installer says so). Re-running updates in place — idempotent, no path assumptions.</p>
 <p><strong>Inside a Cowork or Codex session</strong> (no terminal): just ask the agent to
 install it from the repo — it copies the skills into place and, for a Claude install, wires
 the reflex hook.</p>
@@ -130,6 +296,7 @@ diluted from the Claude side to serve the export.</p>
   (DietrichGebert, MIT) — no ponytail code used. &nbsp;·&nbsp;
   <a href="https://github.com/scottconverse/dev-rigor-stack">Source</a> ·
   <a href="https://github.com/scottconverse/dev-rigor-stack/blob/main/docs/ARCHITECTURE.md">Architecture</a> ·
+  <a href="https://github.com/scottconverse/dev-rigor-stack/blob/main/docs/MANUAL.md">Manual</a> ·
   <a href="https://github.com/scottconverse/dev-rigor-stack/blob/main/LICENSE">License</a></p>
 </footer>
 

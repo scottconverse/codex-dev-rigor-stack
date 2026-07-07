@@ -2,10 +2,10 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A six-gate delivery discipline for AI coding agents — and the skills it runs. It turns
-"the agent said it's done" into "the change was *proven*, at the layer of the claim,
-before it shipped." For anyone directing a coding agent through work where being
-confidently wrong is expensive.
+A six-gate delivery discipline for AI coding agents — the skills it runs, and an always-on
+reflex that keeps the discipline present by default. It turns "the agent said it's done"
+into "the change was *proven*, at the layer of the claim, before it shipped." For anyone
+directing a coding agent through work where being confidently wrong is expensive.
 
 ## What it is
 
@@ -13,6 +13,11 @@ The **dev-rigor-stack** skill routes every unit of work — a fix, a feature, a 
 through five gates, then stands a release gate before any version tag. It is
 model-agnostic and tool-agnostic: install it as a set of Claude Code skills, or paste the
 derived bundle into any other agent.
+
+Two ways it reaches the agent: the **skills are pull-based** (invoked when a task needs
+them), and the **[dev-rigor reflex](plugin/dev-rigor-reflex.md) is push-based** — a
+one-page distillation injected into every session and subagent, so the discipline is on by
+default instead of waiting to be summoned.
 
 ## The loop
 
@@ -31,7 +36,7 @@ skill](skills/dev-rigor-stack/SKILL.md).
 
 ## What's in the box
 
-| Skill | Role in the stack |
+| Component | Role in the stack |
 |---|---|
 | [`dev-rigor-stack`](skills/dev-rigor-stack/SKILL.md) | the stack — orchestrates the loop + release gate |
 | [`coder-tdd-qa`](skills/coder-tdd-qa/SKILL.md) | **BUILD** — test-first engineering + QA standards |
@@ -39,11 +44,11 @@ skill](skills/dev-rigor-stack/SKILL.md).
 | [`audit-lite`](skills/audit-lite/SKILL.md) | **REVIEW** — fast single-pass audit of a small change |
 | [`audit-team`](skills/audit-team/SKILL.md) | **REVIEW** — multi-role deep audit for high-blast units |
 | [`gauntletgate`](skills/gauntletgate/SKILL.md) | **REVIEW + release** — adversarial stage-gate (lite / walkthrough / full) |
+| [`dev-rigor reflex`](plugin/dev-rigor-reflex.md) | **always-on hook** — primes every session with the proof ladder + never-shrink rules; delegates to the six skills above |
 
-All six are MIT-licensed and authored by the repo owner. Alongside them, an always-on
-**dev-rigor reflex** — a one-page distillation of the discipline — installs as a
-SessionStart hook and primes every coding session (see [The always-on
-reflex](#the-always-on-reflex)).
+The six skills and the reflex are MIT-licensed and authored by the repo owner. The reflex
+is the always-on layer (see [The always-on reflex](#the-always-on-reflex)); the skills are
+invoked per gate.
 
 ## Quick start
 
