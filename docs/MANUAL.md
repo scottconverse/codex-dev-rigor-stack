@@ -135,11 +135,15 @@ tool — never a bare recursing agent. Each worker states its tier and moderates
 
 ### Install, configure, export
 
-- **Install**: `./install.ps1` (Windows) or `./install.sh` (macOS/Linux/Git Bash).
-  Installs the six skills into `~/.claude/skills` (or `$CLAUDE_CONFIG_DIR/skills`) **and**
-  wires the always-on **dev-rigor reflex** — a one-page distillation of this discipline — as
-  a SessionStart hook under `~/.claude/dev-rigor-plugin/`. The reflex hook needs Node.js;
-  without it the skills still install and the installer reports the hook as skipped.
+- **Requirements**: Git, and **Node.js** for the reflex (the hook is a small Node script).
+  The six skills install without Node; only the reflex needs it — and anyone running a coding
+  agent almost certainly has it already.
+- **Install**: `./install.sh` (macOS/Linux/Git Bash), or on Windows
+  `powershell -ExecutionPolicy Bypass -File .\install.ps1` (the prefix avoids the default
+  *"running scripts is disabled"* block). Installs the six skills into `~/.claude/skills` (or
+  `$CLAUDE_CONFIG_DIR/skills`) **and** wires the always-on **dev-rigor reflex** — a one-page
+  distillation of this discipline — as a SessionStart hook under `~/.claude/dev-rigor-plugin/`.
+  If Node is missing, the skills still install and the installer reports the hook as skipped.
   Idempotent — re-run to update. One flag on both:
   - `--target <dir>` / `-Target <dir>` — install the skills into any directory, e.g. Codex's
     `~/.codex/skills`. With `--target`, only skills are installed; the always-on reflex hook

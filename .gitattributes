@@ -1,0 +1,5 @@
+# Normalize line endings so the shell and Node scripts run everywhere.
+# Bash chokes on a CRLF shebang; keep .sh (and .js) LF on every checkout.
+* text=auto
+*.sh text eol=lf
+*.js text eol=lf

@@ -7,6 +7,9 @@
 #   ./install.ps1                                  # -> $env:CLAUDE_CONFIG_DIR\skills or ~\.claude\skills
 #   ./install.ps1 -Target ~/.codex/skills          # install skills elsewhere (e.g. Codex); no reflex hook
 #
+# Requires Node.js for the reflex hook (the six skills install without it). On a locked-down
+# box, run this as:  powershell -ExecutionPolicy Bypass -File .\install.ps1
+#
 # Re-running updates in place (each skill is replaced; the hook re-wires idempotently). No path assumptions.
 # NOTE: kept ASCII-only on purpose -- Windows PowerShell 5.1 reads a BOM-less script as
 # ANSI, so non-ASCII characters (em dashes, smart quotes) would break the parser.
@@ -60,8 +63,9 @@ if ((-not $Target) -and (Test-Path $PluginSrc)) {
   if ($node) {
     node (Join-Path $PluginDest 'hooks/wire-settings.js') $ClaudeDir
   } else {
-    Write-Host "  WARN  node not found -- reflex files copied but the SessionStart hook was NOT wired."
-    Write-Host "        Install Node.js and re-run, or add the hook to settings.json by hand (see README)."
+    Write-Host "  WARN  Node.js not found -- it is REQUIRED for the reflex. Skills installed fine;"
+    Write-Host "        reflex files copied but the SessionStart hook was NOT wired. Install Node.js"
+    Write-Host "        and re-run, or add the hook to settings.json by hand (see README)."
   }
 } elseif ($Target) {
   Write-Host "  note  -Target set: skills only; the always-on reflex hook is Claude-specific and was not wired."

@@ -1,6 +1,6 @@
 {
   "name": "dev-rigor-stack",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "license": "MIT",
   "description": "A six-gate delivery discipline for AI coding agents, the skills it invokes, and an always-on rigor reflex hook.",
   "skills": [
@@ -17,7 +17,7 @@
     "source": "plugin/",
     "installs_to": "~/.claude/dev-rigor-plugin/ + SessionStart & SubagentStart entries in settings.json",
     "role": "Always-on one-page distillation of the discipline — the proof ladder (rigor sized to blast radius), the never-shrink rules, and the evidence receipt. Injected every session and into subagents; delegates the heavy mechanics to the skills above. A convenience layer, not a dependency.",
-    "requires": "Node.js (to emit the reflex and to wire the hook). Without node the skills still install; the installer reports the hook as skipped."
+    "requires": "Node.js — REQUIRED for the reflex (it emits the reflex and wires the hook). The six skills install without Node; if Node is missing the installer reports the hook as skipped. Anyone running a coding agent almost certainly has Node already."
   },
   "acknowledgments": [
     {

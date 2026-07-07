@@ -8,6 +8,8 @@
 #   ./install.sh --target ~/.codex/skills         # install skills elsewhere (e.g. Codex); no reflex hook
 #   CLAUDE_CONFIG_DIR=/custom ./install.sh
 #
+# Requires Node.js for the reflex hook (the six skills install without it).
+#
 # Re-running updates in place (each skill is replaced; the hook re-wires idempotently). No path assumptions.
 set -euo pipefail
 
@@ -73,8 +75,9 @@ if [ -z "$TARGET" ] && [ -d "$PLUGIN_SRC" ]; then
   if command -v node >/dev/null 2>&1; then
     node "$PLUGIN_DEST/hooks/wire-settings.js" "$CLAUDE_DIR"
   else
-    echo "  WARN  node not found — reflex files copied but the SessionStart hook was NOT wired."
-    echo "        Install Node.js and re-run, or add the hook to settings.json by hand (see README)."
+    echo "  WARN  Node.js not found — it is REQUIRED for the reflex. Skills installed fine;"
+    echo "        reflex files copied but the SessionStart hook was NOT wired. Install Node.js"
+    echo "        and re-run, or add the hook to settings.json by hand (see README)."
   fi
 elif [ -n "$TARGET" ]; then
   echo "  note  --target set: skills only; the always-on reflex hook is Claude-specific and was not wired."

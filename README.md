@@ -58,18 +58,26 @@ that discipline self-contained, plus a pass/fail verdict, first-run attestation,
 
 ## Quick start
 
+**Requirements:** Git, and **Node.js** — the reflex hook is a small Node script (see [The
+always-on reflex](#the-always-on-reflex)). The six skills install without Node; only the
+reflex needs it, and anyone running a coding agent almost certainly has it already.
+
 **As Claude Code skills:**
 
 ```sh
 git clone https://github.com/scottconverse/dev-rigor-stack
 cd dev-rigor-stack
-./install.ps1     # Windows
-./install.sh      # macOS / Linux / Git Bash
+./install.sh                                             # macOS / Linux / Git Bash
+powershell -ExecutionPolicy Bypass -File .\install.ps1   # Windows
 ```
 
+On Windows the `-ExecutionPolicy Bypass` prefix avoids the default *"running scripts is
+disabled on this system"* block — a bare `.\install.ps1` may be refused on a locked-down box.
+
 Installs the six skills into `~/.claude/skills` (or `$CLAUDE_CONFIG_DIR/skills` if set)
-**and** wires the always-on reflex hook (below). Restart your agent to pick them up.
-Re-running updates in place — no path assumptions, safe to repeat.
+**and** wires the always-on reflex hook (below). If Node is missing, the skills still install
+and the installer says the hook was skipped. Restart your agent to pick them up. Re-running
+updates in place — no path assumptions, safe to repeat.
 
 One flag on both installers:
 

@@ -266,11 +266,16 @@ self-contained, plus a pass/fail verdict). A report vs. a gate.</p>
 <p><strong>As Claude Code skills:</strong></p>
 <pre>git clone https://github.com/scottconverse/dev-rigor-stack
 cd dev-rigor-stack
-./install.sh                            # macOS / Linux / Git Bash  (./install.ps1 on Windows)
-./install.sh --target ~/.codex/skills   # install the skills elsewhere, e.g. Codex</pre>
+./install.sh                                             # macOS / Linux / Git Bash
+powershell -ExecutionPolicy Bypass -File .\install.ps1   # Windows</pre>
+<p><strong>Requires Git and Node.js.</strong> The reflex hook is a small Node script — the six
+skills install without Node, only the reflex needs it (and anyone running a coding agent almost
+certainly has it). On Windows the <code>-ExecutionPolicy Bypass</code> prefix avoids the default
+"scripts are disabled on this system" block.</p>
 <p>Installs the six skills <strong>and</strong> wires the always-on reflex hook into your
-<code>settings.json</code> (needs Node.js; without it the skills still install and the
-installer says so). Re-running updates in place — idempotent, no path assumptions.</p>
+<code>settings.json</code>; if Node is missing the skills still install and the installer says
+so. Re-running updates in place — idempotent, no path assumptions.
+<code>./install.sh --target ~/.codex/skills</code> installs the skills elsewhere (e.g. Codex; no reflex hook).</p>
 <p><strong>Inside a Cowork or Codex session</strong> (no terminal): just ask the agent to
 install it from the repo — it copies the skills into place and, for a Claude install, wires
 the reflex hook.</p>
