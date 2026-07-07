@@ -1,8 +1,8 @@
 {
   "name": "dev-rigor-stack",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "license": "MIT",
-  "description": "A six-gate delivery discipline for AI coding agents, plus the skills it invokes.",
+  "description": "A six-gate delivery discipline for AI coding agents, the skills it invokes, and an always-on rigor reflex hook.",
   "skills": [
     { "name": "dev-rigor-stack", "role": "the stack itself — orchestrates the loop + release gate" },
     { "name": "coder-tdd-qa",    "role": "BUILD gate — test-first engineering + QA standards" },
@@ -11,15 +11,21 @@
     { "name": "audit-team",      "role": "REVIEW lane — multi-role deep audit for high-blast units" },
     { "name": "gauntletgate",    "role": "REVIEW lane + release gate — adversarial stage-gate (lite/walkthrough/full)" }
   ],
-  "external_dependencies": [
+  "reflex": {
+    "name": "dev-rigor-reflex",
+    "type": "hook",
+    "source": "plugin/",
+    "installs_to": "~/.claude/dev-rigor-plugin/ + SessionStart & SubagentStart entries in settings.json",
+    "role": "Always-on one-page distillation of the discipline — the proof ladder (rigor sized to blast radius), the never-shrink rules, and the evidence receipt. Injected every session and into subagents; delegates the heavy mechanics to the skills above. A convenience layer, not a dependency.",
+    "requires": "Node.js (to emit the reflex and to wire the hook). Without node the skills still install; the installer reports the hook as skipped."
+  },
+  "acknowledgments": [
     {
       "name": "ponytail",
+      "author": "DietrichGebert",
       "url": "https://github.com/DietrichGebert/ponytail",
       "license": "MIT",
-      "author": "DietrichGebert",
-      "optional": true,
-      "install": "Not bundled (not our work to redistribute). Fetch on request with the installer flag `--with-ponytail` / `-WithPonytail`, which clones this repo and adds its skills (skills only; always-on hooks not wired). Or install it yourself.",
-      "note": "Third-party code-minimalism / anti-bloat plugin. The dev-rigor-stack skill references the 'ponytail ladder' (PLAN) and 'ponytail governs code scope'. Supplies the stack's only active minimalism discipline. The stack degrades gracefully without it."
+      "note": "Prior art: the reflex hook borrows ponytail's always-on-reflex FORM, aimed at the opposite end (more proof rather than less code). No ponytail code is used, bundled, or required."
     }
   ],
   "config": {

@@ -58,12 +58,20 @@ flowchart LR
     DRS --> V2["VERIFY → proof-gate"]
     DRS --> R2["REVIEW → audit-lite / audit-team / gauntletgate walkthrough"]
     DRS --> G2["RELEASE → gauntletgate all + proof-gate claim-refutation"]
-    DRS -. "ladder + code-scope" .-> PT["ponytail (external, optional)"]
 ```
 
 The orchestrator holds the discipline; each gate delegates to the skill built for it. If
 a lane's skill is absent, the coordinator runs the equivalent discipline inline, says so,
 and still spawns a fresh sub-agent — it never reviews its own work.
+
+## The always-on reflex
+
+The skills are pull-based — invoked when the coordinator judges a task needs them. Shipped
+alongside is a **reflex**: a one-page distillation of the whole discipline (the proof ladder,
+the never-shrink rules, the evidence receipt), injected into every session and every subagent
+through a `SessionStart` / `SubagentStart` hook. It makes the discipline present by default
+and delegates the heavy mechanics back to the skills above — a convenience layer, not a new
+gate. The full text lives in `plugin/dev-rigor-reflex.md`.
 
 ## The two roles
 

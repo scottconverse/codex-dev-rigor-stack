@@ -135,19 +135,19 @@ tool — never a bare recursing agent. Each worker states its tier and moderates
 
 ### Install, configure, export
 
-- **Install** (skills): `./install.ps1` (Windows) or `./install.sh`
-  (macOS/Linux/Git Bash). Targets `~/.claude/skills` or `$CLAUDE_CONFIG_DIR/skills`.
-  Idempotent — re-run to update. Two flags on both:
-  - `--with-ponytail` / `-WithPonytail` — clone [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail)
-    and add its skills (**skills only** — ponytail's always-on hooks are not wired). If git or
-    the network is unavailable, it warns and skips; the stack skills still install.
-  - `--target <dir>` / `-Target <dir>` — install into any directory, e.g. Codex's
-    `~/.codex/skills`.
+- **Install**: `./install.ps1` (Windows) or `./install.sh` (macOS/Linux/Git Bash).
+  Installs the six skills into `~/.claude/skills` (or `$CLAUDE_CONFIG_DIR/skills`) **and**
+  wires the always-on **dev-rigor reflex** — a one-page distillation of this discipline — as
+  a SessionStart hook under `~/.claude/dev-rigor-plugin/`. The reflex hook needs Node.js;
+  without it the skills still install and the installer reports the hook as skipped.
+  Idempotent — re-run to update. One flag on both:
+  - `--target <dir>` / `-Target <dir>` — install the skills into any directory, e.g. Codex's
+    `~/.codex/skills`. With `--target`, only skills are installed; the always-on reflex hook
+    is Claude-specific and is not wired.
 - **Installing from inside a Cowork or Codex session** (the common case, no terminal): tell
   the agent to install the stack from the repo. It copies `skills/*` into the host's skills
-  directory (`~/.claude/skills` for Claude, `~/.codex/skills` for Codex) and can offer the
-  ponytail lane as a yes/no. `manifest.json` marks what's core vs. the optional external
-  ponytail dependency, so the installing agent knows what's opt-in.
+  directory (`~/.claude/skills` for Claude, `~/.codex/skills` for Codex) and, for a Claude
+  install, wires the reflex hook. `manifest.json` lists everything that installs.
 - **Configure**: fold [`config/CLAUDE.md`](../config/CLAUDE.md) into your own `CLAUDE.md`
   to auto-apply the stack. Generic template; review before adopting.
 - **Cross-AI export**: `./export/export-portable.sh` (or `.ps1`) writes
@@ -158,6 +158,7 @@ tool — never a bare recursing agent. Each worker states its tier and moderates
 ### Dependencies & degrade
 
 The stack expects its sibling skills co-installed (`coder-tdd-qa`, `proof-gate`, the
-`gauntletgate` / `audit-lite` / `audit-team` family) and references `ponytail` (external,
-optional). If a lane's skill is absent, the coordinator runs the equivalent discipline
-inline, says so, and still spawns a fresh sub-agent — degrade never means self-review.
+`gauntletgate` / `audit-lite` / `audit-team` family). The always-on reflex is a convenience
+layer, not a dependency — the full discipline lives in the skill. If a lane's skill is
+absent, the coordinator runs the equivalent discipline inline, says so, and still spawns a
+fresh sub-agent — degrade never means self-review.

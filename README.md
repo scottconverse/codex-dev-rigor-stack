@@ -40,11 +40,10 @@ skill](skills/dev-rigor-stack/SKILL.md).
 | [`audit-team`](skills/audit-team/SKILL.md) | **REVIEW** — multi-role deep audit for high-blast units |
 | [`gauntletgate`](skills/gauntletgate/SKILL.md) | **REVIEW + release** — adversarial stage-gate (lite / walkthrough / full) |
 
-All six are MIT-licensed and authored by the repo owner. **ponytail** — the
-code-minimalism / anti-bloat lane the stack references — is a separate third-party MIT
-plugin by [DietrichGebert](https://github.com/DietrichGebert/ponytail); it is **not
-bundled**. Add it with `--with-ponytail` (below) or install it yourself. The stack works
-without it — you only lose the "what can I delete" discipline.
+All six are MIT-licensed and authored by the repo owner. Alongside them, an always-on
+**dev-rigor reflex** — a one-page distillation of the discipline — installs as a
+SessionStart hook and primes every coding session (see [The always-on
+reflex](#the-always-on-reflex)).
 
 ## Quick start
 
@@ -57,29 +56,42 @@ cd dev-rigor-stack
 ./install.sh      # macOS / Linux / Git Bash
 ```
 
-Installs into `~/.claude/skills` (or `$CLAUDE_CONFIG_DIR/skills` if set). Restart your
-agent to pick them up. Re-running updates in place — no path assumptions, safe to repeat.
+Installs the six skills into `~/.claude/skills` (or `$CLAUDE_CONFIG_DIR/skills` if set)
+**and** wires the always-on reflex hook (below). Restart your agent to pick them up.
+Re-running updates in place — no path assumptions, safe to repeat.
 
-Two flags on both installers:
+One flag on both installers:
 
 ```sh
-./install.sh --with-ponytail                # also fetch the optional ponytail lane from its repo
-./install.sh --target ~/.codex/skills       # install somewhere else, e.g. Codex
-./install.ps1 -WithPonytail                 # (PowerShell equivalents)
-./install.ps1 -Target ~/.codex/skills
+./install.sh --target ~/.codex/skills       # install the skills somewhere else, e.g. Codex
+./install.ps1 -Target ~/.codex/skills       # (PowerShell equivalent)
 ```
 
-`--with-ponytail` clones DietrichGebert's repo and adds its skills (skills only — it does
-**not** wire ponytail's always-on hooks); if git or the network is unavailable it warns and
-skips, leaving the stack skills installed. `--target` sends the skills anywhere — use it for
-Codex (`~/.codex/skills`) or any non-default host.
+`--target` sends the skills to any directory — use it for Codex (`~/.codex/skills`) or any
+non-default host. With `--target`, only the skills are installed; the always-on reflex hook
+is Claude-specific and is not wired.
 
 **Installing from inside a Cowork or Codex session** (the common case — no terminal): just
 tell the agent *"install the dev-rigor-stack from github.com/scottconverse/dev-rigor-stack"*.
 It clones the repo, copies `skills/*` into the host's skills directory (`~/.claude/skills`
-for Claude, `~/.codex/skills` for Codex), and can offer the ponytail lane as a yes/no. The
-`manifest.json` lists the skills and marks ponytail as an optional external dependency so the
-agent knows what's core and what's opt-in.
+for Claude, `~/.codex/skills` for Codex), and for a Claude install wires the reflex hook.
+`manifest.json` lists everything that installs.
+
+### The always-on reflex
+
+The six skills are pull-based — the agent invokes them when it judges a task calls for
+them. The **reflex** is push-based: it is injected into every session and every subagent, so
+the discipline is present by default instead of waiting to be summoned. It is a single page —
+persona, the **proof ladder** (spend rigor sized to blast radius, not by habit), the
+never-shrink rules, and a one-line evidence receipt — and it delegates the heavy mechanics to
+the skills. It is a convenience layer, not a dependency: the full discipline lives in the
+`dev-rigor-stack` skill.
+
+The installer copies it to `~/.claude/dev-rigor-plugin/` and adds a `SessionStart` +
+`SubagentStart` entry to your `settings.json` (idempotently, preserving your existing
+hooks). It **needs Node.js** — without node the skills still install and the installer says
+the hook was skipped. Edit `~/.claude/dev-rigor-plugin/dev-rigor-reflex.md` to tune the
+wording; the hook re-reads it, no code change needed.
 
 **For any other agent (ChatGPT, Gemini, Codex, …):**
 
@@ -110,5 +122,7 @@ itself when being wrong is expensive. The stack says so itself, in every gate.
 
 ## License
 
-MIT — see [LICENSE](LICENSE). The bundled skills are authored by Scott Converse.
-`ponytail` is a separate MIT work by DietrichGebert (referenced, not included).
+MIT — see [LICENSE](LICENSE). The skills and the reflex are authored by Scott Converse.
+The reflex's always-on *form* is prior art from
+[ponytail](https://github.com/DietrichGebert/ponytail) (DietrichGebert, MIT) — no ponytail
+code is used, bundled, or required.

@@ -19,7 +19,9 @@ Above the loop, a session/machine continuity bookend: durable state (locked deci
 done-criteria, killed approaches) in a remote-tracked, append-safe artifact —
 pull+revalidate at Start, append During, push+confirm at End. Blast radius (not diff
 size) is the sizing axis. The stack flexes to the unit; a skipped gate is stated with a
-reason, never silent. Skip only for trivial one-line edits.
+reason, never silent. Skip only for trivial one-line edits. (If you installed the dev-rigor
+reflex hook, this discipline is already injected every session; this snippet is the
+equivalent for hosts without the hook.)
 
 ## Subagents
 

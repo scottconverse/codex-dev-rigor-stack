@@ -1,31 +1,29 @@
 #!/usr/bin/env bash
 # dev-rigor-stack installer (macOS / Linux / Git Bash).
-# Copies the vendored skills into your agent's skills directory.
+# Copies the vendored skills into your agent's skills directory, and (for a default Claude
+# install) also installs the always-on dev-rigor reflex hook and wires it into settings.json.
 #
 # Usage:
 #   ./install.sh                                  # -> $CLAUDE_CONFIG_DIR/skills or ~/.claude/skills
-#   ./install.sh --target ~/.codex/skills         # install somewhere else (e.g. Codex)
-#   ./install.sh --with-ponytail                  # also fetch the optional ponytail lane from its repo
+#   ./install.sh --target ~/.codex/skills         # install skills elsewhere (e.g. Codex); no reflex hook
 #   CLAUDE_CONFIG_DIR=/custom ./install.sh
 #
-# Re-running updates in place (each skill is replaced). No path assumptions.
+# Re-running updates in place (each skill is replaced; the hook re-wires idempotently). No path assumptions.
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILLS_SRC="$REPO_DIR/skills"
-WITH_PONYTAIL=0
+PLUGIN_SRC="$REPO_DIR/plugin"
 TARGET=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --with-ponytail) WITH_PONYTAIL=1; shift ;;
     --target) TARGET="${2:-}"; shift 2 ;;
     --target=*) TARGET="${1#*=}"; shift ;;
     -h|--help)
-      echo "usage: ./install.sh [--target <skills-dir>] [--with-ponytail]"
+      echo "usage: ./install.sh [--target <skills-dir>]"
       echo "  --target <dir>    install skills into <dir> (default: \$CLAUDE_CONFIG_DIR/skills or ~/.claude/skills)"
-      echo "  --with-ponytail   also fetch the optional ponytail (code-minimalism) lane from"
-      echo "                    github.com/DietrichGebert/ponytail — third-party, skills only, no hooks"
+      echo "                    with --target, only skills are installed; the reflex hook is Claude-specific and is skipped"
       exit 0 ;;
     *) echo "unknown option: $1 (try --help)" >&2; exit 2 ;;
   esac
@@ -36,11 +34,11 @@ if [ ! -d "$SKILLS_SRC" ]; then
   exit 1
 fi
 
+CLAUDE_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 if [ -n "$TARGET" ]; then
   DEST="$TARGET"
 else
-  DEST_ROOT="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
-  DEST="$DEST_ROOT/skills"
+  DEST="$CLAUDE_DIR/skills"
 fi
 
 mkdir -p "$DEST"
@@ -65,41 +63,26 @@ done
 echo
 echo "Installed $installed stack skill(s) to $DEST"
 
-if [ "$WITH_PONYTAIL" -eq 1 ]; then
-  echo
-  echo "Fetching ponytail (third-party — DietrichGebert, MIT) from github.com/DietrichGebert/ponytail ..."
-  if ! command -v git >/dev/null 2>&1; then
-    echo "  WARN  git not found — skipped ponytail. Your $installed stack skill(s) installed fine."
-    echo "        Add it later from https://github.com/DietrichGebert/ponytail"
+# Always-on reflex hook — default Claude install only (skipped for a custom --target).
+if [ -z "$TARGET" ] && [ -d "$PLUGIN_SRC" ]; then
+  PLUGIN_DEST="$CLAUDE_DIR/dev-rigor-plugin"
+  rm -rf "$PLUGIN_DEST"
+  mkdir -p "$PLUGIN_DEST"
+  cp -r "$PLUGIN_SRC/." "$PLUGIN_DEST/"
+  echo "  ok    dev-rigor reflex -> $PLUGIN_DEST"
+  if command -v node >/dev/null 2>&1; then
+    node "$PLUGIN_DEST/hooks/wire-settings.js" "$CLAUDE_DIR"
   else
-    tmp="$(mktemp -d)"
-    if git clone --depth 1 --quiet "https://github.com/DietrichGebert/ponytail" "$tmp/ponytail" 2>/dev/null \
-       && [ -d "$tmp/ponytail/skills" ]; then
-      pcount=0
-      for ps in "$tmp/ponytail/skills"/*/; do
-        pn="$(basename "$ps")"
-        pt="$DEST/$pn"
-        rm -rf "$pt"; cp -r "$ps" "$pt"
-        if [ -f "$pt/SKILL.md" ]; then printf "  ok    %s\n" "$pn"; pcount=$((pcount + 1)); fi
-      done
-      rm -rf "$tmp"
-      echo "  added $pcount ponytail skill(s) — skills only; always-on hooks NOT wired (see its repo for those)."
-    else
-      rm -rf "$tmp" 2>/dev/null || true
-      echo "  WARN  couldn't fetch ponytail (network or repo issue) — skipped."
-      echo "        Your $installed stack skill(s) installed fine. Add it later from"
-      echo "        https://github.com/DietrichGebert/ponytail"
-    fi
+    echo "  WARN  node not found — reflex files copied but the SessionStart hook was NOT wired."
+    echo "        Install Node.js and re-run, or add the hook to settings.json by hand (see README)."
   fi
+elif [ -n "$TARGET" ]; then
+  echo "  note  --target set: skills only; the always-on reflex hook is Claude-specific and was not wired."
 fi
 
 echo
 echo "Next steps:"
-if [ "$WITH_PONYTAIL" -ne 1 ]; then
-  echo "  * ponytail (the code-minimalism / anti-bloat lane) is a separate third-party plugin"
-  echo "    by DietrichGebert — not bundled. Re-run with  --with-ponytail  to fetch it, or install"
-  echo "    it yourself. The stack works without it; you lose only the 'what can I delete' discipline."
-fi
+echo "  * The reflex activates on your next session start (or /compact). Nothing else to run."
 echo "  * Optional: fold config/CLAUDE.md into your own ~/.claude/CLAUDE.md so the stack applies"
-echo "    automatically. Review it first -- do not blindly overwrite your existing CLAUDE.md."
+echo "    automatically even without the hook. Review it first -- do not blindly overwrite your CLAUDE.md."
 echo "  * Restart your agent (or reload skills) so it picks up the new skills."

@@ -14,7 +14,7 @@ description: >
 license: MIT
 ---
 
-# Standing dev rigor stack (v1.3)
+# Standing dev rigor stack (v1.4)
 
 Two altitudes. The **per-unit loop** (gates 1–5) applies to EVERY unit of work — a
 fix, a module, a feature. The **release gate** fires once per version, at the tag
@@ -53,8 +53,9 @@ tag (a decision killed in 0.1 is still worth not reopening in 0.4).
 ## Per-unit loop (every unit of work)
 
 1. PLAN (Opus, main-thread coordinator)
-   Trace the real code end-to-end before touching it. Climb the ponytail ladder
-   (reuse before build). Write the acceptance criteria / definition of done and the
+   Trace the real code end-to-end before touching it. Climb the reuse-before-build
+   ladder (does this need to exist at all? is it already here? does stdlib or the
+   platform do it? can it be one line?). Write the acceptance criteria / definition of done and the
    TEST LIST up front. **Classify the unit's blast radius here** — that sets the
    review depth and fires the escalators (below). Blast radius, not diff size, is the
    sizing axis: a one-line change to auth is small in lines and large in blast.
@@ -154,7 +155,7 @@ Reconciliation (keeps this from meaning "ask permission constantly") — it's ab
 Concretely: green-path unit merge = standing authorization; the release tag = owner
 decision, every time.
 
-## Documentation discipline (ponytail-for-docs)
+## Documentation discipline
 
 - **Deliverable docs — real and professional, always.** README, two-voice manual
   (non-technical + technical), architecture + professional drawings, honest landing
@@ -172,9 +173,9 @@ decision, every time.
 
 This stack expects its sibling skills co-installed — **coder-tdd-qa, proof-gate, and the
 gauntletgate / audit-lite / audit-team family**. These ship in the stack bundle and
-install together with it. It also references **ponytail** (the ladder + code-scope rule)
-as an *external, optional* dependency: a separate third-party plugin you install on its
-own — not bundled here — and the stack degrades gracefully without it. If any lane's
+install together with it. An always-on **dev-rigor reflex** — a one-page distillation of
+this discipline — ships alongside as a SessionStart hook and primes every session; it is a
+convenience layer, not a dependency, and the full discipline lives here. If any lane's
 skill is absent, the coordinator runs the equivalent discipline inline, **says so**, and
 still spawns a fresh sub-agent to run it — degrade never means the coordinator reviews
 its own work.
@@ -191,8 +192,8 @@ its own work.
 - Open-source-first: verify licenses; prefer MIT/Apache/MPL over BUSL/SSPL/closed.
 - Evidence over claims: reproduce before fixing, verify with numbers, never claim
   beyond the evidence, own mistakes plainly.
-- Ponytail governs CODE SCOPE ONLY — it never authorizes skipping a gate, a CI check,
-  verification, or subagent discipline.
+- Code minimalism governs CODE SCOPE ONLY — reuse-before-build and the shortest working
+  diff shrink the *code*, never a gate, a CI check, verification, or subagent discipline.
 
 The stack FLEXES to the unit — sequential fixes skip fan-out, low-blast units collapse
 VERIFY+REVIEW, user-invisible changes skip the walkthrough lane — but the gates that

@@ -87,21 +87,22 @@ go/no-go on the tag.</p>
   <tr><td><code>audit-team</code></td><td>REVIEW — multi-role deep audit for high-blast units</td></tr>
   <tr><td><code>gauntletgate</code></td><td>REVIEW + release — adversarial stage-gate</td></tr>
 </table>
-<p class="muted">All six are MIT and authored by the repo owner. <code>ponytail</code>, the
-code-minimalism lane the stack references, is a separate MIT plugin by
-<a href="https://github.com/DietrichGebert/ponytail">DietrichGebert</a> — referenced, not
-bundled; the stack works without it.</p>
+<p class="muted">All six are MIT and authored by the repo owner. Alongside them, an always-on
+<strong>dev-rigor reflex</strong> — a one-page distillation of the discipline — installs as a
+SessionStart hook and primes every coding session; it delegates the heavy mechanics back to
+these skills.</p>
 
 <h2>Get started</h2>
 <p><strong>As Claude Code skills:</strong></p>
 <pre>git clone https://github.com/scottconverse/dev-rigor-stack
 cd dev-rigor-stack
-./install.sh                     # macOS / Linux / Git Bash  (./install.ps1 on Windows)
-./install.sh --with-ponytail     # also add the optional code-minimalism lane
-./install.sh --target ~/.codex/skills   # install elsewhere, e.g. Codex</pre>
+./install.sh                            # macOS / Linux / Git Bash  (./install.ps1 on Windows)
+./install.sh --target ~/.codex/skills   # install the skills elsewhere, e.g. Codex</pre>
+<p>Installs the six skills <strong>and</strong> wires the always-on reflex hook (needs
+Node.js; without it the skills still install and the installer says so).</p>
 <p><strong>Inside a Cowork or Codex session</strong> (no terminal): just ask the agent to
-install it from the repo — it copies the skills into the right place and can offer the
-ponytail lane as a yes/no.</p>
+install it from the repo — it copies the skills into place and, for a Claude install, wires
+the reflex hook.</p>
 <p><strong>For any other agent</strong> (ChatGPT, Gemini, Codex): run
 <code>./export/export-portable.sh</code> and paste the generated <code>portable-bundle.md</code>
 into its system prompt. Claude-specific mechanics read as plain guidance — nothing is
@@ -124,8 +125,9 @@ diluted from the Claude side to serve the export.</p>
 </div>
 
 <footer>
-  <p>MIT-licensed. Skills by Scott Converse; <code>ponytail</code> is a separate MIT work by
-  DietrichGebert (referenced, not included). &nbsp;·&nbsp;
+  <p>MIT-licensed. Skills and reflex by Scott Converse; the reflex's always-on <em>form</em>
+  is prior art from <a href="https://github.com/DietrichGebert/ponytail">ponytail</a>
+  (DietrichGebert, MIT) — no ponytail code used. &nbsp;·&nbsp;
   <a href="https://github.com/scottconverse/dev-rigor-stack">Source</a> ·
   <a href="https://github.com/scottconverse/dev-rigor-stack/blob/main/docs/ARCHITECTURE.md">Architecture</a> ·
   <a href="https://github.com/scottconverse/dev-rigor-stack/blob/main/LICENSE">License</a></p>
