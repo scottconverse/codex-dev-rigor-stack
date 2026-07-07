@@ -1,0 +1,27 @@
+{
+  "name": "dev-rigor-stack",
+  "version": "1.3.0",
+  "license": "MIT",
+  "description": "A six-gate delivery discipline for AI coding agents, plus the skills it invokes.",
+  "skills": [
+    { "name": "dev-rigor-stack", "role": "the stack itself — orchestrates the loop + release gate" },
+    { "name": "coder-tdd-qa",    "role": "BUILD gate — test-first engineering + QA standards" },
+    { "name": "proof-gate",      "role": "VERIFY gate — adversarial build-and-verify, anti-theater" },
+    { "name": "audit-lite",      "role": "REVIEW lane — fast single-pass audit of a small change" },
+    { "name": "audit-team",      "role": "REVIEW lane — multi-role deep audit for high-blast units" },
+    { "name": "gauntletgate",    "role": "REVIEW lane + release gate — adversarial stage-gate (lite/walkthrough/full)" }
+  ],
+  "external_dependencies": [
+    {
+      "name": "ponytail",
+      "url": "https://github.com/DietrichGebert/ponytail",
+      "license": "MIT",
+      "author": "DietrichGebert",
+      "optional": true,
+      "note": "Third-party code-minimalism plugin. The dev-rigor-stack skill references the 'ponytail ladder' and 'ponytail governs code scope'. Not bundled here (not our work to redistribute); install separately if you want that lane. The stack degrades gracefully without it."
+    }
+  ],
+  "config": {
+    "claude_md_template": "config/CLAUDE.md"
+  }
+}
