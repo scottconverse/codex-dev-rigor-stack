@@ -1,6 +1,6 @@
 {
   "name": "dev-rigor-stack",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "license": "MIT",
   "description": "A six-gate delivery discipline for AI coding agents, the skills it invokes, and an always-on rigor reflex hook.",
   "skills": [
