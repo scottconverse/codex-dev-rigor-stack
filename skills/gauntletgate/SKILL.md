@@ -14,8 +14,8 @@ It is one gate with three lanes. The argument selects which lane(s) run.
 ## Invocation
 
 Codex Desktop may invoke this skill by name or natural-language request, such as
-asking for "GauntletGate lite" or "GauntletGate walkthrough full". CoWork/Claude-style
-agents may expose it as `/gauntletgate <args>`. In either format, `args` is a
+asking for "GauntletGate lite" or "GauntletGate walkthrough full". In Codex, use the
+natural-language request or `$gauntletgate <args>`. In any format, `args` is a
 space-separated subset of:
 
 | arg | lane | what it does | weight |

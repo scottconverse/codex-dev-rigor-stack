@@ -5,9 +5,9 @@ description: "Engineering, TDD, and QA standards for coding work — hard rules,
 
 # Coder TDD/QA Standards — v0.5
 
-Portable agent standards. In **Claude Code**, install as a skill (this file, with the
-frontmatter above). In **Codex or any other agent**, paste everything below the
-frontmatter into `AGENTS.md` / the system prompt — nothing in the body depends on a
+Portable agent standards. In **Codex Desktop**, install this folder under
+`~/.codex/skills` with the frontmatter above. In any other agent, paste everything below
+the frontmatter into `AGENTS.md` / the system prompt — nothing in the body depends on a
 specific harness, tool name, or file layout.
 
 **This document assumes the host harness provides no other guidance.** It is written
