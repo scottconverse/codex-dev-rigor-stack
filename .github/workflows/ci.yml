@@ -35,7 +35,7 @@ jobs:
           python3 - <<'EOF'
           b = open('/tmp/bundle-a.md','rb').read()
           assert b.count(b'\x00') == 0, 'NUL bytes in bundle'
-          assert b.count('â€'.encode()) == 0, 'mojibake in bundle'
+          assert b.count(b'\xc3\xa2\xe2\x82\xac') == 0, 'mojibake in bundle'
           print('bundle clean:', len(b), 'bytes')
           EOF
       - name: Export parity (bash vs Windows PowerShell 5.1)
@@ -48,6 +48,6 @@ jobs:
           a = open('/tmp/bundle-bash.md','rb').read()
           b = open(r'C:\bundle-ps.md','rb').read()
           assert a == b, f'bundles differ: bash={len(a)}B ps={len(b)}B'
-          assert a.count(b'\x00') == 0 and a.count('â€'.encode()) == 0
+          assert a.count(b'\x00') == 0 and a.count(b'\xc3\xa2\xe2\x82\xac') == 0
           print('bundles byte-identical and clean:', len(a), 'bytes')
           EOF

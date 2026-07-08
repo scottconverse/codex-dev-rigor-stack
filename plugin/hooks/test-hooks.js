@@ -359,6 +359,17 @@ test('activate: subagent mode emits valid SubagentStart JSON carrying the reflex
   assert.strictEqual(j.hookSpecificOutput.additionalContext, expected);
 });
 
+test('activate: a BOM on the reflex file is stripped from the payload', () => {
+  const dir = freshDir();
+  const hooksDir = path.join(dir, 'hooks');
+  fs.mkdirSync(hooksDir, { recursive: true });
+  fs.copyFileSync(ACTIVATE, path.join(hooksDir, 'dev-rigor-activate.js'));
+  fs.writeFileSync(path.join(dir, 'dev-rigor-reflex.md'),
+    Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from('REFLEX BODY\n')]));
+  const out = execFileSync('node', [path.join(hooksDir, 'dev-rigor-activate.js')], { encoding: 'utf8' });
+  assert.strictEqual(out, 'REFLEX BODY\n', 'BOM must not leak into injected context');
+});
+
 test('activate: missing reflex file exits 0 with empty output', () => {
   const tmp = path.join(freshDir(), 'hooks');
   fs.mkdirSync(tmp, { recursive: true });
