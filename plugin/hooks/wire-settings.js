@@ -36,12 +36,15 @@ for (const ev of ['SessionStart', 'SubagentStart', 'UserPromptSubmit', 'PostTool
   s.hooks[ev] = s.hooks[ev] || [];
 }
 
-const present = (arr, marker) => JSON.stringify(arr).includes(marker);
-
+// Replace-own-then-add: drop any existing entry that carries our marker and push the
+// current one, so a re-run UPDATES stale dev-rigor wiring (e.g. a changed matcher)
+// instead of silently keeping it. Foreign entries are never touched.
 let changed = false;
 function wire(event, marker, entry) {
-  if (!present(s.hooks[event], marker)) {
-    s.hooks[event].push(entry);
+  const kept = s.hooks[event].filter((e) => !JSON.stringify(e).includes(marker));
+  const next = kept.concat([entry]);
+  if (JSON.stringify(next) !== JSON.stringify(s.hooks[event])) {
+    s.hooks[event] = next;
     changed = true;
   }
 }

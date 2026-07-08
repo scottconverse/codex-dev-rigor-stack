@@ -285,6 +285,25 @@ test('wire-settings: refuses to clobber a corrupt settings.json', () => {
     'the corrupt file must be left byte-identical, never overwritten');
 });
 
+test('wire-settings: updates a stale dev-rigor entry in place', () => {
+  const cfg = freshDir();
+  fs.writeFileSync(path.join(cfg, 'settings.json'), JSON.stringify({
+    hooks: {
+      PostToolUse: [
+        { matcher: 'OLD|NARROW', hooks: [{ type: 'command', command: 'node "x/dev-rigor-ground.js" record; exit 0' }] },
+        { matcher: 'Foreign', hooks: [{ type: 'command', command: 'node my-other-hook.js' }] },
+      ],
+    },
+  }));
+  execFileSync('node', [WIRE, cfg], { encoding: 'utf8' });
+  const s = JSON.parse(fs.readFileSync(path.join(cfg, 'settings.json'), 'utf8'));
+  const ours = s.hooks.PostToolUse.filter((e) => JSON.stringify(e).includes('dev-rigor-ground'));
+  assert.strictEqual(ours.length, 1, 'stale entry must be replaced, not duplicated');
+  assert.notStrictEqual(ours[0].matcher, 'OLD|NARROW', 'matcher must be updated');
+  assert.match(ours[0].matcher, /jupyter/, 'current matcher expected');
+  assert.match(JSON.stringify(s.hooks.PostToolUse), /my-other-hook/, 'foreign entry must survive');
+});
+
 test('wire-settings: preserves pre-existing foreign hooks', () => {
   const cfg = freshDir();
   fs.writeFileSync(path.join(cfg, 'settings.json'), JSON.stringify({
