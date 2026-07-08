@@ -1,55 +1,25 @@
 {
-  "name": "dev-rigor-stack",
-  "version": "1.5.1",
-  "license": "MIT",
-  "description": "A six-gate delivery discipline for AI coding agents, the skills it invokes, and three always-on hooks: a rigor reflex, a per-task rigor router, and a mechanical grounding check.",
-  "skills": [
-    { "name": "dev-rigor-stack", "role": "the stack itself — orchestrates the loop + release gate" },
-    { "name": "coder-tdd-qa",    "role": "BUILD gate — test-first engineering + QA standards" },
-    { "name": "proof-gate",      "role": "VERIFY gate — adversarial build-and-verify, anti-theater" },
-    { "name": "audit-lite",      "role": "REVIEW lane — fast single-pass audit of a small change" },
-    { "name": "audit-team",      "role": "REVIEW lane — multi-role deep audit for high-blast units" },
-    { "name": "gauntletgate",    "role": "REVIEW lane + release gate — adversarial stage-gate (lite/walkthrough/full)" }
-  ],
-  "plugin": {
-    "source": "plugin/",
-    "installs_to": "~/.claude/dev-rigor-plugin/ + hook entries in settings.json (SessionStart, SubagentStart, UserPromptSubmit, PostToolUse, Stop)",
-    "requires": "Node.js — REQUIRED for the hooks (they are small Node scripts). The six skills install without Node; if Node is missing the installer reports the hooks as skipped. Anyone running a coding agent almost certainly has Node already.",
-    "hooks": [
-      {
-        "name": "dev-rigor-reflex",
-        "events": ["SessionStart", "SubagentStart"],
-        "role": "Always-on one-page distillation of the discipline — the proof ladder (rigor sized to blast radius), the never-shrink rules, and the evidence receipt. Injected every session and into subagents; delegates the heavy mechanics to the skills above."
-      },
-      {
-        "name": "dev-rigor-router",
-        "events": ["UserPromptSubmit"],
-        "role": "Per-task rigor router — classifies each prompt and injects ONLY the matching task protocol from plugin/disciplines/ (investigation for bug work, render/run grounding for UI/artifact work, decomposition + per-story evidence for multi-part work, release discipline for tag work). Each protocol injects at most once per session; no match means silence."
-      },
-      {
-        "name": "dev-rigor-ground",
-        "events": ["PostToolUse", "Stop"],
-        "role": "Mechanical grounding check — records edits to runnable/viewable files and execution-tool calls, then blocks a stop (once per session) if runnable artifacts were edited but nothing was ever executed or rendered. Catches the provable-theater floor; the router's grounding protocol covers the judgment above it."
-      }
-    ]
+  "name": "codex-dev-rigor-stack",
+  "version": "0.1.0",
+  "upstream": {
+    "repo": "https://github.com/scottconverse/dev-rigor-stack",
+    "commit": "63be0f72571d41db3ee5909a03a0b645bb28e71e",
+    "version": "1.5.1"
   },
-  "acknowledgments": [
-    {
-      "name": "ponytail",
-      "author": "DietrichGebert",
-      "url": "https://github.com/DietrichGebert/ponytail",
-      "license": "MIT",
-      "note": "Prior art: the reflex hook borrows ponytail's always-on-reflex FORM, aimed at the opposite end (more proof rather than less code). No ponytail code is used, bundled, or required."
-    },
-    {
-      "name": "fablize",
-      "author": "fivetaku",
-      "url": "https://github.com/fivetaku/fablize",
-      "license": "MIT",
-      "note": "Prior art: fablize's Fable-vs-Opus comparison proved per-task discipline routing and verification grounding transferable to smaller models; the rigor router and grounding check are clean-room implementations of those two concepts. No fablize code was read, used, bundled, or required."
-    }
+  "license": "MIT",
+  "description": "Codex Desktop packaging of the dev-rigor-stack skillset: six pull-based Codex skills for proof-oriented delivery, with Claude-only hooks intentionally left unwired.",
+  "installs_to": "~/.codex/skills by default",
+  "skills": [
+    { "name": "dev-rigor-stack", "role": "orchestrates the delivery loop and release gate" },
+    { "name": "coder-tdd-qa", "role": "BUILD gate: test-first engineering and QA standards" },
+    { "name": "proof-gate", "role": "VERIFY gate: adversarial build-and-verify, anti-theater" },
+    { "name": "audit-lite", "role": "REVIEW lane: fast single-pass audit of a small change" },
+    { "name": "audit-team", "role": "REVIEW lane: multi-role deep audit for high-blast units" },
+    { "name": "gauntletgate", "role": "REVIEW lane and release gate: adversarial stage gate" }
   ],
-  "config": {
-    "claude_md_template": "config/CLAUDE.md"
+  "codex": {
+    "installer": "install.ps1",
+    "restart_required": true,
+    "hooks": "not wired by default; upstream Claude hooks need a Codex-native port before enabling"
   }
 }

@@ -8,8 +8,8 @@ description: >
   this through the stack", "release gate", or asks for systematic/thorough delivery.
   Routes each unit through PLAN → BUILD → VERIFY → REVIEW → MERGE, runs the full
   GauntletGate + claim-refutation + real docs + a rollback plan at the release
-  boundary, keeps durable project state across sessions and machines, fans work out to
-  cheap models via the Workflow tool with tier-calibrated worker prompts, and holds an
+  boundary, keeps durable project state across sessions and machines, fans work out with
+  bounded Codex subagents or serial fresh-context passes when available, and holds an
   evidence-over-claims honesty line. Not for non-code work.
 license: MIT
 ---
@@ -32,7 +32,7 @@ reason it was rejected) — lives in a **remote-tracked, append-safe artifact**,
 only in context:
 
 - **The artifact** — remote-tracked (survives session/machine changes) and append-safe,
-  so interleaved sessions (Cowork↔Codex, many machines) don't clobber each other; that's
+  so interleaved sessions (Codex Desktop, Codex CLI, Claude, many machines) don't clobber each other; that's
   why a comment-append store beats a lone in-repo file that merge-conflicts. Mechanism is
   the project's to pick, not the skill's — point at one that already exists (a
   project-memory vault such as the `claude-dev-loop` skill if present, a pinned decision
@@ -52,7 +52,7 @@ tag (a decision killed in 0.1 is still worth not reopening in 0.4).
 
 ## Per-unit loop (every unit of work)
 
-1. PLAN (Opus, main-thread coordinator)
+1. PLAN (main-thread coordinator)
    Trace the real code end-to-end before touching it. Climb the reuse-before-build
    ladder (does this need to exist at all? is it already here? does stdlib or the
    platform do it? can it be one line?). Write the acceptance criteria / definition of done and the
@@ -60,33 +60,34 @@ tag (a decision killed in 0.1 is still worth not reopening in 0.4).
    review depth and fires the escalators (below). Blast radius, not diff size, is the
    sizing axis: a one-line change to auth is small in lines and large in blast.
 
-2. BUILD — /coder-tdd-qa, test-first
+2. BUILD — `$coder-tdd-qa`, test-first
    Write the failing tests from the test list FIRST (or reproduce-red for a bug),
    watching each FAIL before you make it pass — that, not a percentage, is what makes
    a test real. Then minimum code to pass, then refactor green. Static gates:
    types-strict + lint. Coverage is a **gap diagnostic** (flags untested branches),
    not a threshold to clear — the exact policy lives in coder-tdd-qa. Fan-out (test
-   generation across combos, sweeping for latent siblings) runs as a Workflow on
-   haiku/sonnet — NEVER a bare Agent; if workers produce parallel branches, merge them
-   one at a time (linearize) and re-verify after each.
+   generation across combos, sweeping for latent siblings) uses Codex's bounded
+   multi-agent tools when available. If no bounded fan-out exists, run the same checks
+   serially from a fresh adversarial vantage. If workers produce parallel branches,
+   merge them one at a time (linearize) and re-verify after each.
 
-3. VERIFY — /proof-gate
+3. VERIFY — `$proof-gate`
    Adversarially try to BREAK the claim ("this holds", "the race can't occur", "the
    number isn't inflated"). Skeptics run as a workflow on cheap models; the claim only
    survives if they cannot refute it. For a low-blast unit, VERIFY and REVIEW may
    collapse into one adversarial pass — don't run both formally over a one-liner.
 
 4. REVIEW — the coordinator picks the proportionate review lane for what this
-   slice touched, and dispatches a sonnet/haiku sub-agent to run it with that skill as
-   a toolset:
-   • /audit-lite — default; a scoped diff, a slice, an end-of-slice read.
-   • /audit-team — escalate for high-blast units.
-   • /gauntletgate walkthrough — user-facing wiring: a real end-to-end run hunting dead
+   slice touched, and dispatches a bounded subagent when available. Otherwise, run the
+   same review serially from a fresh adversarial posture:
+   • `$audit-lite` — default; a scoped diff, a slice, an end-of-slice read.
+   • `$audit-team` — escalate for high-blast units.
+   • `$gauntletgate walkthrough` — user-facing wiring: a real end-to-end run hunting dead
      links, dead buttons, broken flows, the way a user hits it.
    (These are the per-unit *review reports*. GauntletGate as the full advancement
    stage-gate — its `lite`/`full` lanes plus a pass/fail verdict — belongs to the RELEASE
-   gate below, not here. Its `lite`/`full` lanes re-run the same discipline as /audit-lite
-   and /audit-team, self-contained, because a gate can't invoke a separate skill mid-run.)
+   gate below, not here. Its `lite`/`full` lanes re-run the same discipline as audit-lite
+   and audit-team, self-contained, because a gate can't invoke a separate skill mid-run.)
    **What counts as a finding:** a REAL defect. An incorrect finding or tool
    false-positive is classified OUT, with the reason it isn't real — that is the
    boundary of "finding," not a back door. Guard both failure modes: never contort
@@ -102,7 +103,7 @@ tag (a decision killed in 0.1 is still worth not reopening in 0.4).
 
 ## Evaluator-owned exits (goal loops)
 
-Where the platform provides goal-based loops (e.g. Claude Code's `/goal`), phrase each
+Where the platform provides goal-based loops or evaluator-owned task loops, phrase each
 BUILD/VERIFY unit as a goal with a **deterministic exit** and an explicit **try cap** —
 "tests green", "0 broken links", "Lighthouse ≥ 90, stop after 5 tries" — so a separate
 evaluator, not the model that did the work, owns "done". Worker ≠ judge is the same
@@ -116,11 +117,11 @@ deterministically, it isn't a goal exit — route it through VERIFY/REVIEW inste
 Fires after the last slice of a version has merged. Everything here runs in a spawned
 sub-agent — the coordinator never reviews its own orchestration.
 
-- **Full gauntlet** — /gauntletgate all → drive all 5 severity levels to **0/0/0/0/0**
+- **Full gauntlet** — `$gauntletgate all` → drive all 5 severity levels to **0/0/0/0/0**
   (blocker → nit). Findings route back into the per-unit loop until zero. The only way
   to clear a finding is to **fix it** (not-real findings are classified out per gate
   4). No waiver, no freeze, no deferred backlog.
-- **Claim refutation** — /proof-gate against the release *claims*: the README, manual,
+- **Claim refutation** — `$proof-gate` against the release *claims*: the README, manual,
   and landing page must not promise what the product doesn't do. Gauntletgate catches a
   dead link; only claim-refutation catches an honest-looking page that overclaims.
 - **Deliverable docs real & complete** — a true README; a two-voice user manual
@@ -144,7 +145,7 @@ are the same bet.
 
 ## Owner vs coordinator decisions
 
-The coordinator (Opus, main-thread) decides everything reversible, in-spec, and
+The coordinator (main-thread) decides everything reversible, in-spec, and
 in-sandbox, and **never originates an owner decision** on its own initiative. The line
 is a principle, not just a list: a decision is the owner's when it is **irreversible,
 crosses a trust boundary, or exposes external value** — i.e. being wrong costs
@@ -186,19 +187,15 @@ decision, every time.
 
 ## Dependencies & degrade-if-missing
 
-The installer bundles and installs all the sibling skills together — **coder-tdd-qa,
+The Codex installer bundles and installs all the sibling skills together — **coder-tdd-qa,
 proof-gate, and the gauntletgate / audit-lite / audit-team family** — so a normal install
-has every lane present. Three always-on hooks install alongside: the **dev-rigor reflex**
-(SessionStart — a one-page distillation that primes every session), the **rigor router**
-(UserPromptSubmit — classifies each prompt and injects only the matching task protocol:
-investigation, grounding, decomposition, or release), and the **grounding check** (Stop —
-mechanically blocks a turn that edited runnable artifacts without ever executing
-anything). All three are convenience layers, not dependencies; the full discipline lives
-here. The degrade
-path is a fallback for the unusual case (a partial or `--target` install, or a skill
+has every lane present. Upstream Claude Code also ships always-on hooks; this Codex
+packaging does not wire them by default because Codex Desktop hook events and payloads
+are different. The full discipline lives in the skills. The degrade path is a fallback for
+the unusual case (a partial install, stale install, or a skill
 manually removed): if a lane's skill is absent, the coordinator runs the equivalent
-discipline inline, **says so**, and still spawns a fresh sub-agent to run it — degrade
-never means the coordinator reviews its own work.
+discipline inline, **says so**, and still uses a fresh-context serial pass or bounded
+subagent when possible — degrade never means the coordinator reviews its own work.
 
 **audit-lite / audit-team vs. gauntletgate** overlap by design — the same review
 discipline in two packagings. The standalone audits are the per-unit *review reports*
@@ -209,8 +206,8 @@ Same discipline, different altitude — a report vs. a gate.
 
 ## Cross-cutting, always on
 
-- Cheap models for fan-out (haiku/sonnet via the Workflow tool); Opus main-thread only
-  where judgment lives. Ultracode is BUDGET-GATED, not a fixed setting — OFF when
+- Cheap or bounded workers for fan-out when the host provides them; keep judgment in the
+  coordinator. Ultracode is BUDGET-GATED, not a fixed setting — OFF when
   budget is tight or being paced (don't default to "a workflow for everything"), ON
   when budget is ample. If the user has turned ultracode ON this session, that choice
   wins — honor it, never override it back to off.
@@ -230,10 +227,10 @@ apply are not optional, and a skip is stated with a reason, never silent.
 
 Fan-out worker preamble (paste the matching line at the top of each agent() prompt):
 
-[sonnet] You are a Sonnet worker. Your known failure mode is passing your own "looks
+[worker] You are a bounded worker. Your known failure mode is passing your own "looks
 right" review instead of running a check that can fail. For every claim, run the real
 check and paste the exact command and its verbatim output.
 
-[haiku] You are a Haiku worker on a mechanical task. Every result needs a named
+[mechanical worker] You are a worker on a mechanical task. Every result needs a named
 artifact — exact command + output. Do not claim "verified" from inspection. If this
 task turns out to need judgment or synthesis, stop and say so; do not guess.

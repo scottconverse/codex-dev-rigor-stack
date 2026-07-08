@@ -2,7 +2,7 @@
 
 You are the orchestrator of the audit-team skill. The five roles do the deep work. Your job is to scope, dispatch, synthesize, and deliver.
 
-This file tells you how to run the roles in parallel through the host's deterministic orchestration tool (in Claude Code: the **Workflow tool**) and how to combine their output into the final audit package. The hard rule, same as the flagship dev-rigor-stack skill: **all fan-out goes through the Workflow tool — never a bare recursing Agent.** Workflow workers are leaf workers with a concurrency cap and no ability to spawn their own subagents; a bare Agent can recurse into an uncontrolled swarm.
+This file tells you how to run the roles in parallel through the host's bounded orchestration tool and how to combine their output into the final audit package. The hard rule, same as the flagship dev-rigor-stack skill: **all fan-out goes through bounded leaf workers, or runs serially from fresh context when bounded fan-out is unavailable.** Workers must not recurse into their own subagent swarms.
 
 ---
 
@@ -10,18 +10,18 @@ This file tells you how to run the roles in parallel through the host's determin
 
 1. **Intake** — confirm scope, posture, and writer mode with the user (see SKILL.md Phase 1).
 2. **Stage the output directory** — create `audit-<project>-<YYYY-MM-DD>/` with empty placeholders.
-3. **Dispatch role workers in parallel** — one Workflow with all in-scope roles as parallel agents on cheaper models (sonnet for analysis; never the top-tier model for workers).
+3. **Dispatch role workers in parallel** — use Codex multi-agent tools when available, with all in-scope roles as bounded leaf workers. If unavailable, run the role passes serially from fresh context.
 4. **Wait for all five to return.**
 5. **Read each deep-dive file they wrote.**
 6. **Cross-reference and synthesize** — look for findings that touch multiple roles.
 7. **Write the executive audit, sprint punchlist, and next-sprint watchlist.**
-8. **Package and present** — hand over via the host's file-presentation tool if it has one (e.g. `mcp__cowork__present_files` in Cowork, SendUserFile in Claude Code); otherwise list the file paths clearly in your final message. Delivery is the gate — the specific tool is not.
+8. **Package and present** — hand over via the host's file-presentation tool if one exists; in Codex Desktop, list clickable absolute file paths in your final message. Delivery is the gate — the specific tool is not.
 
 ---
 
 ## Role dispatch: prompt templates
 
-Run all in-scope roles as **parallel agents inside a single Workflow** (in Claude Code: the Workflow tool's `parallel()` over `agent()` calls, one per role, on a cheaper model such as sonnet). Pass the full role reference file path so each worker reads its role in detail. If the host has no Workflow-class tool, use its most-bounded parallel dispatch, cap the fan-out at the in-scope roles, and ensure workers are leaf workers that cannot spawn their own subagents — never an uncapped, recursion-capable dispatch.
+Run all in-scope roles as **parallel bounded workers** when Codex exposes multi-agent tools. Pass the full role reference file path so each worker reads its role in detail. If the host has no bounded parallel dispatch, run the same role passes serially and say so. Cap fan-out at the in-scope roles and ensure workers are leaf workers that cannot spawn their own subagents.
 
 Each role prompt follows this shape:
 
@@ -69,7 +69,7 @@ If writer mode includes drafting (audit+draft or full-rewrite), also produce rep
 
 ## Parallel dispatch — exact pattern
 
-One Workflow, all roles as parallel leaf workers. Example (concept, not copy-paste; adapt names and paths to the live session):
+One bounded parallel dispatch, all roles as leaf workers. Example (concept, not copy-paste; adapt names and paths to the live session):
 
 ```js
 const summaries = await parallel(ROLES.map((r) => () =>
@@ -77,7 +77,7 @@ const summaries = await parallel(ROLES.map((r) => () =>
 ```
 
 - one `agent()` per in-scope role — Principal Engineer, UI/UX, Technical Writer, Test Engineer, QA
-- `model: 'sonnet'` (or the host's mid-tier) — workers do the reading; the coordinator does the judgment
+- use the host's economical worker tier if available — workers do the reading; the coordinator does the judgment
 - a structured-output schema for the terse summary keeps returns machine-readable
 
 Launch once; wait for the combined return.
@@ -155,7 +155,7 @@ Before declaring done:
 
 ## Presenting the final package
 
-Deliver the files with the host's file-presentation tool if one exists (`mcp__cowork__present_files` in Cowork, SendUserFile in Claude Code); on hosts without one, list the paths clearly in your final message — clickable links where the client supports them. Order matters — the user should see the exec report first:
+Deliver the files with the host's file-presentation tool if one exists; in Codex Desktop, list clickable absolute file paths in your final message. Order matters — the user should see the exec report first:
 
 1. `00-executive-audit.md`
 2. `sprint-punchlist.md`
@@ -173,8 +173,8 @@ Give a short summary in the chat — 3–5 sentences covering severity roll-up, 
 
 ## Failure modes to avoid
 
-- **Sequential dispatch.** If you run the roles one at a time, you've multiplied the wall-clock time for no reason. Parallelize inside the Workflow.
-- **Bare-Agent dispatch.** Spawning roles as bare Agent calls (any `subagent_type`) instead of Workflow workers hands each role the ability to recurse into its own swarm — unbounded cost, no concurrency cap. This exact failure mode has burned six-figure token budgets in the wild. Workflow, always.
+- **Unnecessary sequential dispatch.** If bounded parallel workers are available, running roles one at a time multiplies wall-clock time for no reason.
+- **Unbounded dispatch.** Spawning roles through a tool that allows each role to recurse into its own swarm creates unbounded cost and weak coordination. Use bounded leaf workers, or run serially.
 - **Trusting the summaries without reading the deep-dives.** The summaries are terse; they miss the texture. Read the files.
 - **Silently skipping a role because it's "hard" or "no obvious scope."** If the scope is genuinely empty for a role (project has no UI so UX is moot), say so explicitly in the exec report. Don't omit.
 - **Calibrating findings against each other post-hoc.** The roles are intentionally independent. If the Engineer says the code is fine and the Test Engineer says the suite lies, both go in. State the tension.

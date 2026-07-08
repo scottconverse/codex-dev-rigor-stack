@@ -81,7 +81,7 @@ If escalation is warranted, the lite report still ships — but it ends with a c
 
 ### Step 5 — Present the file
 
-Make the report visible — via the host's file-presentation tool if it has one (`present_files` in Cowork, SendUserFile in Claude Code), otherwise by giving the path clearly in your final message. Do not declare audit-lite done until the file exists and any cross-references resolve.
+Make the report visible via the host's file-presentation tool if it has one; in Codex Desktop, give a clickable absolute file path in the final message. Do not declare audit-lite done until the file exists and any cross-references resolve.
 
 ---
 
@@ -91,7 +91,7 @@ Make the report visible — via the host's file-presentation tool if it has one 
 # Audit Lite — <scope>
 **Date:** <YYYY-MM-DD>
 **Scope:** <one sentence — what was reviewed>
-**Reviewer:** Claude (audit-lite)
+**Reviewer:** Codex (audit-lite)
 
 ## TL;DR
 <2–3 sentences. Ship / ship-with-caveats / don't ship. Honest verdict.>

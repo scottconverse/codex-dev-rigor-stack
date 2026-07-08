@@ -78,7 +78,7 @@ Once all subagent reports are in:
    - Blast-radius notes (decisions or fixes that ripple outward — call them out explicitly so the dev team doesn't break adjacent code)
 4. Build the `sprint-punchlist.md` and `next-sprint-watchlist.md` as standalone files for the dev team's sprint planning.
 5. If writer mode includes drafting replacements, put those in `doc-rewrites/`.
-6. Present all files to the user — via the host's file-presentation tool if it has one (`mcp__cowork__present_files` in Cowork, SendUserFile in Claude Code), otherwise by listing the paths clearly in your final message. Delivery is the gate; the specific tool is not.
+6. Present all files to the user via the host's file-presentation tool if it has one; in Codex Desktop, list clickable absolute file paths in the final message. Delivery is the gate; the specific tool is not.
 
 Do not declare the audit complete until all files exist and all internal cross-references resolve.
 
