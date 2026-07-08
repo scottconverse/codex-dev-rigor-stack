@@ -42,11 +42,15 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          bash export/export-portable.sh /tmp/bundle-bash.md
-          powershell -NoProfile -ExecutionPolicy Bypass -File export/export-portable.ps1 'C:\bundle-ps.md'
+          # RUNNER_TEMP is a Windows path both Git Bash and native Windows Python can
+          # open — bash's /tmp is invisible to native Python on the Windows runner.
+          bash export/export-portable.sh "$RUNNER_TEMP/bundle-bash.md"
+          powershell -NoProfile -ExecutionPolicy Bypass -File export/export-portable.ps1 "$RUNNER_TEMP/bundle-ps.md"
           python3 - <<'EOF'
-          a = open('/tmp/bundle-bash.md','rb').read()
-          b = open(r'C:\bundle-ps.md','rb').read()
+          import os
+          t = os.environ['RUNNER_TEMP']
+          a = open(os.path.join(t, 'bundle-bash.md'), 'rb').read()
+          b = open(os.path.join(t, 'bundle-ps.md'), 'rb').read()
           assert a == b, f'bundles differ: bash={len(a)}B ps={len(b)}B'
           assert a.count(b'\x00') == 0 and a.count(b'\xc3\xa2\xe2\x82\xac') == 0
           print('bundles byte-identical and clean:', len(a), 'bytes')
