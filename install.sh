@@ -71,21 +71,22 @@ if [ -z "$TARGET" ] && [ -d "$PLUGIN_SRC" ]; then
   rm -rf "$PLUGIN_DEST"
   mkdir -p "$PLUGIN_DEST"
   cp -r "$PLUGIN_SRC/." "$PLUGIN_DEST/"
-  echo "  ok    dev-rigor reflex -> $PLUGIN_DEST"
+  echo "  ok    dev-rigor plugin (reflex + router + grounding) -> $PLUGIN_DEST"
   if command -v node >/dev/null 2>&1; then
     node "$PLUGIN_DEST/hooks/wire-settings.js" "$CLAUDE_DIR"
   else
-    echo "  WARN  Node.js not found — it is REQUIRED for the reflex. Skills installed fine;"
-    echo "        reflex files copied but the SessionStart hook was NOT wired. Install Node.js"
-    echo "        and re-run, or add the hook to settings.json by hand (see README)."
+    echo "  WARN  Node.js not found — it is REQUIRED for the hooks. Skills installed fine;"
+    echo "        plugin files copied but no hooks were wired. Install Node.js"
+    echo "        and re-run, or add the hooks to settings.json by hand (see README)."
   fi
 elif [ -n "$TARGET" ]; then
-  echo "  note  --target set: skills only; the always-on reflex hook is Claude-specific and was not wired."
+  echo "  note  --target set: skills only; the hooks are Claude-specific and were not wired."
 fi
 
 echo
 echo "Next steps:"
-echo "  * The reflex activates on your next session start (or /compact). Nothing else to run."
+echo "  * The reflex activates on your next session start (or /compact); the rigor router and"
+echo "    grounding check activate immediately for new sessions. Nothing else to run."
 echo "  * Optional: fold config/CLAUDE.md into your own ~/.claude/CLAUDE.md so the stack applies"
 echo "    automatically even without the hook. Review it first -- do not blindly overwrite your CLAUDE.md."
 echo "  * Restart your agent (or reload skills) so it picks up the new skills."

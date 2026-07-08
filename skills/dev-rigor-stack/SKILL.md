@@ -14,7 +14,7 @@ description: >
 license: MIT
 ---
 
-# Standing dev rigor stack (v1.4.2)
+# Standing dev rigor stack (v1.5.0)
 
 Two altitudes. The **per-unit loop** (gates 1–5) applies to EVERY unit of work — a
 fix, a module, a feature. The **release gate** fires once per version, at the tag
@@ -100,6 +100,17 @@ tag (a decision killed in 0.1 is still worth not reopening in 0.4).
    / no override / no bypassing branch protection. One inappropriate red merge
    undermines every green one after it.
 
+## Evaluator-owned exits (goal loops)
+
+Where the platform provides goal-based loops (e.g. Claude Code's `/goal`), phrase each
+BUILD/VERIFY unit as a goal with a **deterministic exit** and an explicit **try cap** —
+"tests green", "0 broken links", "Lighthouse ≥ 90, stop after 5 tries" — so a separate
+evaluator, not the model that did the work, owns "done". Worker ≠ judge is the same
+principle as never-review-your-own-work, applied to the stop condition itself: the
+builder can't talk its way past a checker that reruns the check. Criteria a model has
+to interpret ("make it good") don't qualify; if the exit can't be checked
+deterministically, it isn't a goal exit — route it through VERIFY/REVIEW instead.
+
 ## Release gate (once per version, before the tag — a different altitude than a unit)
 
 Fires after the last slice of a version has merged. Everything here runs in a spawned
@@ -177,9 +188,13 @@ decision, every time.
 
 The installer bundles and installs all the sibling skills together — **coder-tdd-qa,
 proof-gate, and the gauntletgate / audit-lite / audit-team family** — so a normal install
-has every lane present. An always-on **dev-rigor reflex** — a one-page distillation of
-this discipline — installs alongside as a SessionStart hook and primes every session; it
-is a convenience layer, not a dependency, and the full discipline lives here. The degrade
+has every lane present. Three always-on hooks install alongside: the **dev-rigor reflex**
+(SessionStart — a one-page distillation that primes every session), the **rigor router**
+(UserPromptSubmit — classifies each prompt and injects only the matching task protocol:
+investigation, grounding, decomposition, or release), and the **grounding check** (Stop —
+mechanically blocks a turn that edited runnable artifacts without ever executing
+anything). All three are convenience layers, not dependencies; the full discipline lives
+here. The degrade
 path is a fallback for the unusual case (a partial or `--target` install, or a skill
 manually removed): if a lane's skill is absent, the coordinator runs the equivalent
 discipline inline, **says so**, and still spawns a fresh sub-agent to run it — degrade

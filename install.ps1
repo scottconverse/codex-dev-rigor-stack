@@ -37,7 +37,7 @@ Write-Host "Installing dev-rigor-stack skills -> $Dest`n"
 
 $installed = 0
 foreach ($src in Get-ChildItem -Directory $SkillsSrc) {
-  # NOTE: not $target — PowerShell variable names are case-insensitive, so $target would
+  # NOTE: not $target -- PowerShell variable names are case-insensitive, so $target would
   # alias the $Target param and the loop would clobber it (breaking the reflex-hook check below).
   $skillDest = Join-Path $Dest $src.Name
   if (Test-Path $skillDest) { Remove-Item -Recurse -Force $skillDest }
@@ -58,21 +58,22 @@ if ((-not $Target) -and (Test-Path $PluginSrc)) {
   if (Test-Path $PluginDest) { Remove-Item -Recurse -Force $PluginDest }
   New-Item -ItemType Directory -Force -Path $PluginDest | Out-Null
   Copy-Item -Recurse (Join-Path $PluginSrc '*') $PluginDest
-  Write-Host "  ok    dev-rigor reflex -> $PluginDest"
+  Write-Host "  ok    dev-rigor plugin (reflex + router + grounding) -> $PluginDest"
   $node = Get-Command node -ErrorAction SilentlyContinue
   if ($node) {
     node (Join-Path $PluginDest 'hooks/wire-settings.js') $ClaudeDir
   } else {
-    Write-Host "  WARN  Node.js not found -- it is REQUIRED for the reflex. Skills installed fine;"
-    Write-Host "        reflex files copied but the SessionStart hook was NOT wired. Install Node.js"
-    Write-Host "        and re-run, or add the hook to settings.json by hand (see README)."
+    Write-Host "  WARN  Node.js not found -- it is REQUIRED for the hooks. Skills installed fine;"
+    Write-Host "        plugin files copied but no hooks were wired. Install Node.js"
+    Write-Host "        and re-run, or add the hooks to settings.json by hand (see README)."
   }
 } elseif ($Target) {
-  Write-Host "  note  -Target set: skills only; the always-on reflex hook is Claude-specific and was not wired."
+  Write-Host "  note  -Target set: skills only; the hooks are Claude-specific and were not wired."
 }
 
 Write-Host "`nNext steps:"
-Write-Host "  * The reflex activates on your next session start (or /compact). Nothing else to run."
+Write-Host "  * The reflex activates on your next session start (or /compact); the rigor router and"
+Write-Host "    grounding check activate immediately for new sessions. Nothing else to run."
 Write-Host "  * Optional: fold config/CLAUDE.md into your own ~/.claude/CLAUDE.md so the stack applies"
 Write-Host "    automatically even without the hook. Review it first -- do not blindly overwrite your CLAUDE.md."
 Write-Host "  * Restart your agent (or reload skills) so it picks up the new skills."

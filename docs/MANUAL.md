@@ -47,6 +47,13 @@ version is ready, it runs the full gauntlet, writes real documentation, and then
 and asks you** whether to make the release official. You stay in control of the decisions
 that are actually yours; the agent does the disciplined work in between.
 
+Three small helpers run in the background the whole time. One reminds the agent of the
+discipline at the start of every session. One notices what *kind* of task you just asked
+for — a bug fix, a visual change, a big multi-part feature, a release — and slips the
+agent the matching checklist for exactly that kind of work. And one is a tripwire: if the
+agent edited real code but never once ran anything before saying it was finished, it is
+stopped and told to go run it first. That last one isn't a suggestion — it's enforced.
+
 ---
 
 ## Part 2 — For engineers
@@ -101,6 +108,38 @@ the coordinator never reviews its own orchestration:
 - **Owner go/no-go** — the coordinator drives everything to ready, then hands the tag
   decision to the owner.
 
+### The always-on layer (three hooks)
+
+The skills are pull-based; three Node hooks are push-based and cover different failure
+modes:
+
+- **Reflex** (`SessionStart` + `SubagentStart`) — injects a one-page distillation of the
+  discipline (proof ladder, never-shrink rules, evidence receipt) into every session and
+  subagent.
+- **Rigor router** (`UserPromptSubmit`) — classifies each prompt and injects only the
+  matching task protocol from `plugin/disciplines/`: investigation (reproduce →
+  hypothesize → trace → root-cause fix) for bug work, render/run grounding for UI/artifact
+  work, decomposition + per-story evidence for multi-part work, release discipline for tag
+  work. At most once per discipline per session; no match → silence. This keeps context
+  lean while landing the right discipline at the right moment.
+- **Grounding check** (`PostToolUse` + `Stop`) — the only *enforced* layer. It ledgers
+  edits to runnable/viewable files and execution-tool calls per session; if runnable code
+  was edited but nothing was ever executed or rendered, it blocks the stop once and asks
+  for the narrowest real check. Deliberate floor: it catches provable theater (zero
+  executions ever) and leaves finer judgment to the model.
+
+Tune any of them by editing the markdown under `~/.claude/dev-rigor-plugin/` — the hooks
+re-read it, no code change needed. The hooks ship with an assert-based self-check:
+`node plugin/hooks/test-hooks.js`.
+
+### Evaluator-owned exits (goal loops)
+
+Where the host provides goal-based loops (e.g. Claude Code's `/goal`), phrase each
+BUILD/VERIFY unit as a goal with a deterministic exit and a try cap — "tests green, stop
+after 5 tries" — so a separate evaluator, not the model that did the work, owns "done".
+Worker ≠ judge, applied to the stop condition itself. Exits a model must interpret ("make
+it good") don't qualify; route those through VERIFY/REVIEW instead.
+
 ### Session & machine continuity
 
 Above the loop, a bookend (not a gate — nothing passes or fails). Durable state — locked
@@ -135,23 +174,24 @@ tool — never a bare recursing agent. Each worker states its tier and moderates
 
 ### Install, configure, export
 
-- **Requirements**: Git, and **Node.js** for the reflex (the hook is a small Node script).
-  The six skills install without Node; only the reflex needs it — and anyone running a coding
+- **Requirements**: Git, and **Node.js** for the hooks (three small Node scripts).
+  The six skills install without Node; only the hooks need it — and anyone running a coding
   agent almost certainly has it already.
 - **Install**: `./install.sh` (macOS/Linux/Git Bash), or on Windows
   `powershell -ExecutionPolicy Bypass -File .\install.ps1` (the prefix avoids the default
   *"running scripts is disabled"* block). Installs the six skills into `~/.claude/skills` (or
-  `$CLAUDE_CONFIG_DIR/skills`) **and** wires the always-on **dev-rigor reflex** — a one-page
-  distillation of this discipline — as a SessionStart hook under `~/.claude/dev-rigor-plugin/`.
-  If Node is missing, the skills still install and the installer reports the hook as skipped.
-  Idempotent — re-run to update. One flag on both:
+  `$CLAUDE_CONFIG_DIR/skills`) **and** wires the three always-on hooks (reflex, rigor
+  router, grounding check) under `~/.claude/dev-rigor-plugin/`. If Node is missing, the
+  skills still install and the installer reports the hooks as skipped. Idempotent — re-run
+  to update; a v1.4 install upgrades cleanly (new hooks added, nothing duplicated). One
+  flag on both:
   - `--target <dir>` / `-Target <dir>` — install the skills into any directory, e.g. Codex's
-    `~/.codex/skills`. With `--target`, only skills are installed; the always-on reflex hook
-    is Claude-specific and is not wired.
+    `~/.codex/skills`. With `--target`, only skills are installed; the always-on hooks are
+    Claude-specific and are not wired.
 - **Installing from inside a Cowork or Codex session** (the common case, no terminal): tell
   the agent to install the stack from the repo. It copies `skills/*` into the host's skills
   directory (`~/.claude/skills` for Claude, `~/.codex/skills` for Codex) and, for a Claude
-  install, wires the reflex hook. `manifest.json` lists everything that installs.
+  install, wires the hooks. `manifest.json` lists everything that installs.
 - **Configure**: fold [`config/CLAUDE.md`](../config/CLAUDE.md) into your own `CLAUDE.md`
   to auto-apply the stack. Generic template; review before adopting.
 - **Cross-AI export**: `./export/export-portable.sh` (or `.ps1`) writes
@@ -163,8 +203,8 @@ tool — never a bare recursing agent. Each worker states its tier and moderates
 
 The installer bundles and installs all the sibling skills together (`coder-tdd-qa`,
 `proof-gate`, the `gauntletgate` / `audit-lite` / `audit-team` family) — a normal install
-has every lane present. The always-on reflex installs alongside; it's a convenience layer,
-not a dependency — the full discipline lives in the skill. The degrade path is only a
+has every lane present. The always-on hooks install alongside; they're convenience layers,
+not dependencies — the full discipline lives in the skill. The degrade path is only a
 fallback for a partial or `--target` install: if a lane's skill is absent, the coordinator
 runs the equivalent discipline inline, says so, and still spawns a fresh sub-agent —
 degrade never means self-review.

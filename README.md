@@ -2,10 +2,13 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A six-gate delivery discipline for AI coding agents — the skills it runs, and an always-on
-reflex that keeps the discipline present by default. It turns "the agent said it's done"
-into "the change was *proven*, at the layer of the claim, before it shipped." For anyone
-directing a coding agent through work where being confidently wrong is expensive.
+A six-gate delivery discipline for AI coding agents — the skills it runs, and three
+always-on hooks that keep the discipline present by default: a **reflex** that primes every
+session, a **rigor router** that injects the matching task protocol per prompt, and a
+**grounding check** that mechanically blocks "done" claims on code nothing ever ran. It
+turns "the agent said it's done" into "the change was *proven*, at the layer of the claim,
+before it shipped." For anyone directing a coding agent through work where being
+confidently wrong is expensive.
 
 ## What it is
 
@@ -15,9 +18,11 @@ model-agnostic and tool-agnostic: install it as a set of Claude Code skills, or 
 derived bundle into any other agent.
 
 Two ways it reaches the agent: the **skills are pull-based** (invoked when a task needs
-them), and the **[dev-rigor reflex](plugin/dev-rigor-reflex.md) is push-based** — a
-one-page distillation injected into every session and subagent, so the discipline is on by
-default instead of waiting to be summoned.
+them), and the **hooks are push-based** — the [reflex](plugin/dev-rigor-reflex.md) is a
+one-page distillation injected into every session and subagent, the router injects the
+task-matching protocol the moment a prompt arrives, and the grounding check runs whether
+or not the model remembered the discipline. The discipline is on by default instead of
+waiting to be summoned — and its floor is enforced, not requested.
 
 ## The loop
 
@@ -45,10 +50,12 @@ skill](skills/dev-rigor-stack/SKILL.md).
 | [`audit-team`](skills/audit-team/SKILL.md) | **REVIEW** — multi-role deep audit for high-blast units |
 | [`gauntletgate`](skills/gauntletgate/SKILL.md) | **REVIEW + release** — adversarial stage-gate (lite / walkthrough / full) |
 | [`dev-rigor reflex`](plugin/dev-rigor-reflex.md) | **always-on hook** — primes every session with the proof ladder + never-shrink rules; delegates to the six skills above |
+| [`rigor router`](plugin/hooks/dev-rigor-router.js) | **always-on hook** — classifies each prompt, injects only the [matching task protocol](plugin/disciplines/) (bug → investigation, UI → grounding, multi-part → decomposition, tag → release); silence otherwise |
+| [`grounding check`](plugin/hooks/dev-rigor-ground.js) | **always-on hook** — mechanically blocks ending a session that edited runnable code without ever executing anything |
 
-The six skills and the reflex are MIT-licensed and authored by the repo owner. The reflex
-is the always-on layer (see [The always-on reflex](#the-always-on-reflex)); the skills are
-invoked per gate. The installer installs **all** of them.
+The six skills and the three hooks are MIT-licensed and authored by the repo owner. The
+hooks are the always-on layer (see [The always-on layer](#the-always-on-layer)); the
+skills are invoked per gate. The installer installs **all** of them.
 
 `audit-lite`/`audit-team` and `gauntletgate` overlap by design — the same review discipline
 in two packagings: the standalone audits are the per-unit **review reports**, while
@@ -58,9 +65,9 @@ that discipline self-contained, plus a pass/fail verdict, first-run attestation,
 
 ## Quick start
 
-**Requirements:** Git, and **Node.js** — the reflex hook is a small Node script (see [The
-always-on reflex](#the-always-on-reflex)). The six skills install without Node; only the
-reflex needs it, and anyone running a coding agent almost certainly has it already.
+**Requirements:** Git, and **Node.js** — the three hooks are small Node scripts (see [The
+always-on layer](#the-always-on-layer)). The six skills install without Node; only the
+hooks need it, and anyone running a coding agent almost certainly has it already.
 
 **As Claude Code skills:**
 
@@ -75,9 +82,10 @@ On Windows the `-ExecutionPolicy Bypass` prefix avoids the default *"running scr
 disabled on this system"* block — a bare `.\install.ps1` may be refused on a locked-down box.
 
 Installs the six skills into `~/.claude/skills` (or `$CLAUDE_CONFIG_DIR/skills` if set)
-**and** wires the always-on reflex hook (below). If Node is missing, the skills still install
-and the installer says the hook was skipped. Restart your agent to pick them up. Re-running
-updates in place — no path assumptions, safe to repeat.
+**and** wires the three always-on hooks (below). If Node is missing, the skills still install
+and the installer says the hooks were skipped. Restart your agent to pick them up. Re-running
+updates in place — no path assumptions, safe to repeat (a v1.4 install upgrades cleanly; the
+new hooks are added, nothing is duplicated).
 
 One flag on both installers:
 
@@ -87,30 +95,46 @@ One flag on both installers:
 ```
 
 `--target` sends the skills to any directory — use it for Codex (`~/.codex/skills`) or any
-non-default host. With `--target`, only the skills are installed; the always-on reflex hook
-is Claude-specific and is not wired.
+non-default host. With `--target`, only the skills are installed; the always-on hooks are
+Claude-specific and are not wired.
 
 **Installing from inside a Cowork or Codex session** (the common case — no terminal): just
 tell the agent *"install the dev-rigor-stack from github.com/scottconverse/dev-rigor-stack"*.
 It clones the repo, copies `skills/*` into the host's skills directory (`~/.claude/skills`
-for Claude, `~/.codex/skills` for Codex), and for a Claude install wires the reflex hook.
+for Claude, `~/.codex/skills` for Codex), and for a Claude install wires the hooks.
 `manifest.json` lists everything that installs.
 
-### The always-on reflex
+### The always-on layer
 
 The six skills are pull-based — the agent invokes them when it judges a task calls for
-them. The **reflex** is push-based: it is injected into every session and every subagent, so
-the discipline is present by default instead of waiting to be summoned. It is a single page —
-persona, the **proof ladder** (spend rigor sized to blast radius, not by habit), the
-never-shrink rules, and a one-line evidence receipt — and it delegates the heavy mechanics to
-the skills. It is a convenience layer, not a dependency: the full discipline lives in the
-`dev-rigor-stack` skill.
+them. The three hooks are push-based, each covering a different failure mode:
 
-The installer copies it to `~/.claude/dev-rigor-plugin/` and adds a `SessionStart` +
-`SubagentStart` entry to your `settings.json` (idempotently, preserving your existing
-hooks). It **needs Node.js** — without node the skills still install and the installer says
-the hook was skipped. Edit `~/.claude/dev-rigor-plugin/dev-rigor-reflex.md` to tune the
-wording; the hook re-reads it, no code change needed.
+- **The reflex** (`SessionStart` + `SubagentStart`) is injected into every session and
+  every subagent — a single page: the **proof ladder** (spend rigor sized to blast radius,
+  not by habit), the never-shrink rules, and a one-line evidence receipt. It delegates the
+  heavy mechanics to the skills.
+- **The rigor router** (`UserPromptSubmit`) classifies each prompt and injects **only the
+  matching task protocol** from [`plugin/disciplines/`](plugin/disciplines/): bug work gets
+  the investigation protocol (reproduce → hypothesize → trace → fix at the root), UI and
+  artifact work gets render/run grounding, multi-part work gets decomposition with a
+  per-story evidence gate, and release wording gets the release discipline. Each protocol
+  injects at most once per session; a prompt that matches nothing gets silence. Routing
+  keeps every session's context lean while still delivering the right discipline at the
+  right moment — always-on-everything is the failure mode it replaces.
+- **The grounding check** (`PostToolUse` + `Stop`) is the only *enforced* layer: it keeps a
+  per-session ledger of edits to runnable/viewable files and of execution-tool calls, and
+  if a session edited runnable code but never executed or rendered **anything**, it blocks
+  the stop — once — with instructions to run the narrowest real check first. It is a
+  deliberate floor: it catches provable theater (zero executions ever), and leaves
+  "re-run after the last tweak" judgment to the model and the router's protocol.
+
+All three are convenience layers, not dependencies: the full discipline lives in the
+`dev-rigor-stack` skill. The installer copies them to `~/.claude/dev-rigor-plugin/` and
+adds the hook entries to your `settings.json` (idempotently, preserving your existing
+hooks). They **need Node.js** — without node the skills still install and the installer
+says the hooks were skipped. Edit the markdown under `~/.claude/dev-rigor-plugin/` (the
+reflex page, or any file in `disciplines/`) to tune the wording; the hooks re-read them,
+no code change needed.
 
 **For any other agent (ChatGPT, Gemini, Codex, …):**
 
@@ -141,7 +165,10 @@ itself when being wrong is expensive. The stack says so itself, in every gate.
 
 ## License
 
-MIT — see [LICENSE](LICENSE). The skills and the reflex are authored by Scott Converse.
-The reflex's always-on *form* is prior art from
-[ponytail](https://github.com/DietrichGebert/ponytail) (DietrichGebert, MIT) — no ponytail
-code is used, bundled, or required.
+MIT — see [LICENSE](LICENSE). The skills and the hooks are authored by Scott Converse.
+Two pieces of prior art, gratefully credited: the reflex's always-on *form* is from
+[ponytail](https://github.com/DietrichGebert/ponytail) (DietrichGebert, MIT), and the
+per-task-routing + verification-grounding *concepts* were proven transferable to smaller
+models by [fablize](https://github.com/fivetaku/fablize)'s Fable-vs-Opus comparison
+(fivetaku, MIT). The router and grounding check are clean-room implementations; no code
+from either project is used, bundled, or required.

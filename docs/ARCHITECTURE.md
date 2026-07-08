@@ -70,14 +70,44 @@ in two packagings. The standalone audits are the per-unit *review reports*; gaun
 the release-altitude *advancement gate* whose `lite`/`full` lanes re-run that discipline
 self-contained and add a pass/fail verdict. A report vs. a gate.
 
-## The always-on reflex
+## The always-on layer — three hooks
 
 The skills are pull-based — invoked when the coordinator judges a task needs them. Shipped
-alongside is a **reflex**: a one-page distillation of the whole discipline (the proof ladder,
-the never-shrink rules, the evidence receipt), injected into every session and every subagent
-through a `SessionStart` / `SubagentStart` hook. It makes the discipline present by default
-and delegates the heavy mechanics back to the skills above — a convenience layer, not a new
-gate. The full text lives in `plugin/dev-rigor-reflex.md`.
+alongside are **three hooks** that push the discipline in, each at a different moment:
+
+```mermaid
+flowchart LR
+    SS["SessionStart /<br/>SubagentStart"] --> RX["reflex<br/>one-page distillation:<br/>proof ladder · never-shrink · receipt"]
+    UP["UserPromptSubmit"] --> RT{"rigor router<br/>classify the prompt"}
+    RT -->|bug words| I["investigation protocol"]
+    RT -->|UI / artifact words| GD["render/run grounding"]
+    RT -->|multi-part work| DC["decomposition +<br/>per-story evidence"]
+    RT -->|release words| RL["release discipline"]
+    RT -->|no match| SIL["silence"]
+    PT["PostToolUse"] --> LG["ledger: runnable edits ·<br/>execution calls"]
+    ST["Stop"] --> CK{"edited runnable code,<br/>never ran anything?"}
+    CK -->|yes| BLK["block once:<br/>run the narrowest real check"]
+    CK -->|no| OK["allow stop"]
+```
+
+- The **reflex** (`SessionStart`/`SubagentStart`) primes every session with the one-page
+  distillation and delegates the heavy mechanics back to the skills. Text:
+  `plugin/dev-rigor-reflex.md`.
+- The **rigor router** (`UserPromptSubmit`) classifies each prompt and injects only the
+  matching protocol from `plugin/disciplines/`, at most once per discipline per session —
+  the right discipline at the right moment, without always-on-everything context cost.
+  Release outranks other matches; a broken UI is a bug first (investigation outranks
+  grounding).
+- The **grounding check** (`PostToolUse` + `Stop`) is the enforced floor: a per-session
+  ledger of runnable-file edits vs. execution calls, and a one-time stop-block when a
+  session edited runnable code but never executed anything. It respects
+  `stop_hook_active`, blocks at most once per session, and fails open on any error —
+  a broken hook must never break a session.
+
+All three are convenience layers, not new gates; the full discipline lives in the skills.
+Concept credit: per-task routing and verification grounding were proven transferable by
+[fablize](https://github.com/fivetaku/fablize)'s Fable-vs-Opus comparison (MIT) —
+clean-room implementations here, no fablize code used.
 
 ## The two roles
 

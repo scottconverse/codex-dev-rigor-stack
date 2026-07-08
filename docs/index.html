@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>dev-rigor-stack — make "done" mean proven</title>
-<meta name="description" content="A six-gate delivery discipline for AI coding agents, the skills it runs, and an always-on rigor reflex. Model-agnostic, tool-agnostic, MIT.">
+<meta name="description" content="A six-gate delivery discipline for AI coding agents — the skills it runs, plus three always-on hooks: a rigor reflex, a per-task rigor router, and an enforced grounding check. Model-agnostic, tool-agnostic, MIT.">
 <style>
   :root{
     --bg:#ffffff; --fg:#1a1c20; --muted:#5b6470; --card:#f6f7f9; --border:#e4e7ec;
@@ -71,19 +71,23 @@
 when it means "I wrote code that looks right" — a different claim from "I proved it runs,"
 different again from "I proved it's correct." This stack closes that gap: every change is
 exercised the way a real user hits it before anyone calls it finished, and the call to make
-a release <em>real</em> stays with a human. It ships as a set of Claude Code skills plus an
-always-on <strong>reflex</strong>, and it exports to any other agent as plain text.</p>
+a release <em>real</em> stays with a human. It ships as a set of Claude Code skills plus
+three always-on hooks — a <strong>reflex</strong> that primes every session, a
+<strong>rigor router</strong> that injects the matching task protocol per prompt, and a
+<strong>grounding check</strong> that blocks "done" on code nothing ever ran — and it
+exports to any other agent as plain text.</p>
 
 <h2>How it works</h2>
 <p>Two altitudes, one rule: <strong>nothing advances on a claim, only on evidence.</strong>
 Every unit of work — a fix, a feature, a refactor — walks a five-gate loop. Once per version,
 a heavier release gate runs over everything that merged, and ends at a human's go/no-go on the
-tag. An always-on reflex primes every session; a continuity bookend keeps decisions from being
-lost across days and machines.</p>
+tag. An always-on layer primes every session, routes the right discipline to each prompt, and
+enforces a run-before-done floor; a continuity bookend keeps decisions from being lost across
+days and machines.</p>
 
 <figure>
   <div class="scroll">
-  <svg viewBox="0 0 920 474" role="img" aria-label="The delivery flow: an always-on reflex primes a five-gate loop (PLAN, BUILD, VERIFY, REVIEW, MERGE); merges feed a release gate driven to zero findings, then an owner decides the tag; a continuity bookend wraps the whole effort.">
+  <svg viewBox="0 0 920 474" role="img" aria-label="The delivery flow: an always-on layer (reflex, rigor router, grounding check) primes a five-gate loop (PLAN, BUILD, VERIFY, REVIEW, MERGE); merges feed a release gate driven to zero findings, then an owner decides the tag; a continuity bookend wraps the whole effort.">
     <defs>
       <marker id="ar" markerWidth="9" markerHeight="9" refX="7.5" refY="4.5" orient="auto">
         <path d="M0,0 L9,4.5 L0,9 z" fill="var(--muted)"/></marker>
@@ -102,8 +106,8 @@ lost across days and machines.</p>
 
     <!-- reflex band -->
     <rect class="g" x="36" y="12" width="848" height="50" rx="10"/>
-    <text class="t" x="460" y="34" text-anchor="middle">ALWAYS-ON REFLEX — injected into every session and subagent</text>
-    <text class="s" x="460" y="52" text-anchor="middle">the proof ladder (rigor sized to blast radius) · the never-shrink rules · a one-line evidence receipt</text>
+    <text class="t" x="460" y="34" text-anchor="middle">ALWAYS-ON LAYER — reflex · rigor router · grounding check</text>
+    <text class="s" x="460" y="52" text-anchor="middle">the proof ladder every session · the matching task protocol per prompt · an enforced run-before-done floor</text>
     <path class="fa" d="M285,64 L285,86" marker-end="url(#arA)"/>
     <path class="fa" d="M460,64 L460,86" marker-end="url(#arA)"/>
     <path class="fa" d="M635,64 L635,86" marker-end="url(#arA)"/>
@@ -173,13 +177,19 @@ lost across days and machines.</p>
   <div><b>Release gate</b>Over the whole version: the full gauntlet driven to <em>zero</em> findings, the docs checked for overclaiming, a rollback plan named — then the owner's go/no-go on the tag.</div>
 </div>
 
-<h2>The always-on reflex</h2>
+<h2>The always-on layer</h2>
 <p>The six skills are <strong>pull-based</strong> — the agent invokes them when it judges a
-task needs them. The reflex is <strong>push-based</strong>: it's injected into every session
-and every subagent, so the discipline is present by default instead of waiting to be summoned.
-It's a single page — a persona, the proof ladder, the never-shrink rules, and a one-line
-evidence receipt — and it delegates the heavy mechanics back to the skills. A convenience
-layer, not a dependency: the full discipline lives in the <code>dev-rigor-stack</code> skill.</p>
+task needs them. Three hooks are <strong>push-based</strong>, each covering a different
+failure mode. The <strong>reflex</strong> is injected into every session and every subagent —
+a single page: the proof ladder, the never-shrink rules, a one-line evidence receipt. The
+<strong>rigor router</strong> reads each prompt and injects only the matching task protocol —
+bug work gets a reproduce-trace-root-cause investigation, visual and artifact work gets
+run-and-observe grounding, multi-part work gets decomposition with per-story evidence,
+release wording gets the release discipline; anything else gets silence, so context stays
+lean. And the <strong>grounding check</strong> is enforced, not suggested: if a session edited
+runnable code but never once executed or rendered anything, the agent is stopped and told to
+run the narrowest real check first. All three are convenience layers, not dependencies: the
+full discipline lives in the <code>dev-rigor-stack</code> skill.</p>
 
 <p>Its core idea is <strong>proportion</strong> — spend exactly the rigor a change earns.
 Climb the ladder only as far as the blast radius demands, and stop at the first rung that
@@ -254,8 +264,10 @@ spend, delete) stay the owner's.</p>
   <tr><td><code>audit-team</code></td><td>REVIEW — multi-role deep audit for high-blast units</td></tr>
   <tr><td><code>gauntletgate</code></td><td>REVIEW + release — adversarial stage-gate</td></tr>
   <tr><td><code>dev-rigor reflex</code></td><td><em>always-on hook</em> — primes every session with the proof ladder + never-shrink rules; delegates to the six skills</td></tr>
+  <tr><td><code>rigor router</code></td><td><em>always-on hook</em> — classifies each prompt, injects only the matching task protocol (bug → investigation, UI → grounding, multi-part → decomposition, tag → release)</td></tr>
+  <tr><td><code>grounding check</code></td><td><em>always-on hook</em> — blocks ending a session that edited runnable code without ever executing anything</td></tr>
 </table>
-<p class="muted">All six skills and the reflex are MIT and authored by the repo owner — the
+<p class="muted">All six skills and the three hooks are MIT and authored by the repo owner — the
 installer installs all of them. <code>audit-lite</code>/<code>audit-team</code> and
 <code>gauntletgate</code> overlap by design: the same review discipline in two packagings —
 the standalone audits are the per-unit <em>review reports</em>, while <code>gauntletgate</code>
@@ -268,17 +280,18 @@ self-contained, plus a pass/fail verdict). A report vs. a gate.</p>
 cd dev-rigor-stack
 ./install.sh                                             # macOS / Linux / Git Bash
 powershell -ExecutionPolicy Bypass -File .\install.ps1   # Windows</pre>
-<p><strong>Requires Git and Node.js.</strong> The reflex hook is a small Node script — the six
-skills install without Node, only the reflex needs it (and anyone running a coding agent almost
+<p><strong>Requires Git and Node.js.</strong> The three hooks are small Node scripts — the six
+skills install without Node, only the hooks need it (and anyone running a coding agent almost
 certainly has it). On Windows the <code>-ExecutionPolicy Bypass</code> prefix avoids the default
 "scripts are disabled on this system" block.</p>
-<p>Installs the six skills <strong>and</strong> wires the always-on reflex hook into your
+<p>Installs the six skills <strong>and</strong> wires the three always-on hooks into your
 <code>settings.json</code>; if Node is missing the skills still install and the installer says
-so. Re-running updates in place — idempotent, no path assumptions.
-<code>./install.sh --target ~/.codex/skills</code> installs the skills elsewhere (e.g. Codex; no reflex hook).</p>
+so. Re-running updates in place — idempotent, no path assumptions; a v1.4 install upgrades
+cleanly. <code>./install.sh --target ~/.codex/skills</code> installs the skills elsewhere
+(e.g. Codex; no hooks).</p>
 <p><strong>Inside a Cowork or Codex session</strong> (no terminal): just ask the agent to
 install it from the repo — it copies the skills into place and, for a Claude install, wires
-the reflex hook.</p>
+the hooks.</p>
 <p><strong>For any other agent</strong> (ChatGPT, Gemini, Codex): run
 <code>./export/export-portable.sh</code> and paste the generated <code>portable-bundle.md</code>
 into its system prompt. Claude-specific mechanics read as plain guidance — nothing is
@@ -301,9 +314,12 @@ diluted from the Claude side to serve the export.</p>
 </div>
 
 <footer>
-  <p>MIT-licensed. Skills and reflex by Scott Converse; the reflex's always-on <em>form</em>
-  is prior art from <a href="https://github.com/DietrichGebert/ponytail">ponytail</a>
-  (DietrichGebert, MIT) — no ponytail code used. &nbsp;·&nbsp;
+  <p>MIT-licensed. Skills and hooks by Scott Converse. Prior art, gratefully credited: the
+  reflex's always-on <em>form</em> is from
+  <a href="https://github.com/DietrichGebert/ponytail">ponytail</a> (DietrichGebert, MIT);
+  per-task routing and verification grounding were proven transferable by
+  <a href="https://github.com/fivetaku/fablize">fablize</a>'s Fable-vs-Opus comparison
+  (fivetaku, MIT). Clean-room implementations — no code from either project used. &nbsp;·&nbsp;
   <a href="https://github.com/scottconverse/dev-rigor-stack">Source</a> ·
   <a href="https://github.com/scottconverse/dev-rigor-stack/blob/main/docs/ARCHITECTURE.md">Architecture</a> ·
   <a href="https://github.com/scottconverse/dev-rigor-stack/blob/main/docs/MANUAL.md">Manual</a> ·
