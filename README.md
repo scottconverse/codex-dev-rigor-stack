@@ -15,6 +15,8 @@ because Claude hook events and Codex hook payloads are different.
 - `audit-lite` - fast scoped review
 - `audit-team` - deeper multi-role audit
 - `gauntletgate` - stage/release gate with lite, walkthrough, and full lanes
+- `visitor-audit` - live public-surface audit of rendered pages, links, release assets,
+  checksums, and current claims
 
 ## Install For Codex Desktop
 
@@ -39,7 +41,7 @@ Default destination is:
 Set `CODEX_HOME` to install into a different Codex home, or pass `-Target` /
 `--target`.
 
-The installer replaces these six skill folders in the target. Existing copies are backed
+The installer replaces these seven skill folders in the target. Existing copies are backed
 up under `.backup\codex-dev-rigor-stack\<timestamp>\` unless `-NoBackup` /
 `--no-backup` is used.
 

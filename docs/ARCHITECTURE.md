@@ -21,7 +21,7 @@ flowchart TB
         P["1 · PLAN<br/>classify blast radius"]
         B["2 · BUILD<br/>/coder-tdd-qa · test-first"]
         V["3 · VERIFY<br/>/proof-gate · refute the claim"]
-        R["4 · REVIEW<br/>proportionate lane:<br/>/audit-lite → /audit-team → /gauntletgate walkthrough"]
+        R["4 · REVIEW<br/>proportionate lane:<br/>/audit-lite → /audit-team → /gauntletgate walkthrough<br/>+ /visitor-audit for live public surfaces"]
         M["5 · MERGE<br/>green PR → main · standing auth"]
         P --> B --> V --> R --> M
         V -. "low-blast: collapse" .-> R
@@ -34,13 +34,16 @@ flowchart TB
         G["/gauntletgate all → 0/0/0/0/0"]
         C["claim-refutation on README / manual / landing"]
         D["deliverable docs real & complete"]
+        VA["/visitor-audit on rendered candidate surfaces"]
         RB["rollback trigger + owner named"]
-        G --> C --> D --> RB
+        G --> C --> D --> VA --> RB
     end
 
     REL --> TAG{"OWNER go/no-go<br/>on the tag"}
-    TAG -->|go| SHIP["tag / release"]
+    TAG -->|go| SHIP["tag / release / deploy"]
     TAG -->|no| LOOP
+    SHIP --> LIVE["/visitor-audit on live URLs + assets"]
+    LIVE --> CLOSE["announce + close release workflow"]
 
     R -->|finding| B
     G -->|finding| B
@@ -57,7 +60,8 @@ flowchart LR
     DRS --> B2["BUILD → coder-tdd-qa"]
     DRS --> V2["VERIFY → proof-gate"]
     DRS --> R2["REVIEW → audit-lite / audit-team / gauntletgate walkthrough"]
-    DRS --> G2["RELEASE → gauntletgate all + proof-gate claim-refutation"]
+    DRS --> P2["PUBLIC SURFACE → visitor-audit"]
+    DRS --> G2["RELEASE → gauntletgate all + proof-gate + visitor-audit"]
 ```
 
 The orchestrator holds the discipline; each gate delegates to the skill built for it. The
@@ -69,6 +73,12 @@ inline, says so, and still spawns a fresh sub-agent — it never reviews its own
 in two packagings. The standalone audits are the per-unit *review reports*; gauntletgate is
 the release-altitude *advancement gate* whose `lite`/`full` lanes re-run that discipline
 self-contained and add a pass/fail verdict. A report vs. a gate.
+
+`visitor-audit` does not duplicate walkthrough. Walkthrough exercises the product and
+first-run wiring; visitor-audit reads the public front door as rendered, follows and
+counts every link, and verifies published release assets and claims. Candidate/staging
+evidence informs go/no-go; only the cache-busted live post-deploy pass permits the release
+to be announced as complete and the workflow to close.
 
 ## The always-on layer — three hooks
 

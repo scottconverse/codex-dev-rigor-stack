@@ -19,7 +19,7 @@ if (-not $Target) {
   $Target = Join-Path $CodexHome 'skills'
 }
 
-$Order = @('dev-rigor-stack','coder-tdd-qa','proof-gate','audit-lite','audit-team','gauntletgate')
+$Order = @('dev-rigor-stack','coder-tdd-qa','proof-gate','audit-lite','audit-team','gauntletgate','visitor-audit')
 $Stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $BackupRoot = Join-Path $Target ".backup\codex-dev-rigor-stack\$Stamp"
 

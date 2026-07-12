@@ -2,6 +2,14 @@
 
 All notable changes to dev-rigor-stack. Dates are release (tag) dates.
 
+## Unreleased
+
+- **Added:** `visitor-audit` as the PUBLIC SURFACE gate. Public-facing units receive a
+  rendered-surface review after publication; releases receive a candidate/staging pass
+  before go/no-go and a mandatory live post-deploy pass before announcement or closure.
+- **Added:** bundle consistency validation so the manifest, skill payloads, and both
+  installers cannot silently drift.
+
 ## v1.5.1 — 2026-07-08
 
 Drive-to-zero release: every finding from a full five-role audit of v1.5.0

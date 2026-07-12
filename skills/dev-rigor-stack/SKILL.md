@@ -84,6 +84,10 @@ tag (a decision killed in 0.1 is still worth not reopening in 0.4).
    • `$audit-team` — escalate for high-blast units.
    • `$gauntletgate walkthrough` — user-facing wiring: a real end-to-end run hunting dead
      links, dead buttons, broken flows, the way a user hits it.
+   • `$visitor-audit` — PUBLIC SURFACE lane, only when the unit changes an already-live
+     README, docs site, landing page, release page, announcement, or published asset.
+     Audit the rendered surface after publication, follow every link, and verify quoted
+     checksums/sizes against the published asset. Source inspection or CI is not a pass.
    (These are the per-unit *review reports*. GauntletGate as the full advancement
    stage-gate — its `lite`/`full` lanes plus a pass/fail verdict — belongs to the RELEASE
    gate below, not here. Its `lite`/`full` lanes re-run the same discipline as audit-lite
@@ -124,6 +128,10 @@ sub-agent — the coordinator never reviews its own orchestration.
 - **Claim refutation** — `$proof-gate` against the release *claims*: the README, manual,
   and landing page must not promise what the product doesn't do. Gauntletgate catches a
   dead link; only claim-refutation catches an honest-looking page that overclaims.
+- **Candidate public-surface pass** — `$visitor-audit` against rendered staging/candidate
+  surfaces before the owner go/no-go. Every surface is read in full and every link is
+  counted. Unpublished surfaces remain explicitly unproven; source-file review is not a
+  substitute for the live pass below.
 - **Deliverable docs real & complete** — a true README; a two-voice user manual
   (non-technical + technical); an architecture section with professional-grade
   drawings; an honest marketing landing page (what it is, how it fits, the value — no
@@ -133,6 +141,11 @@ sub-agent — the coordinator never reviews its own orchestration.
 - **STOP → owner go/no-go on the tag.** The coordinator drives everything to ready,
   then hands the decision to the owner. Merging slices is pre-authorized; declaring the
   release real (the tag) is not.
+- **Post-deploy closure** — after an authorized tag/publish/deploy, run `$visitor-audit`
+  again against the live URLs and actual release assets, cache-busted. Until this is
+  clean, do not announce the release as complete, close the release workflow, or retire
+  rollback readiness. A dead download, false current-version claim, or wrong checksum is
+  a release blocker and routes to correction or rollback.
 
 Cost of pure-zero: with no freeze, a nit found after the gauntlet ran moves the tagged
 artifact one commit off the one you proved. Re-run the gate **at the blast radius of
@@ -188,7 +201,7 @@ decision, every time.
 ## Dependencies & degrade-if-missing
 
 The Codex installer bundles and installs all the sibling skills together — **coder-tdd-qa,
-proof-gate, and the gauntletgate / audit-lite / audit-team family** — so a normal install
+proof-gate, the gauntletgate / audit-lite / audit-team family, and visitor-audit** — so a normal install
 has every lane present. Upstream Claude Code also ships always-on hooks; this Codex
 packaging does not wire them by default because Codex Desktop hook events and payloads
 are different. The full discipline lives in the skills. The degrade path is a fallback for

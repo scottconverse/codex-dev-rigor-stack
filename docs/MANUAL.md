@@ -85,6 +85,9 @@ or merge/tag past it. See [ARCHITECTURE.md](ARCHITECTURE.md) for the flow diagra
    defect; a tool false-positive is classified out with the reason it isn't real — never
    contort correct code to satisfy a wrong tool, never pass a real defect as a "false
    positive."
+   If the unit changes an already-published README, docs site, landing page, release page,
+   announcement, or asset, add `visitor-audit` after publication. It reads the rendered
+   surface and follows every link; source inspection and CI do not substitute for it.
 5. **MERGE** — green-path only. Units land on the integration line via green PR; a
    green-path merge is pre-authorized (it cleared gates 1–4). No `--admin`, no override, no
    bypassing branch protection.
@@ -104,9 +107,15 @@ the coordinator never reviews its own orchestration:
   only claim-refutation catches an honest-looking page that overclaims.
 - **Deliverable docs real & complete** — README, a two-voice user manual, an architecture
   section with drawings, an honest landing page.
+- **Candidate public-surface audit** (`visitor-audit`) — read rendered staging/candidate
+  surfaces in full, count and follow every link, and verify candidate assets before
+  go/no-go. Anything not yet published remains explicitly unproven.
 - **Rollback defined** — name the trigger and the owner before tagging.
 - **Owner go/no-go** — the coordinator drives everything to ready, then hands the tag
   decision to the owner.
+- **Live post-deploy closure** — after the authorized tag/publish/deploy, run
+  `visitor-audit` against cache-busted live URLs and actual release assets. Until clean,
+  do not announce completion, close the release workflow, or retire rollback readiness.
 
 ### The always-on layer (three hooks)
 
@@ -175,11 +184,11 @@ tool — never a bare recursing agent. Each worker states its tier and moderates
 ### Install, configure, export
 
 - **Requirements**: Git, and **Node.js** for the hooks (three small Node scripts).
-  The six skills install without Node; only the hooks need it — and anyone running a coding
+  The seven skills install without Node; only the hooks need it — and anyone running a coding
   agent almost certainly has it already.
 - **Install**: `./install.sh` (macOS/Linux/Git Bash), or on Windows
   `powershell -ExecutionPolicy Bypass -File .\install.ps1` (the prefix avoids the default
-  *"running scripts is disabled"* block). Installs the six skills into `~/.claude/skills` (or
+  *"running scripts is disabled"* block). Installs the seven skills into `~/.claude/skills` (or
   `$CLAUDE_CONFIG_DIR/skills`) **and** wires the three always-on hooks (reflex, rigor
   router, grounding check) under `~/.claude/dev-rigor-plugin/`. If Node is missing, the
   skills still install and the installer reports the hooks as skipped. Idempotent — re-run
@@ -202,7 +211,8 @@ tool — never a bare recursing agent. Each worker states its tier and moderates
 ### Dependencies & degrade
 
 The installer bundles and installs all the sibling skills together (`coder-tdd-qa`,
-`proof-gate`, the `gauntletgate` / `audit-lite` / `audit-team` family) — a normal install
+`proof-gate`, the `gauntletgate` / `audit-lite` / `audit-team` family, and
+`visitor-audit`) — a normal install
 has every lane present. The always-on hooks install alongside; they're convenience layers,
 not dependencies — the full discipline lives in the skill. The degrade path is only a
 fallback for a partial or `--target` install: if a lane's skill is absent, the coordinator

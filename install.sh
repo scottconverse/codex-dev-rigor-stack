@@ -23,7 +23,7 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
-order="dev-rigor-stack coder-tdd-qa proof-gate audit-lite audit-team gauntletgate"
+order="dev-rigor-stack coder-tdd-qa proof-gate audit-lite audit-team gauntletgate visitor-audit"
 stamp=$(date +%Y%m%d-%H%M%S)
 backup_root="$target/.backup/codex-dev-rigor-stack/$stamp"
 
