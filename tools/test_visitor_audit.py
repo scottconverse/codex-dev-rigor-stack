@@ -25,7 +25,9 @@ class FixtureHandler(BaseHTTPRequestHandler):
         return
 
     def do_HEAD(self) -> None:  # noqa: N802 - stdlib callback name
-        if self.path == "/redirect":
+        if self.path == "/missing.md":
+            self.send_response(404)
+        elif self.path == "/redirect":
             self.send_response(302)
             self.send_header("Location", "/ok")
         elif self.path == "/head-rejected":
@@ -52,6 +54,18 @@ class FixtureHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)
+            return
+        if self.path == "/README.md":
+            body = b"[working](target.md) [missing](missing.md) ![image](missing.png)"
+            self.send_response(200)
+            self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
+        if self.path == "/missing.md":
+            self.send_response(404)
+            self.end_headers()
             return
         self.send_response(200)
         self.end_headers()
@@ -110,6 +124,14 @@ class VisitorAuditTests(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertEqual(payload["links_checked"], 1)
         self.assertEqual(payload["broken"], 0)
+
+    def test_remote_markdown_is_parsed_as_markdown(self) -> None:
+        result = self.run_checker(f"{self.base}/README.md", "--json")
+        self.assertEqual(result.returncode, 1, result.stderr or result.stdout)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["links_checked"], 2)
+        self.assertEqual(payload["ok"], 1)
+        self.assertEqual(payload["broken"], 1)
 
 
 if __name__ == "__main__":

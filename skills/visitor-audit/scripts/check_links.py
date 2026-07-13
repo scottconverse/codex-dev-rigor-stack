@@ -71,19 +71,21 @@ def extract_links(text: str, is_html: bool) -> list[str]:
     return links
 
 
-def fetch(url: str, method: str = "GET", timeout: float = 20) -> tuple[int, str, str | None, str | None]:
-    """Return status, final URL, decoded body, and error; redirects are followed."""
+def fetch(
+    url: str, method: str = "GET", timeout: float = 20
+) -> tuple[int, str, str | None, str | None, str | None]:
+    """Return status, final URL, body, error, and content type; follow redirects."""
     request = urllib.request.Request(url, headers=USER_AGENT, method=method)
     try:
         with urllib.request.urlopen(
             request, timeout=timeout, context=ssl.create_default_context()
         ) as response:
             body = response.read().decode("utf-8", "replace") if method == "GET" else None
-            return response.status, response.geturl(), body, None
+            return response.status, response.geturl(), body, None, response.headers.get_content_type()
     except urllib.error.HTTPError as exc:
-        return exc.code, exc.geturl(), None, str(exc)
+        return exc.code, exc.geturl(), None, str(exc), exc.headers.get_content_type()
     except Exception as exc:  # network/SSL failures must become evidence, not crashes
-        return 0, url, None, f"{type(exc).__name__}: {exc}"
+        return 0, url, None, f"{type(exc).__name__}: {exc}", None
 
 
 def check_http(href: str, base: str | None, timeout: float, retry_delay: float) -> dict[str, object]:
@@ -91,12 +93,12 @@ def check_http(href: str, base: str | None, timeout: float, retry_delay: float) 
     if not url.startswith(("http://", "https://")):
         return {"href": href, "url": url, "status": 0, "note": "unresolvable (no URL base)"}
 
-    status, final_url, _body, error = fetch(url, method="HEAD", timeout=timeout)
+    status, final_url, _body, error, _content_type = fetch(url, method="HEAD", timeout=timeout)
     if status in GET_FALLBACK_STATUSES:
-        status, final_url, _body, error = fetch(url, method="GET", timeout=timeout)
+        status, final_url, _body, error, _content_type = fetch(url, method="GET", timeout=timeout)
     if status == 429:
         time.sleep(retry_delay)
-        status, final_url, _body, error = fetch(url, method="GET", timeout=timeout)
+        status, final_url, _body, error, _content_type = fetch(url, method="GET", timeout=timeout)
 
     note = error if status == 0 else "rate-limited, unconfirmed" if status == 429 else ""
     return {"href": href, "url": final_url, "status": status, "note": note}
@@ -163,11 +165,18 @@ def main() -> int:
     assert source is not None
     local_root: Path | None = None
     if source.startswith(("http://", "https://")):
-        status, final_url, text, error = fetch(source, method="GET", timeout=args.timeout)
+        status, final_url, text, error, content_type = fetch(
+            source, method="GET", timeout=args.timeout
+        )
         if status != 200 or text is None:
             print(f"FATAL: source fetch failed: {status} {source} {error or ''}".rstrip(), file=sys.stderr)
             return 2
-        is_html = True
+        path = urllib.parse.urlparse(final_url).path.lower()
+        markdown_path = path.endswith((".md", ".markdown", ".mdown", ".mkd"))
+        html_sniff = text.lstrip().lower().startswith(("<!doctype html", "<html"))
+        is_html = content_type in {"text/html", "application/xhtml+xml"} or (
+            not markdown_path and html_sniff
+        )
         base = args.base or final_url
     else:
         source_path = Path(source).resolve()
