@@ -1,6 +1,6 @@
 # codex-dev-rigor-stack
 
-**Current version: 1.7.0**
+**Candidate version: 1.7.0 — review hold; no version is currently approved for installation**
 
 MIT licensed.
 
@@ -93,13 +93,11 @@ rewrites.
 
 ### Codex Desktop — no terminal
 
-1. In a normal Codex Desktop task, ask: `Install release 1.7.0 from scottconverse/codex-dev-rigor-stack using the repository's own installer, not a single-skill copy. Verify all 19 skills, the managed hook runtime, hooks.json, and the six owned definitions.`
-2. Download and double-click
-   [DevRigorHookActivator-1.7.0.exe](https://scottconverse.github.io/codex-dev-rigor-stack/downloads/DevRigorHookActivator-1.7.0.exe).
-3. Inspect the six rows and their exact command/hash details. Choose
-   **Review and trust these 6 hooks**, then approve the confirmation.
-4. Confirm the app reports all six as trusted. Restart Codex Desktop.
-5. Invoke `$dev-rigor-stack` or any standalone entrypoint.
+1. Do not install or activate 1.7.0 while its independent-review hold is active.
+2. Wait for a tagged release and an explicit owner go/no-go. Candidate artifacts remain
+   outside the GitHub Pages publication tree and are not public downloads.
+3. After publication is explicitly authorized, follow the tagged release's installation
+   and graphical trust instructions. Do not use an artifact recovered from repository history.
 
 The activator uses Codex's supported app-server APIs to read, trust, and re-read the exact
 hook hashes. Every command also embeds the expected SHA-256 of its JavaScript, reads the

@@ -104,22 +104,19 @@ and Stop/SubagentStop evidence gate. The original Claude source remains only as 
 ### Codex Desktop installation — no terminal
 
 1. Open a normal Codex Desktop task and ask:
-   `Install release 1.7.0 from scottconverse/codex-dev-rigor-stack using the repository's own installer, not a single-skill copy. Verify all 19 skills, the managed hook runtime, hooks.json, and the six owned definitions.`
+   Do not request installation while 1.7.0 is on independent-review hold.
 2. Codex stages all 19 skill folders, the hook runtime, and the merged six owned
    definitions, then commits them as one rollback-protected transaction while preserving
    unrelated hooks and creating backups.
-3. Download and double-click
-   [DevRigorHookActivator-1.7.0.exe](https://scottconverse.github.io/codex-dev-rigor-stack/downloads/DevRigorHookActivator-1.7.0.exe).
-   Version 1.7.0 is not code-signed, so a browser-downloaded copy may trigger Windows
-   SmartScreen. Before opening it, ask Codex Desktop:
-   `Verify the downloaded DevRigorHookActivator-1.7.0.exe in my Downloads folder against the published SHA-256. Do not open it if they differ.`
-   This performs the checksum step without asking you to use a terminal. Stop if Codex reports
-   a mismatch.
-4. Read all six rows. Selecting a row exposes its exact command, source, matcher, and
+3. Wait for a tagged release, an explicit owner go/no-go, and restored publication links.
+   Candidate executables are deliberately unavailable from GitHub Pages during review.
+4. Once publication is authorized, verify the tagged release's checksum before opening it.
+   Stop if Codex reports a mismatch.
+5. Read all six rows. Selecting a row exposes its exact command, source, matcher, and
    current hash.
-5. Choose **Review and trust these 6 hooks**. The confirmation lists the exact six hashes;
+6. Choose **Review and trust these 6 hooks**. The confirmation lists the exact six hashes;
    choose **Trust these 6 hooks** only after reviewing them.
-6. The app writes trust through Codex, re-reads all six definitions, and must display
+7. The app writes trust through Codex, re-reads all six definitions, and must display
    **Verified — all 6 hooks trusted**. Restart Codex Desktop.
 
 This is the ordinary Windows Desktop path. It does not require opening a terminal, typing
@@ -476,7 +473,7 @@ to make it shorter.
 
 ## Versioning
 
-- **Version 1.7.0** is the current release and continues the product lineage from 1.5.1.
+- **Version 1.7.0** is an unreleased candidate on independent-review hold and continues the product lineage from 1.5.1.
 - The earlier 1.0.0 Codex package number is retained only as historical record of an
   interim reset; future versions advance monotonically from 1.6.0. Version 1.6.1 repaired
   Desktop graphical activation. Version 1.6.2's prompt-boundary repair was incomplete;

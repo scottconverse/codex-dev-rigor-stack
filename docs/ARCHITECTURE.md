@@ -227,13 +227,17 @@ flowchart LR
     Activator["Windows graphical activator\nreview 6 commands + current hashes"]
     AppServer["Codex app server\nhooks/list + config/batchWrite + hooks/list"]
     Trust["Codex hash-bound trust\nrequired before execution"]
-    Download["Pages download\nactivator EXE + SHA-256"]
+    Candidate["candidate-artifacts/\nnot served by Pages"]
+    OwnerGate{"independent TAG GO\n+ explicit owner go/no-go"}
+    Download["authorized release download\nactivator EXE + SHA-256"]
     CI["GitHub Actions\nWindows + Linux gates"]
     Publish["GitHub Pages / repository surfaces"]
 
     Source --> CI --> Publish
     Source --> Docs --> Pages --> Publish
-    Source --> Activator --> Download --> Pages
+    Source --> Activator --> Candidate --> OwnerGate
+    OwnerGate -->|GO only| Download --> Pages
+    OwnerGate -->|NO-GO / no decision| Candidate
     Source --> Archive --> Installer
     Installer -->|staged transaction + durable backup| Backup
     Installer -->|copy complete manifest| Home

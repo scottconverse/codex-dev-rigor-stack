@@ -17,10 +17,34 @@ INTEGRATION_TEST = ROOT / "desktop" / "ActivatorIntegrationSelfTest.cs"
 UI_TEST = ROOT / "desktop" / "ActivatorUiSelfTest.cs"
 LIVE_TEST = ROOT / "desktop" / "test-live-hook-lifecycle.js"
 BINARY_EQUIVALENCE = ROOT / "desktop" / "verify-binary-equivalence.ps1"
-DOWNLOAD = ROOT / "docs" / "downloads" / "DevRigorHookActivator-1.7.0.exe"
+CANDIDATE = ROOT / "candidate-artifacts" / "1.7.0" / "DevRigorHookActivator-1.7.0.exe"
+RELEASE_STATE = ROOT / "release-state.json"
 
 
 class DesktopActivatorContractTests(unittest.TestCase):
+    def test_unapproved_candidate_is_not_published_or_described_as_current(self) -> None:
+        state = json.loads(RELEASE_STATE.read_text(encoding="utf-8"))
+        self.assertEqual(state["candidate_version"], "1.7.0")
+        self.assertEqual(state["status"], "review-hold")
+        self.assertFalse(state["publication_authorized"])
+
+        landing = (ROOT / "docs" / "index.html").read_text(encoding="utf-8")
+        self.assertIn("1.7.0 is under independent review", landing)
+        self.assertIn("Downloads are disabled", landing)
+        self.assertNotIn("Current version: 1.7.0", landing)
+        self.assertNotIn("downloads/DevRigorHookActivator-1.7.0", landing)
+
+        architecture = (ROOT / "docs" / "ARCHITECTURE.md").read_text(encoding="utf-8")
+        self.assertIn("candidate-artifacts/", architecture)
+        self.assertIn("explicit owner go/no-go", architecture)
+        self.assertIn("GO only", architecture)
+
+        published = ROOT / "docs" / "downloads"
+        self.assertFalse(
+            any(p.name.startswith("DevRigorHookActivator-1.7.0") for p in published.iterdir()),
+            "an unapproved 1.7.0 artifact is still in the GitHub Pages source tree",
+        )
+
     def test_version_is_monotonic_task_state_redesign(self) -> None:
         manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
         self.assertEqual(manifest["version"], "1.7.0")
@@ -203,12 +227,12 @@ class DesktopActivatorContractTests(unittest.TestCase):
         self.assertIn("revoke-trust.js", ci)
         self.assertIn("uninstall/reinstall trust lifecycle", ci)
 
-    def test_published_binary_has_a_source_bound_build_record(self) -> None:
-        record = DOWNLOAD.with_name("DevRigorHookActivator-1.7.0.build.json")
+    def test_candidate_binary_has_a_source_bound_build_record(self) -> None:
+        record = CANDIDATE.with_name("DevRigorHookActivator-1.7.0.build.json")
         self.assertTrue(record.is_file())
         data = json.loads(record.read_text(encoding="utf-8"))
         self.assertEqual(data["version"], "1.7.0")
-        self.assertEqual(data["binary_sha256"], hashlib.sha256(DOWNLOAD.read_bytes()).hexdigest())
+        self.assertEqual(data["binary_sha256"], hashlib.sha256(CANDIDATE.read_bytes()).hexdigest())
         self.assertEqual(data["source_sha256"], hashlib.sha256(SOURCE.read_bytes()).hexdigest())
         self.assertIn("compiler_version", data)
 
@@ -240,16 +264,14 @@ class DesktopActivatorContractTests(unittest.TestCase):
         ):
             self.assertIn(term, text)
 
-    def test_landing_download_and_checksum_match_published_executable(self) -> None:
-        landing = (ROOT / "docs" / "index.html").read_text(encoding="utf-8")
-        self.assertIn('href="downloads/DevRigorHookActivator-1.7.0.exe"', landing)
-        self.assertTrue(DOWNLOAD.is_file(), "published activator executable is missing")
-        digest = hashlib.sha256(DOWNLOAD.read_bytes()).hexdigest()
-        checksum = DOWNLOAD.with_suffix(DOWNLOAD.suffix + ".sha256").read_text(encoding="ascii")
-        self.assertEqual(checksum.strip(), f"{digest}  {DOWNLOAD.name}")
+    def test_candidate_binary_and_checksum_match_off_pages(self) -> None:
+        self.assertTrue(CANDIDATE.is_file(), "candidate activator executable is missing")
+        digest = hashlib.sha256(CANDIDATE.read_bytes()).hexdigest()
+        checksum = CANDIDATE.with_suffix(CANDIDATE.suffix + ".sha256").read_text(encoding="ascii")
+        self.assertEqual(checksum.strip(), f"{digest}  {CANDIDATE.name}")
 
-    def test_published_executable_has_windows_gui_subsystem(self) -> None:
-        data = DOWNLOAD.read_bytes()
+    def test_candidate_executable_has_windows_gui_subsystem(self) -> None:
+        data = CANDIDATE.read_bytes()
         self.assertEqual(data[:2], b"MZ")
         pe_offset = int.from_bytes(data[0x3C:0x40], "little")
         self.assertEqual(data[pe_offset:pe_offset + 4], b"PE\0\0")
@@ -257,8 +279,8 @@ class DesktopActivatorContractTests(unittest.TestCase):
         subsystem = int.from_bytes(data[optional_header + 68:optional_header + 70], "little")
         self.assertEqual(subsystem, 2, "executable must use the Windows GUI subsystem")
 
-    def test_published_source_is_the_exact_build_source(self) -> None:
-        published = DOWNLOAD.with_name("DevRigorHookActivator-1.7.0.cs")
+    def test_candidate_source_is_the_exact_build_source(self) -> None:
+        published = CANDIDATE.with_name("DevRigorHookActivator-1.7.0.cs")
         self.assertEqual(published.read_bytes(), SOURCE.read_bytes())
 
 
