@@ -14,7 +14,7 @@ $ErrorActionPreference = 'Stop'
 
 $RepoDir = Split-Path -Parent $PSScriptRoot
 if (-not $OutFile) { $OutFile = Join-Path $RepoDir 'portable-bundle.md' }
-$Order = @('dev-rigor-stack','coder-tdd-qa','proof-gate','audit-lite','audit-team','gauntletgate')
+$Order = @('dev-rigor-stack','dev-rigor-stack-continuity','dev-rigor-stack-plan','dev-rigor-stack-build','dev-rigor-stack-proof-gate','dev-rigor-stack-audit-lite','dev-rigor-stack-audit-team','dev-rigor-stack-walkthrough','dev-rigor-stack-visitor-audit','dev-rigor-stack-gauntletgate','dev-rigor-stack-merge-gate','dev-rigor-stack-docs-gate','dev-rigor-stack-release','coder-tdd-qa','proof-gate','audit-lite','audit-team','gauntletgate','visitor-audit')
 
 # Read as explicit UTF-8. On Windows PowerShell 5.1 a bare Get-Content on a BOM-less
 # file falls back to the ANSI codepage and mojibakes every em dash / smart quote.

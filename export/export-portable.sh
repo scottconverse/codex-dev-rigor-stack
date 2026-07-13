@@ -13,14 +13,14 @@ set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT="${1:-$REPO_DIR/portable-bundle.md}"
-ORDER="dev-rigor-stack coder-tdd-qa proof-gate audit-lite audit-team gauntletgate"
+ORDER="dev-rigor-stack dev-rigor-stack-continuity dev-rigor-stack-plan dev-rigor-stack-build dev-rigor-stack-proof-gate dev-rigor-stack-audit-lite dev-rigor-stack-audit-team dev-rigor-stack-walkthrough dev-rigor-stack-visitor-audit dev-rigor-stack-gauntletgate dev-rigor-stack-merge-gate dev-rigor-stack-docs-gate dev-rigor-stack-release coder-tdd-qa proof-gate audit-lite audit-team gauntletgate visitor-audit"
 
 # Strip only the FIRST YAML frontmatter block; keep every later '---' as body content.
 strip_frontmatter() {
   awk 'NR==1 && /^---[[:space:]]*$/ {infm=1; next}
        infm && /^---[[:space:]]*$/ {infm=0; next}
        infm {next}
-       {print}' "$1"
+       {sub(/\r$/, ""); print}' "$1"
 }
 
 {

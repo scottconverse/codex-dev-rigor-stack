@@ -18,11 +18,11 @@ flowchart TB
 
     subgraph LOOP["Per-unit loop — every unit of work"]
         direction TB
-        P["1 · PLAN<br/>classify blast radius"]
-        B["2 · BUILD<br/>/coder-tdd-qa · test-first"]
-        V["3 · VERIFY<br/>/proof-gate · refute the claim"]
-        R["4 · REVIEW<br/>proportionate lane:<br/>/audit-lite → /audit-team → /gauntletgate walkthrough<br/>+ /visitor-audit for live public surfaces"]
-        M["5 · MERGE<br/>green PR → main · standing auth"]
+        P["1 · PLAN<br/>$dev-rigor-stack-plan"]
+        B["2 · BUILD<br/>$dev-rigor-stack-build · test-first"]
+        V["3 · VERIFY<br/>$dev-rigor-stack-proof-gate"]
+        R["4 · REVIEW<br/>audit-lite / audit-team<br/>+ walkthrough for UI<br/>+ visitor for public surfaces"]
+        M["5 · MERGE<br/>$dev-rigor-stack-merge-gate"]
         P --> B --> V --> R --> M
         V -. "low-blast: collapse" .-> R
     end
@@ -31,10 +31,10 @@ flowchart TB
 
     subgraph REL["Release gate — once per version, before the tag"]
         direction TB
-        G["/gauntletgate all → 0/0/0/0/0"]
+        G["$dev-rigor-stack-gauntletgate all<br/>→ 0/0/0/0/0"]
         C["claim-refutation on README / manual / landing"]
         D["deliverable docs real & complete"]
-        VA["/visitor-audit on rendered candidate surfaces"]
+        VA["candidate Visitor Audit<br/>+ clean-machine Walkthrough"]
         RB["rollback trigger + owner named"]
         G --> C --> D --> VA --> RB
     end
@@ -42,8 +42,9 @@ flowchart TB
     REL --> TAG{"OWNER go/no-go<br/>on the tag"}
     TAG -->|go| SHIP["tag / release / deploy"]
     TAG -->|no| LOOP
-    SHIP --> LIVE["/visitor-audit on live URLs + assets"]
-    LIVE --> CLOSE["announce + close release workflow"]
+    SHIP --> LIVE["live Visitor Audit<br/>public acquisition handoff"]
+    LIVE --> WALK["full published Walkthrough<br/>download → install → every UI path<br/>→ update/repair/uninstall"]
+    WALK --> CLOSE["0/0/0/0/0<br/>announce + close"]
 
     R -->|finding| B
     G -->|finding| B
@@ -57,11 +58,12 @@ release gauntlet route back into BUILD. Nothing routes *around* a gate.
 ```mermaid
 flowchart LR
     DRS["dev-rigor-stack<br/>(orchestrator)"]
-    DRS --> B2["BUILD → coder-tdd-qa"]
-    DRS --> V2["VERIFY → proof-gate"]
-    DRS --> R2["REVIEW → audit-lite / audit-team / gauntletgate walkthrough"]
-    DRS --> P2["PUBLIC SURFACE → visitor-audit"]
-    DRS --> G2["RELEASE → gauntletgate all + proof-gate + visitor-audit"]
+    DRS --> B2["BUILD → dev-rigor-stack-build"]
+    DRS --> V2["VERIFY → dev-rigor-stack-proof-gate"]
+    DRS --> R2["REVIEW → audit-lite / audit-team"]
+    DRS --> W2["PRODUCT JOURNEY → dev-rigor-stack-walkthrough"]
+    DRS --> P2["PUBLIC SURFACE → dev-rigor-stack-visitor-audit"]
+    DRS --> G2["RELEASE → gauntlet + proof + docs<br/>+ candidate/live visitor + walkthrough"]
 ```
 
 The orchestrator holds the discipline; each gate delegates to the skill built for it. The
@@ -74,11 +76,13 @@ in two packagings. The standalone audits are the per-unit *review reports*; gaun
 the release-altitude *advancement gate* whose `lite`/`full` lanes re-run that discipline
 self-contained and add a pass/fail verdict. A report vs. a gate.
 
-`visitor-audit` does not duplicate walkthrough. Walkthrough exercises the product and
-first-run wiring; visitor-audit reads the public front door as rendered, follows and
-counts every link, and verifies published release assets and claims. Candidate/staging
-evidence informs go/no-go; only the cache-busted live post-deploy pass permits the release
-to be announced as complete and the workflow to close.
+Visitor Audit and Walkthrough deliberately overlap at one verified boundary. Visitor Audit
+reads and operates the public front door, follows every link and safe public control,
+inspects visuals, verifies published assets/claims, and emits the exact installer
+acquisition handoff. Walkthrough consumes that artifact in a verified clean machine and
+owns installer lifecycle, every product screen/control/distinct path/state, visual and
+accessibility quality, and interface-to-function wiring. Candidate evidence informs
+go/no-go; cache-busted live Visitor plus full published Walkthrough permit closure.
 
 ## The always-on layer — three hooks
 

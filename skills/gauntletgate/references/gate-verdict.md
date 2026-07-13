@@ -15,13 +15,14 @@ Emit **CLEAR TO ADVANCE** only when **all** of the following hold:
 
 - Both the **walkthrough** and **full** lanes ran (this is what `gauntletgate all`
   does; `lite` is a feeder, not part of the advancement bar).
-- Severity is **0 Blocker / 0 Critical** across every lane.
+- Severity is **0 Blocker / 0 Critical / 0 Major / 0 Minor / 0 Nit** across every lane
+  under the dev-rigor-stack's default strict-zero policy.
 - **First-run coverage is VALID** (the environment attestation is filled with
   verified facts) **and a brand-new user can reach the core feature.**
 
-Majors/Minors/Nits may remain in a CLEAR verdict, but they ride along on the
-punch list / watchlist; they don't block advancement. (Projects that hold a higher
-bar — e.g. "0/0/0/0/0 to advance" — say so at invocation and the gate honors it.)
+No confirmed finding may remain in a CLEAR verdict. An operator may invoke a looser
+policy only through an explicit owner decision that names the accepted findings and risk;
+that result is POLICY-OVERRIDDEN, not the dev-rigor-stack's normal clear verdict.
 
 ### PARTIAL CHECK  (any run missing a required lane)
 
@@ -37,7 +38,7 @@ it ran* — it just cannot greenlight advancement.
 
 ### DO NOT ADVANCE
 
-Any run (full or partial) that finds a **Blocker or Critical**, or whose first-run
+Any strict-zero run (full or partial) that has a confirmed finding at any severity, or whose first-run
 coverage is **INVALID** while a UI/onboarding/dependency surface is in scope, emits
 **DO NOT ADVANCE** with the blocking punch list that must be cleared before a re-run.
 
@@ -63,6 +64,8 @@ coverage is **INVALID** while a UI/onboarding/dependency surface is in scope, em
 ## Honesty rules (do not violate)
 
 - A `lite`-only or any partial run is **never** CLEAR TO ADVANCE. Label it PARTIAL.
+- Under the default dev-rigor-stack policy, any confirmed Blocker/Critical/Major/Minor/Nit
+  prevents CLEAR TO ADVANCE. Classify false positives out with evidence; do not waive them.
 - Never report CLEAR TO ADVANCE off an environment whose first-run state was not
   verified, when the product has a first-run surface. INVALID first-run coverage
   caps the verdict.

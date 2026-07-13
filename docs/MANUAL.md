@@ -73,21 +73,25 @@ or merge/tag past it. See [ARCHITECTURE.md](ARCHITECTURE.md) for the flow diagra
    done-criteria and the test list, and **classify blast radius**. Blast radius — not diff
    size — is the sizing axis: a one-line change to auth is small in lines and large in
    blast, and gets the deep treatment.
-2. **BUILD** (`coder-tdd-qa`) — test-first. Write the failing test and *watch it fail*
+2. **BUILD** (`dev-rigor-stack-build`, compatible with `coder-tdd-qa`) — test-first. Write the failing test and *watch it fail*
    before making it pass; that, not a coverage percentage, is what proves the test is
    real. Coverage is a gap diagnostic, not a threshold to game.
-3. **VERIFY** (`proof-gate`) — adversarially try to *break* the claim ("this holds," "the
+3. **VERIFY** (`dev-rigor-stack-proof-gate`, compatible with `proof-gate`) — adversarially try to *break* the claim ("this holds," "the
    race can't occur," "the number isn't inflated"). The claim survives only if it can't be
    refuted. For a low-blast unit, VERIFY and REVIEW may collapse into one pass.
 4. **REVIEW** — the coordinator picks the proportionate lane for what the slice touched:
-   `audit-lite` (default), `audit-team` (high-blast), or `gauntletgate walkthrough`
-   (user-facing wiring — dead links, dead buttons, broken flows). A *finding* is a real
+   `dev-rigor-stack-audit-lite` (default), `dev-rigor-stack-audit-team` (high-blast),
+   and `dev-rigor-stack-walkthrough` for user-facing work. Walkthrough begins blind,
+   verifies a clean environment, inventories every screen/control/distinct path/state,
+   exercises actual wiring, and performs systematic visual/accessibility QA. A *finding* is a real
    defect; a tool false-positive is classified out with the reason it isn't real — never
    contort correct code to satisfy a wrong tool, never pass a real defect as a "false
    positive."
    If the unit changes an already-published README, docs site, landing page, release page,
-   announcement, or asset, add `visitor-audit` after publication. It reads the rendered
-   surface and follows every link; source inspection and CI do not substitute for it.
+   announcement, or asset, add `dev-rigor-stack-visitor-audit` after publication. It reads
+   every rendered public surface, follows every link, exercises every safe public control,
+   inspects visuals, verifies assets, and hands the exact downloaded installer to
+   Walkthrough; source inspection and CI do not substitute for it.
 5. **MERGE** — green-path only. Units land on the integration line via green PR; a
    green-path merge is pre-authorized (it cleared gates 1–4). No `--admin`, no override, no
    bypassing branch protection.
@@ -110,12 +114,19 @@ the coordinator never reviews its own orchestration:
 - **Candidate public-surface audit** (`visitor-audit`) — read rendered staging/candidate
   surfaces in full, count and follow every link, and verify candidate assets before
   go/no-go. Anything not yet published remains explicitly unproven.
+- **Candidate newcomer walkthrough** (`dev-rigor-stack-walkthrough`) — exercise the
+  packaged installer in a verified clean machine, including installer lifecycle, every
+  inventoried product screen/control/path/state, visual/accessibility quality, actual
+  function wiring, update, repair, and uninstall. Missing denominators are INVALID.
 - **Rollback defined** — name the trigger and the owner before tagging.
 - **Owner go/no-go** — the coordinator drives everything to ready, then hands the tag
   decision to the owner.
 - **Live post-deploy closure** — after the authorized tag/publish/deploy, run
-  `visitor-audit` against cache-busted live URLs and actual release assets. Until clean,
-  do not announce completion, close the release workflow, or retire rollback readiness.
+  Visitor Audit against cache-busted live URLs and actual release assets, then consume its
+  acquisition handoff in a full published Walkthrough from public discovery through
+  download, clean-machine install, complete product journey, update/repair/uninstall.
+  Until both are clean at 0/0/0/0/0, do not announce completion, close the release
+  workflow, or retire rollback readiness.
 
 ### The always-on layer (three hooks)
 
@@ -184,11 +195,11 @@ tool — never a bare recursing agent. Each worker states its tier and moderates
 ### Install, configure, export
 
 - **Requirements**: Git, and **Node.js** for the hooks (three small Node scripts).
-  The seven skills install without Node; only the hooks need it — and anyone running a coding
+  The nineteen skills/entrypoints install without Node; only the hooks need it — and anyone running a coding
   agent almost certainly has it already.
 - **Install**: `./install.sh` (macOS/Linux/Git Bash), or on Windows
   `powershell -ExecutionPolicy Bypass -File .\install.ps1` (the prefix avoids the default
-  *"running scripts is disabled"* block). Installs the seven skills into `~/.claude/skills` (or
+  *"running scripts is disabled"* block). Installs the nineteen skills into `~/.claude/skills` (or
   `$CLAUDE_CONFIG_DIR/skills`) **and** wires the three always-on hooks (reflex, rigor
   router, grounding check) under `~/.claude/dev-rigor-plugin/`. If Node is missing, the
   skills still install and the installer reports the hooks as skipped. Idempotent — re-run
@@ -210,9 +221,8 @@ tool — never a bare recursing agent. Each worker states its tier and moderates
 
 ### Dependencies & degrade
 
-The installer bundles and installs all the sibling skills together (`coder-tdd-qa`,
-`proof-gate`, the `gauntletgate` / `audit-lite` / `audit-team` family, and
-`visitor-audit`) — a normal install
+The Codex installer bundles thirteen namespaced standalone capabilities plus six
+backward-compatible entrypoints — a normal install
 has every lane present. The always-on hooks install alongside; they're convenience layers,
 not dependencies — the full discipline lives in the skill. The degrade path is only a
 fallback for a partial or `--target` install: if a lane's skill is absent, the coordinator

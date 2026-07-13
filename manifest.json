@@ -1,22 +1,34 @@
 {
   "name": "codex-dev-rigor-stack",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "upstream": {
     "repo": "https://github.com/scottconverse/dev-rigor-stack",
     "commit": "63be0f72571d41db3ee5909a03a0b645bb28e71e",
     "version": "1.5.1"
   },
   "license": "MIT",
-  "description": "Codex Desktop packaging of the dev-rigor-stack skillset: seven pull-based Codex skills for proof-oriented delivery, including live public-surface verification, with Claude-only hooks intentionally left unwired.",
+  "description": "Codex-native dev-rigor-stack 1.0: thirteen namespaced standalone capabilities plus six backward-compatible entrypoints for proof-oriented delivery, exhaustive newcomer/UI walkthroughs, public-surface verification, and strict-zero release closure.",
   "installs_to": "~/.codex/skills by default",
   "skills": [
     { "name": "dev-rigor-stack", "role": "orchestrates the delivery loop and release gate" },
+    { "name": "dev-rigor-stack-continuity", "role": "restores and persists durable project state" },
+    { "name": "dev-rigor-stack-plan", "role": "PLAN gate: scope, acceptance, tests, blast radius, and routing" },
+    { "name": "dev-rigor-stack-build", "role": "BUILD gate: namespaced full TDD and QA entrypoint" },
+    { "name": "dev-rigor-stack-proof-gate", "role": "VERIFY gate: namespaced adversarial proof entrypoint" },
+    { "name": "dev-rigor-stack-audit-lite", "role": "REVIEW lane: namespaced fast scoped audit" },
+    { "name": "dev-rigor-stack-audit-team", "role": "REVIEW lane: namespaced five-role audit" },
+    { "name": "dev-rigor-stack-walkthrough", "role": "black-box acquisition, installer, UI/UX, wiring, and lifecycle audit" },
+    { "name": "dev-rigor-stack-visitor-audit", "role": "public surfaces, controls, visuals, assets, claims, and acquisition handoff" },
+    { "name": "dev-rigor-stack-gauntletgate", "role": "namespaced advancement-gate entrypoint" },
+    { "name": "dev-rigor-stack-merge-gate", "role": "green-path merge evidence gate" },
+    { "name": "dev-rigor-stack-docs-gate", "role": "deliverable documentation truth and completeness gate" },
+    { "name": "dev-rigor-stack-release", "role": "candidate-to-live strict-zero release protocol" },
     { "name": "coder-tdd-qa", "role": "BUILD gate: test-first engineering and QA standards" },
     { "name": "proof-gate", "role": "VERIFY gate: adversarial build-and-verify, anti-theater" },
     { "name": "audit-lite", "role": "REVIEW lane: fast single-pass audit of a small change" },
     { "name": "audit-team", "role": "REVIEW lane: multi-role deep audit for high-blast units" },
     { "name": "gauntletgate", "role": "REVIEW lane and release gate: adversarial stage gate" },
-    { "name": "visitor-audit", "role": "PUBLIC SURFACE gate: rendered pages, links, assets, checksums, and claims" }
+    { "name": "visitor-audit", "role": "backward-compatible PUBLIC SURFACE gate" }
   ],
   "codex": {
     "installer": "install.ps1",
