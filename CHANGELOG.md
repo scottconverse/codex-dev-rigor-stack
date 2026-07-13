@@ -3,9 +3,9 @@
 All notable changes to dev-rigor-stack. A version heading does not imply a Git tag exists
 in this repository.
 
-## 1.7.0 — 2026-07-13
+## 1.7.0 candidate — unreleased, independent-review hold
 
-Task-scoped substantive enforcement redesign. This release preserves 1.6.3's exact-turn
+Task-scoped substantive enforcement redesign. This candidate preserves 1.6.3's exact-turn
 isolation and one-block circuit breaker while correcting the state and policy model that
 made earlier receipt enforcement destructive.
 

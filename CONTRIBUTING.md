@@ -1,6 +1,6 @@
 # Contributing
 
-**Current release:** 1.7.0
+**Candidate:** 1.7.0 — independent-review hold; not released
 
 Thanks for considering it. This repo practices what it ships — contributions walk the
 same gates the stack enforces.

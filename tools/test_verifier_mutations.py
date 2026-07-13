@@ -58,13 +58,13 @@ def main() -> int:
         )
         manifest.write_text(original_manifest, encoding="utf-8")
 
-        executable = copy / "docs" / "downloads" / "DevRigorHookActivator-1.7.0.exe"
+        executable = copy / "candidate-artifacts" / "1.7.0" / "DevRigorHookActivator-1.7.0.exe"
         data = bytearray(executable.read_bytes())
         data[-1] ^= 0x01
         executable.write_bytes(data)
         require_red(
             run(copy, [sys.executable, "tools/test_desktop_activator.py"]),
-            "test_landing_download_and_checksum_match_published_executable",
+            "test_candidate_binary_and_checksum_match_off_pages",
             "published executable checksum",
         )
 

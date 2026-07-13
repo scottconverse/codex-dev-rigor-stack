@@ -1,0 +1,8 @@
+{
+  "candidate_version": "1.7.0",
+  "status": "review-hold",
+  "publication_authorized": false,
+  "tag": null,
+  "release_url": null,
+  "reason": "Independent review returned TAG NO-GO. Candidate acquisition remains disabled until the owner gives an explicit go/no-go after a clean re-review."
+}
