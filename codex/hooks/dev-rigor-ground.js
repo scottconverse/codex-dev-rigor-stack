@@ -234,7 +234,9 @@ function addDebt(task, session, turn) {
 function acceptProof(task, proof) {
   const accepted = new Set(proof.edits);
   task.dirtyEdits = task.dirtyEdits.filter((edit) => !accepted.has(edit));
-  task.unresolved = task.unresolved.filter((debt) => debt.editSetHash !== proof.editSetHash);
+  task.unresolved = task.unresolved.filter((debt) =>
+    !Array.isArray(debt.edits) || !debt.edits.every((edit) => accepted.has(edit))
+  );
 }
 
 function block(reason) {

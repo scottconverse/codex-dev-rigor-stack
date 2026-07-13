@@ -95,6 +95,13 @@ function stateLines(home, prefix = 'ground-v4-') {
   );
 }
 
+function taskState(home) {
+  const state = path.join(home, 'dev-rigor-stack', 'state');
+  const files = stateFiles(home, 'task-v4-');
+  assert.strictEqual(files.length, 1, 'expected exactly one task state');
+  return JSON.parse(fs.readFileSync(path.join(state, files[0]), 'utf8'));
+}
+
 const receipt = 'proved: pytest -q - 12 passed · blast: medium · skipped: none';
 const tests = [];
 function test(name, fn) { tests.push([name, fn]); }
@@ -237,6 +244,19 @@ test('ground: a substantive block cannot loop and leaves visible unresolved proo
   assert.ok(stateLines(home).some((line) => line.startsWith('U ')), 'circuit release must record unresolved proof');
   const status = JSON.parse(prompt(home, 'ground-retry', 'DevRigorSTATUS'));
   assert.match(status.hookSpecificOutput.additionalContext, /unresolved proof:\s*yes/i);
+});
+
+test('ground: proof resolves debt only for the same or a verified superseding edit set', () => {
+  const home = freshHome();
+  record(home, 'ground-debt-superset', 'apply_patch', { command: '*** Update File: src/app.ts' }, {}, 'turn-debt');
+  assert.strictEqual(JSON.parse(stop(home, 'ground-debt-superset', 'Done.', false, 'stop', 'turn-debt')).decision, 'block');
+  assert.strictEqual(stop(home, 'ground-debt-superset', 'Released after the one-block circuit.', true, 'stop', 'turn-debt').trim(), '');
+  assert.strictEqual(taskState(home).unresolved.length, 1);
+
+  record(home, 'ground-debt-superset', 'apply_patch', { command: '*** Update File: src/helper.ts' }, {}, 'turn-proof');
+  record(home, 'ground-debt-superset', 'Bash', { command: 'npm test' }, { exit_code: 0 }, 'turn-proof');
+  assert.strictEqual(stop(home, 'ground-debt-superset', receipt, false, 'stop', 'turn-proof').trim(), '');
+  assert.strictEqual(taskState(home).unresolved.length, 0, 'a proved superset containing every indebted edit must resolve the older debt');
 });
 
 test('ground: the same turn is blocked at most once when Codex omits stop_hook_active', () => {

@@ -27,6 +27,7 @@ jobs:
           python3 tools/test_stack_contracts.py
           python3 tools/test_desktop_activator.py
           python3 tools/test_visitor_audit.py
+          python3 tools/test_upgrade_matrix.py
       # SKILL.md <-> SKILL-LITE.md sync blocks must be byte-identical.
       - name: Sync-block check
         run: python3 tools/check_sync.py
