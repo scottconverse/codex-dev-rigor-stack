@@ -183,7 +183,7 @@ class StackContractTests(unittest.TestCase):
         self.assertEqual(hook_status["status"], "active")
         self.assertEqual(
             set(hook_status["events"]),
-            {"SessionStart", "SubagentStart", "UserPromptSubmit", "PostToolUse", "Stop", "SubagentStop"},
+            {"SessionStart", "SubagentStart", "UserPromptSubmit", "PreToolUse", "PostToolUse", "Stop", "SubagentStop"},
         )
 
         required = (

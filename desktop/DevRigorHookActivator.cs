@@ -55,10 +55,10 @@ namespace DevRigorStack.Desktop
 
     internal static class OwnershipRules
     {
-        public const int ExpectedHookCount = 6;
+        public const int ExpectedHookCount = 7;
         public static readonly string[] ExpectedEvents =
         {
-            "sessionStart", "subagentStart", "userPromptSubmit", "postToolUse", "stop", "subagentStop"
+            "sessionStart", "subagentStart", "userPromptSubmit", "preToolUse", "postToolUse", "stop", "subagentStop"
         };
 
         public static List<HookRecord> FilterOwned(IEnumerable<HookRecord> hooks, string codexHome)
@@ -164,6 +164,11 @@ namespace DevRigorStack.Desktop
                     script = "dev-rigor-router.js"; suffix = "";
                     expectedMatcher = "";
                     expectedStatus = "Routing dev-rigor protocol";
+                    break;
+                case "preToolUse":
+                    script = "dev-rigor-ground.js"; suffix = " snapshot";
+                    expectedMatcher = "^(Bash|PowerShell|apply_patch|Edit|Write|MultiEdit|NotebookEdit|mcp__.*(preview|browser|chrome|computer|screenshot|navigate|snapshot|exec|run|test|shell|terminal|jupyter|notebook|ide|eval).*)$";
+                    expectedStatus = "Snapshotting dev-rigor worktree state";
                     break;
                 case "postToolUse":
                     script = "dev-rigor-ground.js"; suffix = " record";
@@ -583,7 +588,7 @@ namespace DevRigorStack.Desktop
     {
         public HookReviewDialog(string review)
         {
-            Text = "Review the six Dev Rigor hooks";
+            Text = "Review the seven Dev Rigor hooks";
             StartPosition = FormStartPosition.CenterParent;
             ClientSize = new Size(900, 640);
             MinimumSize = new Size(680, 480);
@@ -607,7 +612,7 @@ namespace DevRigorStack.Desktop
             Label heading = new Label
             {
                 Dock = DockStyle.Fill,
-                Text = "Codex will trust exactly the six current definitions below. Each command verifies its script SHA-256 and executes the already-verified bytes.\r\nUpdated scripts create changed definitions that require review again.",
+                Text = "Codex will trust exactly the seven current definitions below. Each command verifies its script SHA-256 and executes the already-verified bytes.\r\nUpdated scripts create changed definitions that require review again.",
                 AutoEllipsis = true
             };
             layout.Controls.Add(heading, 0, 0);
@@ -621,13 +626,13 @@ namespace DevRigorStack.Desktop
                 ScrollBars = ScrollBars.Both,
                 BackColor = Color.White,
                 Text = review,
-                AccessibleName = "Exact six-hook review details",
-                AccessibleDescription = "Commands, sources, matchers, enabled states, timeouts, and current hashes for all six hooks."
+                AccessibleName = "Exact seven-hook review details",
+                AccessibleDescription = "Commands, sources, matchers, enabled states, timeouts, and current hashes for all seven hooks."
             };
             layout.Controls.Add(content, 0, 1);
 
             Button cancel = new Button { Text = "&Cancel", DialogResult = DialogResult.Cancel, Width = 110, Height = 36 };
-            Button trust = new Button { Text = "&Trust these 6 hooks", DialogResult = DialogResult.OK, Width = 180, Height = 36 };
+            Button trust = new Button { Text = "&Trust these 7 hooks", DialogResult = DialogResult.OK, Width = 180, Height = 36 };
             FlowLayoutPanel actions = new FlowLayoutPanel
             {
                 Dock = DockStyle.Fill,
@@ -717,7 +722,7 @@ namespace DevRigorStack.Desktop
             };
             root.Controls.Add(title, 0, 0);
 
-            _summary.Text = "Checking the six installed hook definitions with Codex…\r\nUse Up and Down Arrow to select a hook; Tab moves to its exact details and the action buttons. No terminal is required.";
+            _summary.Text = "Checking the seven installed hook definitions with Codex…\r\nUse Up and Down Arrow to select a hook; Tab moves to its exact details and the action buttons. No terminal is required.";
             _summary.Dock = DockStyle.Fill;
             _summary.ForeColor = Color.FromArgb(55, 65, 81);
             _summary.Padding = new Padding(0, 4, 0, 4);
@@ -776,10 +781,10 @@ namespace DevRigorStack.Desktop
             };
             ConfigureButton(_close, "Close", 100);
             ConfigureButton(_refresh, "Refresh", 100);
-            ConfigureButton(_trust, "Review and trust these 6 hooks", 238);
+            ConfigureButton(_trust, "Review and trust these 7 hooks", 238);
             _close.Text = "&Close";
             _refresh.Text = "&Refresh";
-            _trust.Text = "Review and &trust these 6 hooks";
+            _trust.Text = "Review and &trust these 7 hooks";
             _close.TabIndex = 4;
             _refresh.TabIndex = 3;
             _trust.TabIndex = 2;
@@ -922,7 +927,7 @@ namespace DevRigorStack.Desktop
             if (!_reviewAndConfirm(this, review)) return;
 
             List<HookRecord> reviewed = _ownedHooks.ToList();
-            SetBusy(true, "Saving the six reviewed hashes through Codex…");
+            SetBusy(true, "Saving the seven reviewed hashes through Codex…");
             Task.Factory.StartNew(() =>
             {
                 return _trustThroughCodex(reviewed);
@@ -1011,8 +1016,8 @@ namespace DevRigorStack.Desktop
             }
             if (!IsExactOwnedSet(_ownedHooks))
             {
-                _summary.Text = "The complete six-hook Dev Rigor set is not installed in this Codex profile.\r\nAsk Codex Desktop to install dev-rigor-stack 1.7.0, then reopen this app.";
-                _status.Text = "Found " + _ownedHooks.Count + " of 6 owned hooks. No trust settings were changed.";
+                _summary.Text = "The complete seven-hook Dev Rigor set is not installed in this Codex profile.\r\nAsk Codex Desktop to install dev-rigor-stack 1.7.0, then reopen this app.";
+                _status.Text = "Found " + _ownedHooks.Count + " of 7 owned hooks. No trust settings were changed.";
                 _status.ForeColor = Color.FromArgb(185, 28, 28);
                 _trust.Enabled = false;
                 return;
@@ -1021,10 +1026,10 @@ namespace DevRigorStack.Desktop
             int trusted = _ownedHooks.Count(h => String.Equals(h.TrustStatus, "trusted", StringComparison.OrdinalIgnoreCase));
             if (trusted == ExpectedHookCount)
             {
-                _summary.Text = "Verified: all six Dev Rigor hooks are trusted by Codex.\r\nRestart Codex Desktop so every new task starts with the safeguards active.";
+                _summary.Text = "Verified: all seven Dev Rigor hooks are trusted by Codex.\r\nRestart Codex Desktop so every new task starts with the safeguards active.";
                 _status.Text = afterTrust ? "Activation verified after the trust write." : "Activation is already verified.";
                 _status.ForeColor = Color.FromArgb(21, 128, 61);
-                _trust.Text = "Verified — all 6 hooks trusted";
+                _trust.Text = "Verified — all 7 hooks trusted";
                 _trust.BackColor = Color.FromArgb(229, 231, 235);
                 _trust.ForeColor = Color.FromArgb(55, 65, 81);
                 _trust.Enabled = false;
@@ -1032,9 +1037,9 @@ namespace DevRigorStack.Desktop
             else
             {
                 _summary.Text = "Review every row below. In Keyboard review, use Up and Down Arrow to select each hook; press Alt+T to review trust.\r\nTab moves through details and actions. The app asks once more before trust. No terminal is required.";
-                _status.Text = trusted + " of 6 trusted. " + (ExpectedHookCount - trusted) + " require review.";
+                _status.Text = trusted + " of 7 trusted. " + (ExpectedHookCount - trusted) + " require review.";
                 _status.ForeColor = Color.FromArgb(146, 64, 14);
-                _trust.Text = "Review and &trust these 6 hooks";
+                _trust.Text = "Review and &trust these 7 hooks";
                 _trust.BackColor = Color.FromArgb(37, 99, 235);
                 _trust.ForeColor = Color.White;
                 _trust.Enabled = true;
@@ -1132,6 +1137,7 @@ namespace DevRigorStack.Desktop
                 case "sessionStart": return "Task starts / resumes";
                 case "subagentStart": return "Subagent starts";
                 case "userPromptSubmit": return "You send a prompt";
+                case "preToolUse": return "Before a change or command runs";
                 case "postToolUse": return "A change or UI action runs";
                 case "stop": return "Codex tries to stop";
                 case "subagentStop": return "A subagent tries to stop";
@@ -1146,6 +1152,7 @@ namespace DevRigorStack.Desktop
                 case "sessionStart": return "Loads the rigor rules at the beginning and after continuity events.";
                 case "subagentStart": return "Gives delegated work the same rigor rules.";
                 case "userPromptSubmit": return "Routes coding and release requests through the required gates.";
+                case "preToolUse": return "Snapshots tracked worktree state so opaque shell writes cannot bypass proof.";
                 case "postToolUse": return "Records grounded evidence after changes and interactive checks.";
                 case "stop": return "Refuses an unsupported done claim when required evidence is missing.";
                 case "subagentStop": return "Applies the same evidence check to delegated work.";

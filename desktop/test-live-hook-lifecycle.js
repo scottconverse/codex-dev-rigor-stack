@@ -3,7 +3,7 @@
 
 // Authenticated, disposable-profile integration check. This is intentionally
 // separate from CI's deterministic app-server trust test: it proves that the
-// installed client actually emits PostToolUse and Stop for a real model turn.
+// installed client actually emits PreToolUse, PostToolUse, and Stop for a real model turn.
 const { execFileSync, spawn } = require('child_process');
 const fs = require('fs');
 const os = require('os');
@@ -100,6 +100,9 @@ function verifyState() {
   );
   if (!taskStates.some((task) => Array.isArray(task.unresolved) && task.unresolved.length > 0)) {
     throw new Error('the substantive block was released or remediated without preserving unresolved proof debt');
+  }
+  if (!taskStates.some((task) => task.delivery && task.delivery.preToolUse >= 2 && task.delivery.postToolUse >= 2 && task.delivery.stop >= 3)) {
+    throw new Error(`the authenticated lifecycle did not observe the PreToolUse/PostToolUse/Stop contract: ${JSON.stringify(taskStates)}`);
   }
   const completedReports = reportMessages.filter((message) => message.text.includes('REPORT_STAYS_VISIBLE'));
   const uniqueReportText = new Set(completedReports.map((message) => message.text));

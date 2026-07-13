@@ -157,5 +157,5 @@ finally {
   Remove-EmptyTransactionScaffolding
 }
 
-Write-Host "Active Codex hooks installed with content-bound SHA-256 guards: SessionStart, SubagentStart, UserPromptSubmit, PostToolUse, Stop, SubagentStop."
-Write-Host "Open DevRigorHookActivator-1.7.0.exe, review the six definitions, approve their exact hashes, then restart Codex Desktop."
+Write-Host "Active Codex hooks installed with content-bound SHA-256 guards: SessionStart, SubagentStart, UserPromptSubmit, PreToolUse, PostToolUse, Stop, SubagentStop."
+Write-Host "Open DevRigorHookActivator-1.7.0.exe, review the seven definitions, approve their exact hashes, then restart Codex Desktop."

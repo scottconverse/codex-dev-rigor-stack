@@ -23,12 +23,27 @@ function taskPath(session) {
   return path.join(stateDir, `task-v4-${key}.json`);
 }
 function defaultTask() {
-  return { version: 4, mode: 'ON', salt: crypto.randomBytes(32).toString('hex'), dirtyEdits: [], proofs: [], unresolved: [], warnings: {} };
+  return normalizeTask({ version: 4, mode: 'ON', salt: crypto.randomBytes(32).toString('hex') });
+}
+function normalizeTask(task) {
+  task.dirtyEdits = Array.isArray(task.dirtyEdits) ? task.dirtyEdits : [];
+  task.proofs = Array.isArray(task.proofs) ? task.proofs : [];
+  task.unresolved = Array.isArray(task.unresolved) ? task.unresolved : [];
+  task.warnings = task.warnings && typeof task.warnings === 'object' ? task.warnings : {};
+  task.notices = Array.isArray(task.notices) ? task.notices : [];
+  task.children = Array.isArray(task.children) ? task.children : [];
+  task.checkpoint = Number.isInteger(task.checkpoint) && task.checkpoint >= 0 ? task.checkpoint : 0;
+  task.blockCount = Number.isInteger(task.blockCount) && task.blockCount >= 0 ? task.blockCount : 0;
+  task.delivery = task.delivery && typeof task.delivery === 'object' ? task.delivery : {};
+  for (const event of ['preToolUse', 'postToolUse', 'stop']) {
+    task.delivery[event] = Number.isInteger(task.delivery[event]) && task.delivery[event] >= 0 ? task.delivery[event] : 0;
+  }
+  return task;
 }
 function loadTask(session) {
   try {
     const parsed = JSON.parse(fs.readFileSync(taskPath(session), 'utf8'));
-    if (parsed && parsed.version === 4 && /^(?:ON|WARN|OFF)$/.test(parsed.mode)) return parsed;
+    if (parsed && parsed.version === 4 && /^(?:ON|WARN|OFF)$/.test(parsed.mode)) return normalizeTask(parsed);
   } catch (_) { /* first task control */ }
   return defaultTask();
 }
@@ -40,16 +55,48 @@ function saveTask(session, task) {
   fs.renameSync(temporary, target);
   try { fs.chmodSync(target, 0o600); } catch (_) { /* Windows inherits profile ACLs. */ }
 }
+function loadTaskByKey(key) {
+  try {
+    const parsed = JSON.parse(fs.readFileSync(path.join(stateDir, `task-v4-${key}.json`), 'utf8'));
+    return parsed && parsed.version === 4 ? normalizeTask(parsed) : null;
+  } catch (_) { return null; }
+}
+function associatedSummary(task, visited = new Set()) {
+  const summary = { count: 0, unresolved: [], blocks: 0 };
+  for (const key of task.children) {
+    if (visited.has(key)) continue;
+    visited.add(key);
+    const child = loadTaskByKey(key);
+    if (!child) continue;
+    summary.count++;
+    summary.unresolved.push(...child.unresolved.map((debt) => debt.id));
+    summary.blocks += child.blockCount;
+    const nested = associatedSummary(child, visited);
+    summary.count += nested.count;
+    summary.unresolved.push(...nested.unresolved);
+    summary.blocks += nested.blocks;
+  }
+  summary.unresolved = [...new Set(summary.unresolved)];
+  return summary;
+}
 function controlOutput(task, changed) {
   const latest = task.proofs.length ? task.proofs[task.proofs.length - 1] : null;
+  const children = associatedSummary(task);
+  const debtIds = task.unresolved.map((debt) => debt.id);
   const text = [
     'DEV-RIGOR TASK STATUS',
     'version: 1.7.0',
     `mode: ${task.mode}`,
     `dirty edit: ${task.dirtyEdits.length ? 'yes' : 'no'}`,
-    `unresolved proof: ${task.unresolved.length ? 'yes' : 'no'}`,
+    `unresolved proof: ${task.unresolved.length ? `yes (${debtIds.join(', ')})` : 'no'}`,
     `latest proof: ${latest ? `${latest.eventClass} / ${latest.token}` : 'none'}`,
-    `hook delivery: ${task.warnings && task.warnings.mechanicalUnavailable ? 'unverified / missing turn_id' : 'verified'}`,
+    `checkpoint: ${task.checkpoint}`,
+    `substantive blocks: ${task.blockCount}`,
+    `associated subagents: ${children.count}`,
+    `subagent unresolved proof: ${children.unresolved.length}${children.unresolved.length ? ` (${children.unresolved.join(', ')})` : ''}`,
+    `subagent substantive blocks: ${children.blocks}`,
+    `delivery observed: PreToolUse ${task.delivery.preToolUse}, PostToolUse ${task.delivery.postToolUse}, Stop ${task.delivery.stop}`,
+    'trust: not established by task ledger; use Codex hook review for configuration trust',
     changed ? 'Task control updated. This does not change global Codex configuration.' : 'Status is read-only.',
   ].join('\n');
   return JSON.stringify({ hookSpecificOutput: { hookEventName: 'UserPromptSubmit', additionalContext: text } });
@@ -104,14 +151,21 @@ function main() {
     try { process.stdout.write(controlOutput(task, control !== 'DevRigorSTATUS')); } catch (_) { /* closed stdout */ }
     return;
   }
-  if (prompt.length < 8) return;
-  const route = ROUTES.find((candidate) => candidate.match(prompt));
-  if (!route && !missingTurnWarning) return;
+  const route = prompt.length >= 8 ? ROUTES.find((candidate) => candidate.match(prompt)) : null;
+  const pendingNotices = currentTask ? currentTask.notices.filter((notice) => notice.delivered !== true) : [];
+  const codingPrompt = Boolean(route || (ACTION_VERB.test(prompt) &&
+    (CODE_HINT.test(prompt) || SYMPTOM.test(prompt) || (currentTask && currentTask.unresolved.length))));
+  const debtReminder = currentTask && codingPrompt && currentTask.unresolved.length
+    ? `DEV-RIGOR PROOF DEBT: ${currentTask.unresolved.length} unresolved edit set(s) remain (${currentTask.unresolved.map((debt) => debt.id).join(', ')}). Resolve debt only with evidence bound to the same affected edit set or a verified superseding set; release gates remain blocked.`
+    : '';
+  const noticeText = pendingNotices.map((notice) => notice.message).join('\n');
+  if (!route && !missingTurnWarning && !noticeText && !debtReminder) return;
 
-  if (!route && missingTurnWarning) {
-    currentTask.warnings.mechanicalUnavailable.delivered = true;
+  if (!route && (missingTurnWarning || noticeText || debtReminder)) {
+    if (missingTurnWarning && currentTask.warnings.mechanicalUnavailable) currentTask.warnings.mechanicalUnavailable.delivered = true;
+    pendingNotices.forEach((notice) => { notice.delivered = true; });
     try { saveTask(exactSession, currentTask); } catch (_) { /* warning may repeat rather than disappear */ }
-    try { process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'UserPromptSubmit', additionalContext: missingTurnWarning } })); } catch (_) { /* closed stdout */ }
+    try { process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'UserPromptSubmit', additionalContext: [missingTurnWarning, noticeText, debtReminder].filter(Boolean).join('\n\n') } })); } catch (_) { /* closed stdout */ }
     return;
   }
 
@@ -119,11 +173,11 @@ function main() {
   if (stateFile) {
     let seen = '';
     try { seen = fs.readFileSync(stateFile, 'utf8'); } catch (_) { /* first route */ }
-    if (seen.split('\n').includes(route.name)) return;
+    if (seen.split('\n').includes(route.name) && !missingTurnWarning && !noticeText && !debtReminder) return;
   }
 
   let text;
-  try { text = fs.readFileSync(path.join(disciplinesDir, route.file), 'utf8').replace(/^\uFEFF/, ''); } catch (_) { return; }
+  try { text = fs.readFileSync(path.join(disciplinesDir, route.file), 'utf8').replace(/^\uFEFF/, ''); } catch (_) { text = ''; }
 
   if (stateFile) {
     try {
@@ -142,11 +196,15 @@ function main() {
     process.stdout.write(JSON.stringify({
       hookSpecificOutput: {
         hookEventName: 'UserPromptSubmit',
-        additionalContext: [missingTurnWarning, text].filter(Boolean).join('\n\n'),
+        additionalContext: [missingTurnWarning, noticeText, debtReminder, text].filter(Boolean).join('\n\n'),
       },
     }));
     if (missingTurnWarning) {
       currentTask.warnings.mechanicalUnavailable.delivered = true;
+      try { saveTask(exactSession, currentTask); } catch (_) { /* warning may repeat rather than disappear */ }
+    }
+    if (pendingNotices.length) {
+      pendingNotices.forEach((notice) => { notice.delivered = true; });
       try { saveTask(exactSession, currentTask); } catch (_) { /* warning may repeat rather than disappear */ }
     }
   } catch (_) { /* closed stdout */ }

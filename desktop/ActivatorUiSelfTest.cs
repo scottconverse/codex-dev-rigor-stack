@@ -65,7 +65,7 @@ namespace DevRigorStack.Desktop
                         Environment.GetEnvironmentVariable("CODEX_HOME")
                     );
                 }
-                Check(OwnershipRules.IsExactOwnedSet(exact), "The UI self-test requires the exact installed six-hook set.");
+                Check(OwnershipRules.IsExactOwnedSet(exact), "The UI self-test requires the exact installed seven-hook set.");
 
                 HookListResult untrusted = Result(exact, "changed");
                 int reviewCalls = 0;
@@ -75,7 +75,7 @@ namespace DevRigorStack.Desktop
                     delegate(List<HookRecord> reviewed)
                     {
                         trustCalls++;
-                        Check(OwnershipRules.IsExactOwnedSet(reviewed), "The button did not submit the exact six-hook set.");
+                        Check(OwnershipRules.IsExactOwnedSet(reviewed), "The button did not submit the exact seven-hook set.");
                         return Result(reviewed, "trusted");
                     },
                     delegate(IWin32Window owner, string review)
@@ -97,7 +97,7 @@ namespace DevRigorStack.Desktop
                     Application.DoEvents();
                     IntPtr handle = form.Handle;
                     form.ApplyHookListForTest(untrusted);
-                    Check(form.TrustEnabledForTest, "The trust button was not enabled for six changed hooks.");
+                    Check(form.TrustEnabledForTest, "The trust button was not enabled for seven changed hooks.");
                     form.PerformTrustClickForTest();
                     PumpUntil(
                         delegate { return trustCalls == 1 && form.StatusForTest == "Activation verified after the trust write."; },
@@ -212,6 +212,7 @@ namespace DevRigorStack.Desktop
                 case "sessionStart": return "Task starts";
                 case "subagentStart": return "Subagent starts";
                 case "userPromptSubmit": return "You send a prompt";
+                case "preToolUse": return "Before a change or command runs";
                 case "postToolUse": return "A change or UI action runs";
                 case "stop": return "Codex tries to stop";
                 case "subagentStop": return "A subagent tries to stop";

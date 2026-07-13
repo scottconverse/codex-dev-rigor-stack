@@ -91,7 +91,7 @@
   <a href="#plain-english">Plain English</a>
   <a href="#technical-architecture">Technical architecture</a>
   <a href="#entrypoints">All 19 entrypoints</a>
-  <a href="#install">Install</a>
+  <a href="#install">Release hold</a>
 </nav>
 
 <main id="main-content" tabindex="-1">
@@ -159,7 +159,7 @@ and machines.</p>
     <!-- active Codex hook band -->
     <rect class="g" x="36" y="12" width="848" height="50" rx="10"/>
     <text class="t" x="460" y="34" text-anchor="middle">ACTIVE CODEX HOOKS → COORDINATOR + 19 ENTRYPOINTS</text>
-    <text class="s" x="460" y="52" text-anchor="middle">SessionStart/SubagentStart core · UserPromptSubmit router/controls · PostToolUse evidence · Stop/SubagentStop gate</text>
+    <text class="s" x="460" y="52" text-anchor="middle">SessionStart/SubagentStart core · UserPromptSubmit controls · Pre/PostToolUse evidence · Stop/SubagentStop gate</text>
     <path class="fa" d="M285,64 L285,86" marker-end="url(#arA)"/>
     <path class="fa" d="M460,64 L460,86" marker-end="url(#arA)"/>
     <path class="fa" d="M635,64 L635,86" marker-end="url(#arA)"/>
@@ -258,16 +258,20 @@ evidence, but cannot rewrite upstream findings or coverage.</p>
 associated subagents. The <strong>router</strong> injects the complete matching protocol and
 recognizes exact task-only owner controls: <code>DevRigorON</code>,
 <code>DevRigorWARN</code>, <code>DevRigorOFF</code>, and <code>DevRigorSTATUS</code>.
-The <strong>evidence recorder</strong> distinguishes direct edits, generated changes,
+The <strong>evidence recorder</strong> pairs PreToolUse and PostToolUse worktree fingerprints
+to catch opaque shell-authored changes, and distinguishes direct edits, generated changes,
 inspections, runs/renders, tests, builds, and authoritative failures without persisting raw
 sensitive commands. At Stop and SubagentStop, the gate evaluates the authoritative current
 turn. In ON mode an unproved important edit can block once; a retry is released but leaves
 unresolved proof debt. Missing receipt formatting after substantive proof is a warning,
 never a destructive block. Compaction preserves task state, and subagent inheritance occurs
 only with authoritative parent identity; otherwise it visibly fails open in WARN.
+Evidence tokens bind the exact execution fingerprint and checkpoint, and
+<code>DevRigorSTATUS</code> reports blocks, checkpoints, debt IDs, child debt, and observed
+delivery without claiming that ledger activity proves hook trust.
 Codex requires the user to review and trust
-non-managed hooks. The Windows graphical activator shows the exact six commands and hashes,
-requires explicit approval, writes trust through Codex's app server, and re-reads all six
+non-managed hooks. The Windows graphical activator shows the exact seven commands and hashes,
+requires explicit approval, writes trust through Codex's app server, and re-reads all seven
 before it reports enforcement active. Each command embeds its script SHA-256 and compiles
 the already-verified bytes, so an altered runtime file is refused.</p>
 
@@ -365,27 +369,20 @@ installed together. <code>audit-lite</code>/<code>audit-team</code> and
   <tr><th>Codex event</th><th>Enforced behavior</th></tr>
   <tr><td><code>SessionStart / SubagentStart</code></td><td>inject compact safeguards; restore mode/routing after compaction; inherit only from an authoritative parent</td></tr>
   <tr><td><code>UserPromptSubmit</code></td><td>route complete disciplines and apply exact task-only ON/WARN/OFF/STATUS controls</td></tr>
+  <tr><td><code>PreToolUse</code></td><td>capture an invocation-bound, privacy-bounded Git worktree fingerprint before commands and tools run</td></tr>
   <tr><td><code>PostToolUse</code></td><td>record privacy-bounded edit, generated-change, inspection, run, test, build, and failure evidence</td></tr>
   <tr><td><code>Stop / SubagentStop</code></td><td>enforce substantive proof once; warn on receipt formatting; preserve unresolved proof debt without loops</td></tr>
 </table>
 </div>
 
-<h2 id="maintainer-install">Scripted/maintainer installation</h2>
-<pre>git clone https://github.com/scottconverse/codex-dev-rigor-stack
-cd codex-dev-rigor-stack
-./install.sh                                             # macOS / Linux / Git Bash
-powershell -ExecutionPolicy Bypass -File .\install.ps1   # Windows</pre>
-<p><strong>Requires Git and Node.js.</strong> The active hooks use Node built-ins only. On Windows the <code>-ExecutionPolicy Bypass</code> prefix avoids the default
-"scripts are disabled on this system" block.</p>
-<p>Transactionally stages and installs nineteen skill entrypoints plus the active hook
-runtime, preserves foreign hook definitions, and merges six content-bound owned events into
-<code>~/.codex/hooks.json</code>. A failed commit restores the prior set. Use the
-graphical activator on Windows or the current client's supported hook-review UI, then
-restart Codex.</p>
-<p><strong>For other agents</strong> (ChatGPT, Gemini, or a plain system prompt): run
-<code>./export/export-portable.sh</code> and paste the generated <code>portable-bundle.md</code>
-into its system prompt. The export is derived from the complete canonical skills; canonical
-capabilities are never removed merely to make the bundle shorter.</p>
+<h2 id="maintainer-install">Installation remains withheld</h2>
+<div class="notice">
+  <p><strong>No installation path is authorized while 1.7.0 is under review.</strong></p>
+  <p>The double-click installer, scripted maintainer instructions, checksums, portable export,
+  and release artifact will appear here only after an independent clean verdict and the owner's
+  explicit go decision. Repository source remains visible for review; that visibility is not
+  release authorization.</p>
+</div>
 
 <h2>Version model</h2>
 <div class="callout">

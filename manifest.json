@@ -38,7 +38,7 @@
     "restart_required": true,
     "hooks": {
       "status": "active",
-      "events": ["SessionStart", "SubagentStart", "UserPromptSubmit", "PostToolUse", "Stop", "SubagentStop"],
+      "events": ["SessionStart", "SubagentStart", "UserPromptSubmit", "PreToolUse", "PostToolUse", "Stop", "SubagentStop"],
       "config": "~/.codex/hooks.json",
       "runtime": "~/.codex/dev-rigor-stack",
       "trust_required": true,

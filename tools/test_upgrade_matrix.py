@@ -9,12 +9,18 @@ import os
 import shutil
 import subprocess
 import sys
+import tarfile
 import tempfile
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILLS = [item["name"] for item in json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))["skills"]]
+HISTORICAL = {
+    "1.6.1": "e1e22a2",
+    "1.6.2": "89c5d0d",
+    "1.6.3": "91c8d7f",
+}
 
 
 def fingerprint(root: Path) -> str:
@@ -37,23 +43,23 @@ def snapshot(root: Path) -> dict[str, str]:
     return result
 
 
-def command(script: str, home: Path, *, uninstall: bool = False) -> list[str]:
+def command(script: str, home: Path, *, uninstall: bool = False, repo: Path = ROOT) -> list[str]:
     if os.name == "nt":
         args = [
             "powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
-            str(ROOT / script), "-CodexHome", str(home),
+            str(repo / script), "-CodexHome", str(home),
         ]
         if not uninstall:
             args.append("-NoBackup")
         return args
-    args = ["bash", str(ROOT / script), "--codex-home", str(home)]
+    args = ["bash", str(repo / script), "--codex-home", str(home)]
     if not uninstall:
         args.append("--no-backup")
     return args
 
 
 def install_fake_revoker(home: Path) -> None:
-    """Replace only the disposable profile's revoker with a deterministic trust mutation."""
+    """Inject deterministic rollback failure after real-revoker behavior is covered in CI."""
     script = """#!/usr/bin/env node
 const fs = require('fs');
 const path = require('path');
@@ -65,30 +71,32 @@ if (process.env.DEV_RIGOR_UNINSTALL_TEST_FAIL_AT) {
     (home / "dev-rigor-stack" / "hooks" / "revoke-trust.js").write_text(script, encoding="utf-8")
 
 
-def seed(home: Path, version: str) -> None:
-    (home / "skills").mkdir(parents=True)
-    for name in SKILLS:
-        target = home / "skills" / name
-        target.mkdir()
-        (target / "SKILL.md").write_text(f"seed {version} {name}\n", encoding="utf-8")
+def historical_tree(temporary: Path, version: str) -> Path:
+    commit = HISTORICAL[version]
+    archive = temporary / f"{version}.tar"
+    tree = temporary / f"source-{version}"
+    subprocess.run(
+        ["git", "archive", "--format=tar", "-o", str(archive), commit],
+        cwd=ROOT, check=True, capture_output=True,
+    )
+    tree.mkdir()
+    with tarfile.open(archive) as bundle:
+        bundle.extractall(tree, filter="data")
+    manifest = json.loads((tree / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["version"] == version, f"{commit} is not the exact {version} tree"
+    return tree
+
+
+def seed_foreign_and_poison(home: Path, version: str) -> None:
     runtime = home / "dev-rigor-stack" / "hooks"
-    runtime.mkdir(parents=True)
-    (runtime / "dev-rigor-ground.js").write_text(f"// seed {version}\n", encoding="utf-8")
     state = runtime.parent / "state"
-    state.mkdir()
+    state.mkdir(exist_ok=True)
     ledger = "ground-seed.log" if version == "1.6.1" else f"ground-v{2 if version == '1.6.2' else 3}-seed.log"
     (state / ledger).write_text("E old-poisoned-edit.ts\nX Bash\n", encoding="utf-8")
-    owned = f'node "{runtime / "dev-rigor-ground.js"}" check'
-    hooks = {
-        "hooks": {
-            "Stop": [
-                {"hooks": [{"type": "command", "command": "node foreign-stop.js"}]},
-                {"hooks": [{"type": "command", "command": owned}]},
-            ],
-            "ForeignEvent": [{"hooks": [{"type": "command", "command": "node foreign.js"}]}],
-        },
-        "foreignRoot": {"preserve": True},
-    }
+    hooks = json.loads((home / "hooks.json").read_text(encoding="utf-8"))
+    hooks["hooks"].setdefault("Stop", []).insert(0, {"hooks": [{"type": "command", "command": "node foreign-stop.js"}]})
+    hooks["hooks"]["ForeignEvent"] = [{"hooks": [{"type": "command", "command": "node foreign.js"}]}]
+    hooks["foreignRoot"] = {"preserve": True}
     (home / "hooks.json").write_text(json.dumps(hooks, indent=2) + "\n", encoding="utf-8")
     (home / "config.toml").write_text("[hooks.state.'foreign-proof']\ntrusted_hash = 'sha256:foreign'\n", encoding="utf-8")
 
@@ -112,8 +120,15 @@ def verify_uninstalled(home: Path, foreign_config: bytes) -> None:
 
 def scenario(version: str) -> None:
     with tempfile.TemporaryDirectory(prefix=f"dev-rigor-upgrade-{version}-") as temporary:
+        temporary_path = Path(temporary)
         home = Path(temporary) / "home"
-        seed(home, version)
+        source = historical_tree(temporary_path, version)
+        historical_env = {**os.environ, "CI": "1"}
+        run(command("install.ps1" if os.name == "nt" else "install.sh", home, repo=source), historical_env, 0)
+        seed_foreign_and_poison(home, version)
+        installed_skill = home / "skills" / "dev-rigor-stack" / "SKILL.md"
+        source_skill = source / "skills" / "dev-rigor-stack" / "SKILL.md"
+        assert installed_skill.read_bytes() == source_skill.read_bytes(), f"{version} was not installed from its archived tree"
         before = fingerprint(home)
         env = {**os.environ, "CI": "1", "DEV_RIGOR_INSTALL_TEST_FAIL_AT": "mid-commit"}
         run(command("install.ps1" if os.name == "nt" else "install.sh", home), env, 1)

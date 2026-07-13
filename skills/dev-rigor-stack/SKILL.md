@@ -256,9 +256,9 @@ The Codex installer bundles and installs every namespaced standalone stage plus 
 backward-compatible **coder-tdd-qa, proof-gate, gauntletgate, audit-lite, audit-team, and
 visitor-audit** entrypoints, so a normal install has every lane present. It also installs
 and wires the active Codex lifecycle layer: SessionStart/SubagentStart core activation,
-UserPromptSubmit routing/task controls, PostToolUse typed evidence, and
+UserPromptSubmit routing/task controls, PreToolUse/PostToolUse worktree comparison and typed evidence, and
 Stop/SubagentStop substantive proof checks. Codex requires the user to review and trust
-the six non-managed hooks; Codex Desktop users do that in the graphical activator, not a
+the seven non-managed hooks; Codex Desktop users do that in the graphical activator, not a
 terminal-only command. An untrusted, disabled, missing, or failed hook must be reported as
 unenforced, never represented as active. The full discipline remains in the skills. The
 hooks mechanically require a real qualifying check after important direct/generated

@@ -1,7 +1,7 @@
 {
     "version":  "1.7.0",
-    "binary_sha256":  "6c42fe1cb849aedceda2f82b2c55c22125d4f85ad607b11a0494b7c0e83d83b1",
-    "source_sha256":  "18bc00e745b37cf73113cbba6c1c23248090c609c683ee013af605549807f348",
+    "binary_sha256":  "d1282dfbdbcc5c26b88a7adb9c01ba8721a59743b710ab67efcefcde385ac1f5",
+    "source_sha256":  "284acda05eaa290ef8e55ea5a608df24d12f7cd022dd229c0dc911ecc4841ecb",
     "compiler":  ".NET Framework csc.exe",
     "compiler_version":  "4.8.9221.0 built by: NET481REL1LAST_25H2",
     "assembly_version":  "1.7.0.0",

@@ -13,6 +13,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -99,6 +101,17 @@ jobs:
           node codex/hooks/wire-hooks.js --remove "$env:CODEX_HOME" "$env:CODEX_HOME\dev-rigor-stack"
           .\install.ps1 -Target "$env:CODEX_HOME\skills" -NoBackup
           node desktop/test-app-server.js "$env:GITHUB_WORKSPACE"
+          # Prove an explicit alternate profile wins over ambient CODEX_HOME through
+          # the real revoker + uninstaller path.
+          $alternate = "$env:RUNNER_TEMP\alternate-uninstall-home"
+          .\install.ps1 -CodexHome $alternate -NoBackup
+          $ambient = "$env:RUNNER_TEMP\ambient-other-home"
+          New-Item -ItemType Directory -Force $ambient | Out-Null
+          Set-Content -LiteralPath "$ambient\foreign-sentinel.txt" -Value 'preserve'
+          $env:CODEX_HOME = $ambient
+          .\uninstall.ps1 -CodexHome $alternate
+          if (Test-Path "$alternate\dev-rigor-stack") { throw 'alternate profile runtime survived uninstall' }
+          if (-not (Test-Path "$ambient\foreign-sentinel.txt")) { throw 'ambient profile was changed by alternate uninstall' }
           # Keep a separately implemented protocol oracle as defense in depth.
           $env:CODEX_HOME = "$env:RUNNER_TEMP\oracle-home"
           .\install.ps1 -Target "$env:CODEX_HOME\skills" -NoBackup

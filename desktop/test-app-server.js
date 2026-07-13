@@ -7,7 +7,7 @@ const { spawn } = require('child_process');
 const cwd = process.argv[2] || process.cwd();
 const expectedEvents = new Set([
   'sessionStart', 'subagentStart', 'userPromptSubmit',
-  'postToolUse', 'stop', 'subagentStop',
+  'preToolUse', 'postToolUse', 'stop', 'subagentStop',
 ]);
 
 const command = process.platform === 'win32' ? (process.env.ComSpec || 'cmd.exe') : 'codex';
@@ -35,7 +35,7 @@ function hooksFrom(message) {
 }
 
 function assertExact(hooks) {
-  if (hooks.length !== 6) throw new Error(`expected 6 owned hooks, received ${hooks.length}`);
+  if (hooks.length !== 7) throw new Error(`expected 7 owned hooks, received ${hooks.length}`);
   for (const event of expectedEvents) {
     if (hooks.filter((hook) => hook.eventName === event).length !== 1) {
       throw new Error(`expected exactly one ${event} hook`);
@@ -91,7 +91,7 @@ child.stdout.on('data', (chunk) => {
       }
       completed = true;
       clearTimeout(timeout);
-      process.stdout.write('Codex app-server trust round trip: 6/6 verified\n');
+      process.stdout.write('Codex app-server trust round trip: 7/7 verified\n');
       child.kill();
     }
   }

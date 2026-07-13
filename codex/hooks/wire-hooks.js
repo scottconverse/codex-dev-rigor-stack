@@ -14,7 +14,7 @@ const codexHome = path.resolve(args[0] || process.env.CODEX_HOME || path.join(os
 const runtimeRoot = path.resolve(args[1] || path.join(codexHome, 'dev-rigor-stack'));
 const contentRoot = path.resolve(args[2] || runtimeRoot);
 const hooksPath = path.join(codexHome, 'hooks.json');
-const events = ['SessionStart', 'SubagentStart', 'UserPromptSubmit', 'PostToolUse', 'Stop', 'SubagentStop'];
+const events = ['SessionStart', 'SubagentStart', 'UserPromptSubmit', 'PreToolUse', 'PostToolUse', 'Stop', 'SubagentStop'];
 
 let config = {};
 let original = '';
@@ -78,6 +78,10 @@ const definitions = {
   UserPromptSubmit: {
     hooks: [{ type: 'command', ...command('dev-rigor-router.js'), timeout: 5, statusMessage: 'Routing dev-rigor protocol' }],
   },
+  PreToolUse: {
+    matcher: '^(Bash|PowerShell|apply_patch|Edit|Write|MultiEdit|NotebookEdit|mcp__.*(preview|browser|chrome|computer|screenshot|navigate|snapshot|exec|run|test|shell|terminal|jupyter|notebook|ide|eval).*)$',
+    hooks: [{ type: 'command', ...command('dev-rigor-ground.js', ' snapshot'), timeout: 5, statusMessage: 'Snapshotting dev-rigor worktree state' }],
+  },
   PostToolUse: {
     matcher: '^(Bash|PowerShell|apply_patch|Edit|Write|MultiEdit|NotebookEdit|mcp__.*(preview|browser|chrome|computer|screenshot|navigate|snapshot|exec|run|test|shell|terminal|jupyter|notebook|ide|eval).*)$',
     hooks: [{ type: 'command', ...command('dev-rigor-ground.js', ' record'), timeout: 5 }],
@@ -105,6 +109,7 @@ function isOwned(event, entry) {
     SessionStart: ['dev-rigor-activate.js', ''],
     SubagentStart: ['dev-rigor-activate.js', ' subagent'],
     UserPromptSubmit: ['dev-rigor-router.js', ''],
+    PreToolUse: ['dev-rigor-ground.js', ' snapshot'],
     PostToolUse: ['dev-rigor-ground.js', ' record'],
     Stop: ['dev-rigor-ground.js', ' check'],
     SubagentStop: ['dev-rigor-ground.js', ' check'],
