@@ -73,6 +73,9 @@ jobs:
             if ($remaining.Count -ne 0) { throw "fresh $point left partial installation artifacts: $($remaining.FullName -join ', ')" }
           }
           Remove-Item Env:DEV_RIGOR_INSTALL_TEST_FAIL_AT -ErrorAction SilentlyContinue
+          # Both child installers above must exit nonzero. Their full rollback was
+          # asserted, so do not leak the last expected child code into this step.
+          $global:LASTEXITCODE = 0
       - name: Build and run the production Desktop hook trust path (Windows)
         if: runner.os == 'Windows'
         shell: powershell

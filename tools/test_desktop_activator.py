@@ -151,6 +151,14 @@ class DesktopActivatorContractTests(unittest.TestCase):
         self.assertEqual(ci.count("fingerprint_install_tree.py"), 6)
         self.assertEqual(ci.count("--seed"), 2)
 
+    def test_cross_platform_provenance_and_rollback_harnesses_are_real(self) -> None:
+        attributes = (ROOT / ".gitattributes").read_text(encoding="utf-8")
+        self.assertIn("*.cs text eol=lf", attributes)
+        rollback = (ROOT / "tools" / "test_clean_rollback.sh").read_text(encoding="utf-8")
+        self.assertIn('bash "$repo_dir/install.sh"', rollback)
+        ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+        self.assertIn("$global:LASTEXITCODE = 0", ci)
+
     def test_uninstall_revokes_only_exact_owned_trust_before_removal(self) -> None:
         revoker = ROOT / "codex" / "hooks" / "revoke-trust.js"
         self.assertTrue(revoker.is_file())
