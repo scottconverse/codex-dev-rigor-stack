@@ -1,8 +1,8 @@
 # codex-dev-rigor-stack — technical architecture
 
-**Architecture version:** 1.6.0
+**Architecture version:** 1.6.1
 
-**Applies to dev-rigor-stack:** 1.6.0
+**Applies to dev-rigor-stack:** 1.6.1
 
 This document describes the system boundaries, delivery state machine, evidence flow, and
 deployment model. The [user manual](MANUAL.md) explains operation; this document explains
@@ -93,8 +93,13 @@ append order so a test run before a later code edit cannot clear the later edit.
 failed executions also cannot clear the edit. Codex's `stop_hook_active` field is honored
 as the platform anti-loop guard. Session and prompt
 hooks inject the complete operating contract; PostToolUse supplies observable grounding.
-Codex requires users to review and trust non-managed hook definitions through `/hooks`.
-Installed but untrusted hooks are not active enforcement.
+Codex requires users to review and trust non-managed hook definitions. Each command binds
+its definition to the runtime script SHA-256, verifies a single read buffer, and compiles
+that same buffer; it never hashes one read and executes a second. On Windows, the
+graphical Desktop activator supplies that missing client surface: it lists the exact six
+owned definitions, requires human confirmation, writes only their current hashes through
+Codex's app server, and re-lists them before it can report success. Installed but
+untrusted hooks are not active enforcement.
 The event and trust behavior follow the
 [official Codex hooks contract](https://learn.chatgpt.com/docs/hooks).
 
@@ -192,29 +197,37 @@ flowchart LR
     Docs["docs/\nstatic landing + manual + architecture"]
     Pages["GitHub Pages\npublic landing URL"]
     Archive["GitHub source archive\npublished installer scripts"]
-    Installer["install.ps1 / install.sh\ndev-rigor-stack 1.6.0"]
+    Installer["agent or script installation\ndev-rigor-stack 1.6.1"]
     Backup["target/.backup/.../<timestamp>"]
     Home["CODEX_HOME/skills\n19 entrypoints"]
     Runtime["CODEX_HOME/dev-rigor-stack\nactive Node hook runtime + state"]
     HookConfig["CODEX_HOME/hooks.json\n6 merged lifecycle events"]
-    Trust["/hooks review + trust\nrequired before execution"]
+    Activator["Windows graphical activator\nreview 6 commands + current hashes"]
+    AppServer["Codex app server\nhooks/list + config/batchWrite + hooks/list"]
+    Trust["Codex hash-bound trust\nrequired before execution"]
+    Download["Pages download\nactivator EXE + SHA-256"]
     CI["GitHub Actions\nWindows + Linux gates"]
     Publish["GitHub Pages / repository surfaces"]
 
     Source --> CI --> Publish
     Source --> Docs --> Pages --> Publish
+    Source --> Activator --> Download --> Pages
     Source --> Archive --> Installer
-    Installer -->|backup managed folders| Backup
+    Installer -->|staged transaction + durable backup| Backup
     Installer -->|copy complete manifest| Home
     Installer --> Runtime
     Installer -->|preserve foreign entries; merge owned entries| HookConfig
-    HookConfig --> Trust --> Runtime
+    HookConfig --> AppServer
+    Activator -->|explicit human approval| AppServer --> Trust --> Runtime
 ```
 
-The script installers install all 19 managed folders plus the active hook runtime, back up
+The script installers stage all 19 managed folders, the active hook runtime, and the merged
+`hooks.json`, then commit or roll back that set together. They back up
 replaced copies and changed hook configuration, and merge only owned entries. Node.js is a
 runtime requirement for the hooks; no package dependencies are installed. Codex reloads
-skill metadata after restart and executes non-managed hooks only after `/hooks` trust.
+skill metadata after restart and executes non-managed hooks only after Codex records the
+reviewed current hashes. The Windows activator never edits `config.toml` directly; it uses
+the same `hooks/list` and `config/batchWrite` contract as Codex's own hook-review client.
 
 ## Runtime and failure boundaries
 
@@ -237,9 +250,9 @@ unexpected hook configuration is refused and left byte-identical.
 
 ## Version model
 
-Version `1.6.0` continues the product lineage from `1.5.1`. The interim `1.0.0` Codex
+Version `1.6.1` continues the product lineage from `1.5.1`. The interim `1.0.0` Codex
 package number remains historical changelog data, not a new lineage root. Subsequent
-versions advance monotonically from 1.6.0.
+versions advance monotonically from 1.6.0; 1.6.1 repairs the Desktop activation surface.
 
 ## Provenance note
 

@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
-# Generate a single portable bundle for non-Claude agents (ChatGPT, Gemini, Codex, etc.).
+# Generate a single portable bundle for compatible agent hosts.
 # Strips each skill's YAML frontmatter and concatenates the bodies — PLUS every support
 # file the skills reference (SKILL-LITE, references/, lanes/, templates/) — into one
 # Markdown file you can paste into a system prompt / custom instructions / AGENTS.md.
 #
-# The Claude-native skills stay canonical. This is a DERIVED artifact — Claude-specific
-# mechanics (the Workflow tool, /slash skills, haiku/sonnet routing) are left in and read
-# as plain guidance to any model; nothing is removed from the source to serve other agents.
+# The Codex skills stay canonical. This is a DERIVED artifact; host-specific mechanics
+# remain as explicit guidance so the export never weakens the source capabilities.
 #
 # Usage: ./export/export-portable.sh [output_file]
 set -euo pipefail
@@ -24,7 +23,7 @@ strip_frontmatter() {
 }
 
 {
-  echo "# codex-dev-rigor-stack 1.6.0 — portable bundle"
+  echo "# codex-dev-rigor-stack 1.6.1 — portable bundle"
   echo
   echo "Derived from the complete Codex bundle. Paste into any agent's system prompt / AGENTS.md."
   echo "Host-specific mechanics read as plain guidance; canonical capabilities are not removed"

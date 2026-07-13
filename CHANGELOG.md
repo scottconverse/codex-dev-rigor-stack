@@ -3,6 +3,34 @@
 All notable changes to dev-rigor-stack. A version heading does not imply a Git tag exists
 in this repository.
 
+## 1.6.1 — 2026-07-13
+
+Desktop activation hotfix. Version 1.6.0 installed the active hook definitions but
+incorrectly directed Codex Desktop users to the CLI-only `/hooks` command.
+
+- **Added a native graphical hook activator:** no terminal or command knowledge is needed.
+- **Kept the trust decision human:** all six event purposes, commands, sources, statuses,
+  and current hashes are reviewable before an explicit confirmation.
+- **Restricted trust scope:** the activator refuses partial, duplicate, foreign-source, or
+  unexpected event sets and writes only the six owned current hashes.
+- **Bound definitions to runtime bytes:** every command embeds the expected script SHA-256,
+  verifies one read buffer, and compiles that same buffer; changed hook files are refused.
+- **Made installation transactional:** both installers stage skills, runtime, and merged
+  hook configuration, then roll back injected mid-commit and backup failures, including a
+  clean first install with no partial directories left behind.
+- **Closed the lifecycle:** uninstall revokes exactly the six owned trusted hashes before
+  removal while preserving foreign trust state; restore merges only owned definitions into
+  the current hook file instead of overwriting later foreign hooks.
+- **Proved the real Desktop path:** a compiled WinForms capstone clicks the actual Trust
+  button, exercises safe cancel/incomplete/error states, and a fresh app-server process
+  verifies 6/6. The protocol stream is explicitly BOM-free for Codex JSON.
+- **Used Codex's supported integration:** `hooks/list` discovers the current definitions;
+  `config/batchWrite` records trust exactly as Codex's own hook review does; a second
+  `hooks/list` proves the result.
+- **Corrected every Desktop-facing claim and path:** the README, manual, architecture,
+  landing page, installers, security model, manifest, tests, and CI now describe the
+  graphical flow. Versioning advances monotonically from 1.6.0 to 1.6.1.
+
 ## 1.6.0 — 2026-07-13
 
 Version 1.6.0 restores monotonic product-line versioning after the interim 1.0.0 Codex

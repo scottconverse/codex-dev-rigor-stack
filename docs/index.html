@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>dev-rigor-stack 1.6.0 — make "done" mean proven</title>
-<meta name="description" content="Codex dev-rigor-stack 1.6.0: active enforcement hooks, all 19 entrypoints, exhaustive newcomer/UI audits, public-surface verification, and strict-zero release closure. MIT.">
+<title>dev-rigor-stack 1.6.1 — make "done" mean proven</title>
+<meta name="description" content="Codex dev-rigor-stack 1.6.1: active enforcement hooks with graphical Desktop trust, all 19 entrypoints, exhaustive newcomer/UI audits, public-surface verification, and strict-zero release closure. MIT.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9C%85%3C/text%3E%3C/svg%3E">
 <meta property="og:type" content="website">
 <meta property="og:title" content="dev-rigor-stack — make &quot;done&quot; mean proven">
@@ -25,10 +25,13 @@
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--fg);
     font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  .skip-link{position:absolute;left:16px;top:-80px;z-index:10;background:var(--accent);
+    color:var(--accent-fg);padding:10px 14px;border-radius:0 0 8px 8px;font-weight:700}
+  .skip-link:focus{top:0}
   .wrap{max-width:880px;margin:0 auto;padding:0 20px}
   header{padding:50px 0 24px;text-align:center}
   nav{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;padding:18px 0 0;font-size:.92rem}
-  nav a{text-decoration:none;font-weight:600}
+  nav a{text-decoration:none;font-weight:600;display:inline-flex;align-items:center;min-height:44px;padding:8px 6px}
   .version{display:inline-block;margin-bottom:14px;padding:4px 11px;border:1px solid var(--border);
     border-radius:999px;background:var(--card);color:var(--muted);font-size:.83rem;font-weight:700}
   h1{font-size:2.6rem;margin:0 0 .3em;letter-spacing:-.02em}
@@ -40,7 +43,7 @@
   a.btn.primary:hover,a.btn.primary:focus-visible{filter:brightness(1.15)}
   a.btn.ghost{border:1px solid var(--border);color:var(--fg)}
   a.btn.ghost:hover,a.btn.ghost:focus-visible{border-color:var(--accent);background:var(--card)}
-  a.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
   h2{font-size:1.5rem;margin:52px 0 12px;letter-spacing:-.01em}
   h3{font-size:1.12rem;margin:26px 0 8px}
   p{margin:0 0 1em}
@@ -49,6 +52,8 @@
   code{padding:2px 6px;font-size:.9em}
   pre{padding:14px 16px;overflow-x:auto;font-size:.9rem;line-height:1.5}
   table{width:100%;border-collapse:collapse;margin:8px 0 4px;font-size:.96rem}
+  .table-scroll{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .table-scroll table{min-width:620px}
   th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:top}
   th{color:var(--muted);font-weight:600}
   .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
@@ -74,10 +79,12 @@
   figure svg text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
   figcaption{color:var(--muted);font-size:.9rem;margin-top:8px;text-align:center}
   footer{margin:56px 0 40px;padding-top:20px;border-top:1px solid var(--border);color:var(--muted);font-size:.9rem}
+  footer a,.resource-links a{display:inline-flex;align-items:center;min-height:44px;padding:8px 4px}
   a{color:var(--accent)}
 </style>
 </head>
 <body>
+<a class="skip-link" href="#main-content">Skip to main content</a>
 <div class="wrap">
 
 <nav aria-label="Primary navigation">
@@ -87,16 +94,33 @@
   <a href="#install">Install</a>
 </nav>
 
+<main id="main-content" tabindex="-1">
 <header>
-  <div class="version">Version 1.6.0</div>
+  <div class="version">Version 1.6.1</div>
   <h1>dev-rigor-stack</h1>
   <p class="tag">A Codex-native delivery discipline — so "done" means <em>proven by the real artifact</em>, not "looks right."</p>
   <div class="cta">
-    <a class="btn primary" href="https://github.com/scottconverse/codex-dev-rigor-stack">View on GitHub</a>
+    <a class="btn primary" href="#install">Install in Codex Desktop</a>
+    <a class="btn ghost" href="downloads/DevRigorHookActivator-1.6.1.exe" download>Download hook activator (after installation)</a>
+    <a class="btn ghost" href="https://github.com/scottconverse/codex-dev-rigor-stack">View on GitHub</a>
     <a class="btn ghost" href="https://github.com/scottconverse/codex-dev-rigor-stack/blob/main/docs/MANUAL.md">Read the full user manual</a>
     <a class="btn ghost" href="https://github.com/scottconverse/codex-dev-rigor-stack/blob/main/docs/ARCHITECTURE.md">Architecture drawings</a>
   </div>
 </header>
+
+<h2 id="install">Install and activate in Codex Desktop</h2>
+<div class="callout">
+  <ol>
+    <li>In a normal Codex Desktop task, ask: <code>Install release 1.6.1 from scottconverse/codex-dev-rigor-stack using the repository's own installer, not a single-skill copy. Verify all 19 skills, the managed hook runtime, hooks.json, and the six owned definitions.</code></li>
+    <li><a href="downloads/DevRigorHookActivator-1.6.1.exe" download>Download and double-click the graphical hook activator</a> only after Codex confirms installation.</li>
+    <li>Use Up and Down Arrow or the mouse to inspect all six rows and exact details. Choose <strong>Review and trust these 6 hooks</strong>, then approve the confirmation.</li>
+    <li>Require <strong>Verified — all 6 hooks trusted</strong>, then restart Codex Desktop.</li>
+  </ol>
+  <p class="resource-links"><a href="downloads/DevRigorHookActivator-1.6.1.exe.sha256">Published SHA-256 checksum</a> ·
+  <a href="downloads/DevRigorHookActivator-1.6.1.cs">complete activator source</a> ·
+  <a href="downloads/DevRigorHookActivator-1.6.1.build.json">source-bound build record</a></p>
+  <p class="muted">The executable is not code-signed, so Windows may show a SmartScreen warning. Before opening it, ask Codex Desktop to verify the downloaded executable in your Downloads folder against the published SHA-256. Never continue if it differs.</p>
+</div>
 
 <h2 id="plain-english">Plain English — what it does</h2>
 <p>AI coding agents are confident, and confidence isn't correctness. An agent says "done"
@@ -194,7 +218,7 @@ and machines.</p>
     <!-- installation, CI, and publication -->
     <rect class="cont" x="36" y="410" width="848" height="48" rx="10"/>
     <text class="t" x="460" y="431" text-anchor="middle">INSTALL · CI · PUBLICATION FLOW</text>
-    <text class="s" x="460" y="449" text-anchor="middle">install.ps1/sh → 19 skills + active hooks.json · Windows/Linux CI → main · GitHub Pages + repository publication</text>
+    <text class="s" x="460" y="449" text-anchor="middle">agent/script install → 19 skills + hooks.json → graphical hash review via Codex app server · CI → Pages + repository publication</text>
   </svg>
   </div>
   <figcaption>The delivery flow. Findings loop back until they're gone; only a human tags the release.</figcaption>
@@ -239,8 +263,10 @@ and every subagent. The <strong>router</strong> injects only the task protocol t
 prompt. The <strong>grounding ledger</strong> records runnable edits and actual executions or
 renders. At Stop and SubagentStop, the gate continues Codex if no check followed the latest
 runnable edit or the evidence receipt is absent. Codex requires the user to review and trust
-non-managed hooks through <code>/hooks</code>; installed-but-untrusted hooks are not described
-as enforced.</p>
+non-managed hooks. The Windows graphical activator shows the exact six commands and hashes,
+requires explicit approval, writes trust through Codex's app server, and re-reads all six
+before it reports enforcement active. Each command embeds its script SHA-256 and compiles
+the already-verified bytes, so an altered runtime file is refused.</p>
 
 <p>Its core idea is <strong>proportion</strong> — spend exactly the rigor a change earns.
 Climb the ladder only as far as the blast radius demands, and stop at the first rung that
@@ -306,6 +332,7 @@ never claim beyond the check you actually ran, and owner decisions (tag, publish
 spend, delete) stay the owner's.</p>
 
 <h2 id="entrypoints">All 19 entrypoints</h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="All 19 entrypoints; scroll horizontally if needed">
 <table>
   <tr><th>Component</th><th>Role</th></tr>
   <tr><td><code>dev-rigor-stack</code></td><td>the stack — orchestrates the loop + release gate</td></tr>
@@ -323,12 +350,14 @@ spend, delete) stay the owner's.</p>
   <tr><td><code>dev-rigor-stack-docs-gate</code></td><td>DOCS — rendered truth and deliverable completeness</td></tr>
   <tr><td><code>6 compatibility names</code></td><td><code>coder-tdd-qa</code>, <code>proof-gate</code>, <code>audit-lite</code>, <code>audit-team</code>, <code>gauntletgate</code>, and <code>visitor-audit</code> retain their complete contracts</td></tr>
 </table>
+</div>
 <p class="muted">All thirteen canonical capabilities and six compatibility entrypoints are
 installed together. <code>audit-lite</code>/<code>audit-team</code> and
 <code>gauntletgate</code> overlap by design: the standalone audits are per-unit
 <em>review reports</em>; gauntletgate is the release-altitude <em>advancement gate</em>.</p>
 
 <h3>Active lifecycle coverage</h3>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Active lifecycle coverage; scroll horizontally if needed">
 <table>
   <tr><th>Codex event</th><th>Enforced behavior</th></tr>
   <tr><td><code>SessionStart / SubagentStart</code></td><td>inject the universal dev-rigor reflex and evidence receipt contract</td></tr>
@@ -336,20 +365,20 @@ installed together. <code>audit-lite</code>/<code>audit-team</code> and
   <tr><td><code>PostToolUse</code></td><td>append runnable edits and execution/render observations to per-session state</td></tr>
   <tr><td><code>Stop / SubagentStop</code></td><td>continue work when the latest runnable edit lacks a later successful check or receipt</td></tr>
 </table>
+</div>
 
-<h2 id="install">Get started</h2>
-<p><strong>For Codex Desktop:</strong></p>
+<h2 id="maintainer-install">Scripted/maintainer installation</h2>
 <pre>git clone https://github.com/scottconverse/codex-dev-rigor-stack
 cd codex-dev-rigor-stack
 ./install.sh                                             # macOS / Linux / Git Bash
 powershell -ExecutionPolicy Bypass -File .\install.ps1   # Windows</pre>
 <p><strong>Requires Git and Node.js.</strong> The active hooks use Node built-ins only. On Windows the <code>-ExecutionPolicy Bypass</code> prefix avoids the default
 "scripts are disabled on this system" block.</p>
-<p>Installs nineteen skill entrypoints plus the active hook runtime, preserves foreign
-hook definitions, and merges six owned events into <code>~/.codex/hooks.json</code>. Open
-<code>/hooks</code>, review and trust them, then restart Codex.</p>
-<p><strong>Inside a Codex session</strong> (no terminal): ask the agent to install it from
-the repository; it copies the skills into the configured Codex home.</p>
+<p>Transactionally stages and installs nineteen skill entrypoints plus the active hook
+runtime, preserves foreign hook definitions, and merges six content-bound owned events into
+<code>~/.codex/hooks.json</code>. A failed commit restores the prior set. Use the
+graphical activator on Windows or the current client's supported hook-review UI, then
+restart Codex.</p>
 <p><strong>For other agents</strong> (ChatGPT, Gemini, or a plain system prompt): run
 <code>./export/export-portable.sh</code> and paste the generated <code>portable-bundle.md</code>
 into its system prompt. The export is derived from the complete canonical skills; canonical
@@ -357,9 +386,9 @@ capabilities are never removed merely to make the bundle shorter.</p>
 
 <h2>Version model</h2>
 <div class="callout">
-  <p><strong>Current version: 1.6.0.</strong> It continues the product lineage from 1.5.1.
+  <p><strong>Current version: 1.6.1.</strong> It continues the product lineage from 1.5.1.
   The earlier 1.0.0 Codex packaging number remains historical; future versions advance
-  monotonically from 1.6.0.</p>
+  monotonically from 1.6.0. Version 1.6.1 is the Desktop graphical-activation hotfix.</p>
 </div>
 
 <h2>Honest scope</h2>
@@ -378,8 +407,9 @@ capabilities are never removed merely to make the bundle shorter.</p>
   </div>
 </div>
 
+</main>
 <footer>
-  <p>dev-rigor-stack 1.6.0 · MIT-licensed. Codex skills and active hook port by Scott Converse. Prior art, gratefully credited: the
+  <p>dev-rigor-stack 1.6.1 · MIT-licensed. Codex skills and active hook port by Scott Converse. Prior art, gratefully credited: the
   reflex's always-on <em>form</em> is from
   <a href="https://github.com/DietrichGebert/ponytail">ponytail</a> (DietrichGebert, MIT);
   per-task routing and verification grounding were proven transferable by

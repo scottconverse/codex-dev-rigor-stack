@@ -3,6 +3,7 @@
 * text=auto
 *.sh text eol=lf
 *.js text eol=lf
+*.cs text eol=lf
 
 # Hook payload markdown must checkout LF everywhere — the hooks inject these bytes verbatim.
 plugin/*.md text eol=lf

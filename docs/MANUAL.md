@@ -1,8 +1,8 @@
 # codex-dev-rigor-stack — user manual
 
-**Manual version:** 1.6.0
+**Manual version:** 1.6.1
 
-**Applies to dev-rigor-stack:** 1.6.0
+**Applies to dev-rigor-stack:** 1.6.1
 
 This is the operating manual, not a longer README. Part 1 explains the product in plain
 English. Part 2 is the technical manual for installation, operation, evidence, lifecycle,
@@ -85,7 +85,7 @@ ownership away from you.
 
 ### Package model
 
-Version 1.6.0 installs **all 19 entrypoints**: 13 canonical namespaced skills and 6
+Version 1.6.1 installs **all 19 entrypoints**: 13 canonical namespaced skills and 6
 backward-compatible entrypoints. Each canonical section can be invoked independently or
 through `$dev-rigor-stack`.
 
@@ -97,9 +97,35 @@ and Stop/SubagentStop evidence gate. The original Claude source remains only as 
 ### Requirements
 
 - Codex Desktop or another client that loads `CODEX_HOME/skills`
-- PowerShell 5.1+ on Windows, or Bash/Git Bash
-- Git only if cloning rather than downloading a source archive
 - Node.js for the active Codex hooks; the runtime uses built-ins only
+- Windows 10/11 for the graphical hook activator
+- PowerShell/Bash and Git only for maintainers or scripted installation
+
+### Codex Desktop installation — no terminal
+
+1. Open a normal Codex Desktop task and ask:
+   `Install release 1.6.1 from scottconverse/codex-dev-rigor-stack using the repository's own installer, not a single-skill copy. Verify all 19 skills, the managed hook runtime, hooks.json, and the six owned definitions.`
+2. Codex stages all 19 skill folders, the hook runtime, and the merged six owned
+   definitions, then commits them as one rollback-protected transaction while preserving
+   unrelated hooks and creating backups.
+3. Download and double-click
+   [DevRigorHookActivator-1.6.1.exe](https://scottconverse.github.io/codex-dev-rigor-stack/downloads/DevRigorHookActivator-1.6.1.exe).
+   Version 1.6.1 is not code-signed, so a browser-downloaded copy may trigger Windows
+   SmartScreen. Before opening it, ask Codex Desktop:
+   `Verify the downloaded DevRigorHookActivator-1.6.1.exe in my Downloads folder against the published SHA-256. Do not open it if they differ.`
+   This performs the checksum step without asking you to use a terminal. Stop if Codex reports
+   a mismatch.
+4. Read all six rows. Selecting a row exposes its exact command, source, matcher, and
+   current hash.
+5. Choose **Review and trust these 6 hooks**. The confirmation lists the exact six hashes;
+   choose **Trust these 6 hooks** only after reviewing them.
+6. The app writes trust through Codex, re-reads all six definitions, and must display
+   **Verified — all 6 hooks trusted**. Restart Codex Desktop.
+
+This is the ordinary Windows Desktop path. It does not require opening a terminal, typing
+a command, editing configuration, or knowing where Codex stores its files.
+
+### Scripted installation for maintainers and compatible clients
 
 ### Windows PowerShell
 
@@ -120,7 +146,10 @@ cd codex-dev-rigor-stack
 The default targets are `~/.codex/skills` for the 19 entrypoints and
 `~/.codex/dev-rigor-stack` for the hook runtime. The installer merges owned entries into
 `~/.codex/hooks.json`, preserving foreign hooks and backing up changed configuration.
-Open `/hooks`, review and trust the dev-rigor definitions, then restart Codex Desktop.
+The staged skills, runtime, and hook configuration commit together or restore the prior set.
+On Windows, open `DevRigorHookActivator-1.6.1.exe`, review and approve the exact six
+hashes, and require its verified result before restarting Codex Desktop. Other Codex
+clients may use their own supported hook-review UI.
 
 ### Custom target
 
@@ -139,8 +168,9 @@ Use a custom target for clean-profile verification, CI, or another compatible ho
 ### Verify the installation
 
 The installer must report `Installed 19 skill(s).` Verify every manifest entry has a
-`SKILL.md`, `CODEX_HOME/dev-rigor-stack/hooks/dev-rigor-ground.js` exists, and `/hooks`
-shows all six trusted lifecycle events. Restart Codex and invoke a known entrypoint.
+`SKILL.md`, `CODEX_HOME/dev-rigor-stack/hooks/dev-rigor-ground.js` exists, and the
+graphical activator shows all six trusted lifecycle events. Restart Codex and invoke a
+known entrypoint.
 
 ## Choose an entrypoint
 
@@ -277,13 +307,22 @@ the product may advance.
 - **Stop/SubagentStop evidence gate:** continues Codex when no real check followed the
   latest runnable edit, when that check explicitly failed, or when the required evidence receipt is missing.
 
-Codex requires explicit trust for non-managed hooks. Use `/hooks` to verify that all six
-events are present and trusted. If they are untrusted, disabled, or failing, the skills
-remain usable but mechanical enforcement is not active and must not be claimed.
+Codex requires explicit trust for non-managed hooks. On Windows, use the graphical
+activator to inspect and approve the exact six current hashes. It discovers them with
+`hooks/list`, refuses any incomplete or unexpected owned set, writes trust with
+`config/batchWrite`, then calls `hooks/list` again. If any event is untrusted, modified,
+disabled, absent, duplicated, or failing, the skills remain usable but mechanical
+enforcement is not active and must not be claimed.
+Each owned command also embeds its runtime script SHA-256, verifies a single read buffer,
+and compiles that same buffer. Changed script bytes are refused. Reinstalling legitimate
+updates changes the command definitions and requires review again.
 
 ## Degrade and invalid states
 
-The complete installer prevents ordinary partial installs by validating all 19 sources.
+The complete installer prevents partial installs by staging all 19 sources, the runtime,
+and the merged hook configuration before replacement. A commit or backup-finalization
+failure restores the prior set. If automatic recovery itself fails, the recovery tree is
+preserved and reported instead of deleted.
 If a required sibling or evidence artifact is missing at runtime, the affected gate is
 INVALID and the gap is reported. Degrade never means silently using a shorter contract or
 self-reviewing. Where the complete equivalent can be executed inline, the coordinator
@@ -293,28 +332,64 @@ states that path explicitly and still preserves independent/fresh-context judgme
 
 ### Update
 
-Pull or download the new repository version and rerun the installer. It replaces the 19
-managed skill folders and active Codex hook runtime, merges current owned hook definitions,
-and creates timestamped backups first.
+Pull or download the new repository version and rerun the installer. It stages the 19
+managed skill folders, active Codex hook runtime, and current owned hook definitions,
+then transactionally commits them and retains timestamped backups. Reopen the graphical
+activator after every update. If any script or definition changed, review and trust the new
+six hashes, require **Verified — all 6 hooks trusted**, and restart Codex Desktop.
 
 ### Backup
 
-Backups live under `<target>/.backup/codex-dev-rigor-stack/<timestamp>/`. Each contains
-the managed folders that existed before that installation.
+One installation timestamp can have two coordinated backup locations:
+
+- `<target>/.backup/codex-dev-rigor-stack/<timestamp>/` contains the prior managed skill
+  folders.
+- `<CODEX_HOME>/.backup/codex-dev-rigor-stack/<timestamp>/runtime` contains the prior
+  managed hook runtime, and the adjacent `hooks.json` is the prior merged hook configuration.
+
+Keep both locations together. Restoring only one creates a mixed-version installation.
 
 ### Restore
 
-1. Close Codex Desktop.
-2. Choose the timestamped backup.
-3. Copy its saved skill folders back into `~/.codex/skills`, replacing only matching
-   current stack folders.
-4. Restart Codex and invoke a known entrypoint.
+For a no-terminal restore, open a Codex Desktop task before closing the app and ask:
+`Restore dev-rigor-stack from backup timestamp <timestamp>. Restore the 19 managed skills and managed runtime from that timestamp. Rebuild only the owned definitions into the current hooks.json with the restored wire-hooks.js; never replace hooks.json wholesale. Preserve every unrelated skill, hook, and trust entry.`
+Require Codex to report the restored skills/runtime, the matching timestamp, and an
+owned-only hook merge that retained current foreign hooks.
+Then reopen the graphical activator, review the restored definitions, require all six
+trusted, and restart Codex Desktop.
+
+For a manual maintainer restore:
+
+1. Close Codex Desktop and choose one timestamp present in both backup locations.
+2. Copy the saved skill folders from the target backup into `<target>`, replacing only
+   matching managed stack folders.
+3. Replace `<CODEX_HOME>/dev-rigor-stack` with the saved `runtime` directory.
+4. Do **not** replace the current `hooks.json` wholesale; that could erase unrelated hooks
+   added after the backup. Run the restored runtime's `hooks/wire-hooks.js` against the
+   current `hooks.json`. It reconstructs and replaces only the six owned definitions while
+   preserving foreign hooks. Treat the saved `hooks.json` as recovery evidence, not a
+   whole-file restore payload.
+
+   ```text
+   node <CODEX_HOME>/dev-rigor-stack/hooks/wire-hooks.js <CODEX_HOME> <CODEX_HOME>/dev-rigor-stack
+   ```
+
+5. Open the graphical activator, review the restored definitions, require all six trusted,
+   then restart Codex Desktop and invoke a known entrypoint.
 
 ### Uninstall
 
-Close Codex Desktop. First run the hook remover so foreign hook definitions are preserved:
+For a no-terminal uninstall, open a Codex Desktop task and ask:
+`Uninstall dev-rigor-stack. First run the managed revoke-trust.js through Codex app-server and verify exactly 6/6 owned trusted hashes were removed while foreign trust state was preserved. Then remove only the 19 managed skills, six owned hook definitions, and managed runtime; preserve every unrelated skill, hook, trust entry, and backup.`
+Codex must revoke trust before removing the definitions/runtime, preserve foreign hooks,
+and report every path changed.
+Restart Codex Desktop afterward.
+
+Maintainers may instead close Codex Desktop after first revoking the exact owned trust
+receipts, then run the hook remover so foreign hook definitions are preserved:
 
 ```text
+node <CODEX_HOME>/dev-rigor-stack/hooks/revoke-trust.js <CODEX_HOME> <working-directory>
 node <CODEX_HOME>/dev-rigor-stack/hooks/wire-hooks.js --remove <CODEX_HOME> <CODEX_HOME>/dev-rigor-stack
 ```
 
@@ -325,7 +400,8 @@ Then remove the 19 folders listed in `manifest.json` and the managed
 
 ### PowerShell says scripts are disabled
 
-Run `powershell -ExecutionPolicy Bypass -File .\install.ps1`.
+Ordinary Codex Desktop users should use the no-terminal path above. Maintainers choosing
+the script path can run `powershell -ExecutionPolicy Bypass -File .\install.ps1`.
 
 ### Codex does not recognize a skill
 
@@ -336,13 +412,14 @@ Run `powershell -ExecutionPolicy Bypass -File .\install.ps1`.
 
 ### The hooks are installed but do not run
 
-- Open `/hooks` and confirm each dev-rigor definition is trusted and enabled.
+- Open `DevRigorHookActivator-1.6.1.exe` and confirm each dev-rigor definition is trusted.
 - Confirm `[features].hooks` is not `false` in active Codex configuration or policy.
-- Confirm Node.js is on the PATH visible to Codex, not only an interactive terminal.
+- Confirm Node.js is on the PATH visible to Codex.
 - Confirm `CODEX_HOME/dev-rigor-stack/hooks/` and `CODEX_HOME/hooks.json` point to the same
   Codex home.
-- Restart Codex after installation or any hook-definition change. Trust is hash-bound, so
-  changed hook definitions require review again.
+- Restart Codex after installation or any hook-definition change. Definition trust and the
+  embedded runtime SHA-256 guards must both pass; updated scripts produce changed
+  definitions that require review again.
 
 ### The installer reports fewer than 19 skills
 
@@ -374,9 +451,10 @@ to make it shorter.
 
 ## Versioning
 
-- **Version 1.6.0** is the current release and continues the product lineage from 1.5.1.
+- **Version 1.6.1** is the current release and continues the product lineage from 1.5.1.
 - The earlier 1.0.0 Codex package number is retained only as historical record of an
-  interim reset; future versions advance monotonically from 1.6.0.
+  interim reset; future versions advance monotonically from 1.6.0. Version 1.6.1 is the
+  Desktop graphical-activation hotfix.
 
 ## Security and honest limits
 

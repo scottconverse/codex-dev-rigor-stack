@@ -1,6 +1,6 @@
 # Contributing
 
-**Current release:** 1.6.0
+**Current release:** 1.6.1
 
 Thanks for considering it. This repo practices what it ships — contributions walk the
 same gates the stack enforces.
@@ -14,8 +14,11 @@ same gates the stack enforces.
 - **Run the complete suite before pushing:** `node codex/hooks/test-hooks.js`,
   `node plugin/hooks/test-hooks.js` (provenance regression suite),
   `python3 tools/check_sync.py`, `python3 tools/check_bundle.py`, and
-  `python3 -m unittest tools.test_stack_contracts tools.test_visitor_audit`. CI repeats
-  them on Ubuntu and Windows, smoke-installs all 19 skills, and verifies exporter parity.
+  `python3 -m unittest tools.test_stack_contracts tools.test_desktop_activator
+  tools.test_visitor_audit`. On Windows, also build `desktop/build.ps1`; CI runs its
+  compiled ownership and fresh-process production app-server tests, compares the rebuilt
+  executable with the published binary after normalizing compiler identity bytes, injects
+  transactional-installer failures, and verifies exporter parity on Ubuntu and Windows.
 - **Green-path only.** PRs merge when CI is green. No `--admin`, no overrides.
 - **Windows PowerShell 5.1 is a first-class target.** `.ps1` files stay pure ASCII
   (PS 5.1 reads BOM-less files as ANSI — non-ASCII in source breaks or corrupts);
