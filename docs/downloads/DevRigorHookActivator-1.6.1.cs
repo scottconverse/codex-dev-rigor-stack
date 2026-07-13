@@ -50,6 +50,7 @@ namespace DevRigorStack.Desktop
     {
         public string FileName;
         public string[] ArgumentList;
+        public bool WindowsVerbatimArguments;
     }
 
     internal static class OwnershipRules
@@ -287,7 +288,7 @@ namespace DevRigorStack.Desktop
             );
         }
 
-        private static CodexLaunch CreateLaunch(string path)
+        internal static CodexLaunch CreateLaunch(string path)
         {
             string extension = Path.GetExtension(path).ToLowerInvariant();
             if (extension == ".cmd" || extension == ".bat")
@@ -295,7 +296,8 @@ namespace DevRigorStack.Desktop
                 return new CodexLaunch
                 {
                     FileName = Environment.GetEnvironmentVariable("ComSpec") ?? "cmd.exe",
-                    ArgumentList = new[] { "/d", "/s", "/c", "\"\"" + path + "\" app-server --listen stdio://\"" }
+                    ArgumentList = new[] { "/d", "/s", "/c", "\"\"" + path + "\" app-server --listen stdio://\"" },
+                    WindowsVerbatimArguments = true
                 };
             }
             return new CodexLaunch
@@ -315,14 +317,15 @@ namespace DevRigorStack.Desktop
             var spec = new Dictionary<string, object>
             {
                 { "file", launch.FileName },
-                { "args", launch.ArgumentList }
+                { "args", launch.ArgumentList },
+                { "verbatim", launch.WindowsVerbatimArguments }
             };
             string specJson = new JavaScriptSerializer().Serialize(spec);
             string specBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(specJson));
             string relay =
                 "const{spawn}=require('child_process');" +
                 "const s=JSON.parse(Buffer.from(process.argv[1],'base64').toString('utf8'));" +
-                "const c=spawn(s.file,s.args,{stdio:['pipe','pipe','pipe'],windowsHide:true});" +
+                "const c=spawn(s.file,s.args,{stdio:['pipe','pipe','pipe'],windowsHide:true,windowsVerbatimArguments:!!s.verbatim});" +
                 "let first=true,prefix=Buffer.alloc(0);" +
                 "process.stdin.on('data',d=>{" +
                 "if(first){prefix=Buffer.concat([prefix,d]);if(prefix.length<3)return;first=false;" +

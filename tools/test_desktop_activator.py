@@ -46,6 +46,8 @@ class DesktopActivatorContractTests(unittest.TestCase):
         for term in (
             "CreateRelayStart",
             "windowsHide:true",
+            "windowsVerbatimArguments:!!s.verbatim",
+            "WindowsVerbatimArguments = true",
             "prefix[0]===0xef",
             "prefix[1]===0xbb",
             "prefix[2]===0xbf",

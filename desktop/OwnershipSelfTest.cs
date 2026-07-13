@@ -53,6 +53,10 @@ namespace DevRigorStack.Desktop
             Check(relay.Arguments.Contains("eval(Buffer.from"), "byte relay must be embedded without a separate mutable script");
             Check(relay.RedirectStandardInput && relay.RedirectStandardOutput && relay.RedirectStandardError,
                 "byte relay must preserve all three app-server protocol streams");
+            CodexLaunch commandShim = CodexAppServerSession.CreateLaunch("C:\\Program Files\\Codex CLI\\codex.cmd");
+            Check(commandShim.WindowsVerbatimArguments, "Windows command shims must preserve cmd.exe quoting verbatim");
+            Check(commandShim.ArgumentList.Length == 4 && commandShim.ArgumentList[3].StartsWith("\"\"C:\\Program Files"),
+                "Windows command shims must keep a spaced executable path inside cmd.exe's outer quote pair");
             string home = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "dev-rigor-ownership-test", ".codex"));
             string hookDirectory = Path.Combine(home, "dev-rigor-stack", "hooks");
             Directory.CreateDirectory(hookDirectory);
