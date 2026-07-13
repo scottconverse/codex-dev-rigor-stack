@@ -2,7 +2,7 @@
 // Hermetic contract suite for the active Codex hook runtime.
 
 const assert = require('assert');
-const { execFileSync, execSync, spawnSync } = require('child_process');
+const { execFileSync, execSync, spawn, spawnSync } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -35,9 +35,28 @@ function runHook(script, input, home, args = []) {
   });
 }
 
-function record(home, session, toolName, toolInput, toolResponse = {}) {
+function runHookAsync(script, input, home, args = []) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [script, ...args], {
+      env: { ...process.env, CODEX_HOME: home }, stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (chunk) => { stdout += chunk; });
+    child.stderr.on('data', (chunk) => { stderr += chunk; });
+    child.on('error', reject);
+    child.on('close', (code) => {
+      if (code === 0) resolve(stdout);
+      else reject(new Error(`hook exited ${code}: ${stderr}`));
+    });
+    child.stdin.end(JSON.stringify(input));
+  });
+}
+
+function record(home, session, toolName, toolInput, toolResponse = {}, turn = 'turn-1') {
   return runHook(GROUND, {
     session_id: session,
+    turn_id: turn,
     hook_event_name: 'PostToolUse',
     tool_name: toolName,
     tool_input: toolInput,
@@ -45,18 +64,20 @@ function record(home, session, toolName, toolInput, toolResponse = {}) {
   }, home, ['record']);
 }
 
-function stop(home, session, message = '', active = false, mode = 'stop') {
+function stop(home, session, message = '', active = false, mode = 'stop', turn = 'turn-1') {
   return runHook(GROUND, {
     session_id: session,
+    turn_id: turn,
     hook_event_name: mode === 'subagent' ? 'SubagentStop' : 'Stop',
     stop_hook_active: active,
     last_assistant_message: message,
   }, home, ['check']);
 }
 
-function prompt(home, session, message) {
+function prompt(home, session, message, turn = 'turn-1') {
   return runHook(ROUTER, {
     session_id: session,
+    turn_id: turn,
     hook_event_name: 'UserPromptSubmit',
     prompt: message,
   }, home);
@@ -101,6 +122,14 @@ test('router: non-code prompts remain silent', () => {
   assert.strictEqual(out.trim(), '');
 });
 
+test('router: prompt routing never creates or mutates a grounding ledger', () => {
+  const home = freshHome();
+  prompt(home, 'router-no-ground', 'Fix the parser crash and prove the regression.', 'turn-prompt');
+  const state = path.join(home, 'dev-rigor-stack', 'state');
+  const files = fs.existsSync(state) ? fs.readdirSync(state) : [];
+  assert.strictEqual(files.some((name) => name.startsWith('ground-')), false);
+});
+
 test('ground: apply_patch runnable edit without a later execution blocks Stop', () => {
   const home = freshHome();
   record(home, 'ground-1', 'apply_patch', {
@@ -137,18 +166,26 @@ test('ground: a later edit after an accepted receipt re-arms proof enforcement',
   assert.match(parsed.reason, /latest runnable edit/i);
 });
 
-test('ground: a new user prompt scopes out unresolved edits from an older turn', () => {
+test('ground: a distinct Codex turn passes even when an older turn remains unresolved', () => {
   const home = freshHome();
-  record(home, 'ground-turn', 'apply_patch', { command: '*** Update File: src/app.ts' });
-  prompt(home, 'ground-turn', 'What is the current project status?');
-  assert.strictEqual(stop(home, 'ground-turn', 'Here is the read-only status report.').trim(), '');
+  record(home, 'ground-turn', 'apply_patch', { command: '*** Update File: src/app.ts' }, {}, 'turn-edit');
+  assert.strictEqual(stop(home, 'ground-turn', 'Here is the read-only status report.', false, 'stop', 'turn-status').trim(), '');
 });
 
 test('ground: an edit after the current prompt boundary still requires proof', () => {
   const home = freshHome();
-  prompt(home, 'ground-current-turn', 'Please update src/app.ts for me.');
-  record(home, 'ground-current-turn', 'apply_patch', { command: '*** Update File: src/app.ts' });
-  const parsed = JSON.parse(stop(home, 'ground-current-turn', receipt));
+  prompt(home, 'ground-current-turn', 'Please update src/app.ts for me.', 'turn-edit');
+  record(home, 'ground-current-turn', 'apply_patch', { command: '*** Update File: src/app.ts' }, {}, 'turn-edit');
+  const parsed = JSON.parse(stop(home, 'ground-current-turn', receipt, false, 'stop', 'turn-edit'));
+  assert.strictEqual(parsed.decision, 'block');
+  assert.match(parsed.reason, /latest runnable edit/i);
+});
+
+test('ground: an ambient prompt with another turn id cannot clear dirty coding state', () => {
+  const home = freshHome();
+  record(home, 'ground-ambient', 'apply_patch', { command: '*** Update File: src/app.ts' }, {}, 'turn-edit');
+  prompt(home, 'ground-ambient', 'Background suggestion event.', 'turn-ambient');
+  const parsed = JSON.parse(stop(home, 'ground-ambient', receipt, false, 'stop', 'turn-edit'));
   assert.strictEqual(parsed.decision, 'block');
   assert.match(parsed.reason, /latest runnable edit/i);
 });
@@ -164,12 +201,163 @@ test('ground: a blocked response cannot loop and the next real prompt starts cle
   assert.strictEqual(stop(home, 'ground-retry', 'The prior coding response omitted its receipt.').trim(), '');
 });
 
-test('ground: legacy 1.6.1 ledgers remain audit history and cannot poison 1.6.2 turns', () => {
+test('ground: the same turn is blocked at most once when Codex omits stop_hook_active', () => {
+  const home = freshHome();
+  record(home, 'ground-circuit', 'apply_patch', { command: '*** Update File: src/app.ts' });
+  record(home, 'ground-circuit', 'Bash', { command: 'npm test' }, { exit_code: 0 });
+  const first = JSON.parse(stop(home, 'ground-circuit', 'All done.'));
+  assert.strictEqual(first.decision, 'block');
+  assert.strictEqual(stop(home, 'ground-circuit', 'Explanation after hook feedback.').trim(), '');
+  assert.strictEqual(stop(home, 'ground-circuit', 'Later conversation in the same turn.').trim(), '');
+});
+
+test('ground: stop_hook_active clears a prior block instead of leaving poison state', () => {
+  const home = freshHome();
+  record(home, 'ground-active-clear', 'apply_patch', { command: '*** Update File: src/app.ts' });
+  const first = JSON.parse(stop(home, 'ground-active-clear', receipt));
+  assert.strictEqual(first.decision, 'block');
+  assert.strictEqual(stop(home, 'ground-active-clear', 'Hook continuation.', true).trim(), '');
+  assert.strictEqual(stop(home, 'ground-active-clear', 'Ordinary follow-up in the same turn.').trim(), '');
+});
+
+test('ground: stop_hook_active without a prior block does not silently clear dirty work', () => {
+  const home = freshHome();
+  record(home, 'ground-active-no-block', 'apply_patch', { command: '*** Update File: src/app.ts' });
+  assert.strictEqual(stop(home, 'ground-active-no-block', 'Platform retry.', true).trim(), '');
+  const parsed = JSON.parse(stop(home, 'ground-active-no-block', receipt));
+  assert.strictEqual(parsed.decision, 'block');
+  assert.match(parsed.reason, /latest runnable edit/i);
+});
+
+test('ground: new tool activity after a block re-arms the current turn', () => {
+  const home = freshHome();
+  record(home, 'ground-rearm-after-block', 'apply_patch', { command: '*** Update File: src/app.ts' });
+  const first = JSON.parse(stop(home, 'ground-rearm-after-block', receipt));
+  assert.strictEqual(first.decision, 'block');
+  record(home, 'ground-rearm-after-block', 'Bash', { command: 'npm test' }, { exit_code: 0 });
+  const second = JSON.parse(stop(home, 'ground-rearm-after-block', 'Done without a receipt.'));
+  assert.strictEqual(second.decision, 'block');
+  assert.match(second.reason, /evidence receipt/i);
+  assert.strictEqual(stop(home, 'ground-rearm-after-block', 'Hook feedback retry.').trim(), '');
+});
+
+test('ground: missing turn_id fails open and creates no active ledger', () => {
+  const home = freshHome();
+  runHook(GROUND, {
+    session_id: 'ground-no-turn', hook_event_name: 'PostToolUse', tool_name: 'apply_patch',
+    tool_input: { command: '*** Update File: src/app.ts' }, tool_response: {},
+  }, home, ['record']);
+  const out = runHook(GROUND, {
+    session_id: 'ground-no-turn', hook_event_name: 'Stop', stop_hook_active: false,
+    last_assistant_message: '',
+  }, home, ['check']);
+  assert.strictEqual(out.trim(), '');
+  const state = path.join(home, 'dev-rigor-stack', 'state');
+  assert.strictEqual(fs.existsSync(state) && fs.readdirSync(state).some((name) => name.startsWith('ground-v3-')), false);
+});
+
+test('ground: inability to persist a block fails open instead of creating a retry loop', () => {
+  const home = freshHome();
+  record(home, 'ground-read-only', 'apply_patch', { command: '*** Update File: src/app.ts' });
+  const state = path.join(home, 'dev-rigor-stack', 'state');
+  const ledgerName = fs.readdirSync(state).find((name) => name.startsWith('ground-v3-'));
+  const ledger = path.join(state, ledgerName);
+  fs.chmodSync(ledger, 0o444);
+  try {
+    assert.strictEqual(stop(home, 'ground-read-only', receipt).trim(), '');
+  } finally {
+    fs.chmodSync(ledger, 0o666);
+  }
+});
+
+test('ground: legacy 1.6.1 and 1.6.2 ledgers remain audit history and cannot poison v3 turns', () => {
   const home = freshHome();
   const state = path.join(home, 'dev-rigor-stack', 'state');
   fs.mkdirSync(state, { recursive: true });
   fs.writeFileSync(path.join(state, 'ground-ground-legacy.log'), 'E src/old.ts\nX Bash\n');
+  fs.writeFileSync(path.join(state, 'ground-v2-ground-legacy.log'), 'E src/old.ts\nX Bash\n');
   assert.strictEqual(stop(home, 'ground-legacy', 'Ordinary conversation.').trim(), '');
+});
+
+test('ground: the same turn id in different sessions remains isolated', () => {
+  const home = freshHome();
+  record(home, 'session-a', 'apply_patch', { command: '*** Update File: src/a.ts' }, {}, 'shared-turn');
+  assert.strictEqual(stop(home, 'session-b', 'Conversation only.', false, 'stop', 'shared-turn').trim(), '');
+  const parsed = JSON.parse(stop(home, 'session-a', receipt, false, 'stop', 'shared-turn'));
+  assert.strictEqual(parsed.decision, 'block');
+});
+
+test('ground: identity hashing prevents sanitized path collisions', () => {
+  const home = freshHome();
+  record(home, 'session/a', 'apply_patch', { command: '*** Update File: src/a.ts' }, {}, 'turn?1');
+  assert.strictEqual(stop(home, 'sessiona', 'Conversation only.', false, 'stop', 'turn1').trim(), '');
+  const parsed = JSON.parse(stop(home, 'session/a', receipt, false, 'stop', 'turn?1'));
+  assert.strictEqual(parsed.decision, 'block');
+  const ledgers = fs.readdirSync(path.join(home, 'dev-rigor-stack', 'state'))
+    .filter((name) => name.startsWith('ground-v3-'));
+  assert.strictEqual(ledgers.length, 1);
+});
+
+test('ground: concurrent PostToolUse writes retain every edit event', async () => {
+  const home = freshHome();
+  const session = 'ground-concurrent';
+  const turn = 'turn-concurrent';
+  await Promise.all(Array.from({ length: 24 }, (_, index) => runHookAsync(GROUND, {
+    session_id: session,
+    turn_id: turn,
+    hook_event_name: 'PostToolUse',
+    tool_name: 'apply_patch',
+    tool_input: { command: `*** Update File: src/file-${index}.ts` },
+    tool_response: {},
+  }, home, ['record'])));
+  record(home, session, 'Bash', { command: 'npm test' }, { exit_code: 0 }, turn);
+  assert.strictEqual(stop(home, session, receipt, false, 'stop', turn).trim(), '');
+  const state = path.join(home, 'dev-rigor-stack', 'state');
+  const ledgerName = fs.readdirSync(state).find((name) => name.startsWith('ground-v3-'));
+  const lines = fs.readFileSync(path.join(state, ledgerName), 'utf8').trim().split('\n');
+  assert.strictEqual(lines.filter((line) => line.startsWith('E ')).length, 24);
+  assert.strictEqual(lines.filter((line) => line.startsWith('X ')).length, 1);
+  assert.strictEqual(lines.filter((line) => line.startsWith('C ')).length, 1);
+});
+
+test('ground: full Codex-shaped nested failure response cannot count as proof', () => {
+  const home = freshHome();
+  record(home, 'ground-shaped', 'apply_patch', {
+    command: '*** Update File: src/app.ts', cwd: 'C:\\repo', timeout_ms: 120000,
+  }, { content: [{ type: 'text', text: 'patch applied' }] }, 'turn-shaped');
+  record(home, 'ground-shaped', 'shell_command', {
+    command: 'npm test', cwd: 'C:\\repo', timeout_ms: 120000,
+  }, { content: [{ type: 'text', text: 'Exit code: 1\n1 test failed' }] }, 'turn-shaped');
+  const parsed = JSON.parse(stop(home, 'ground-shaped', receipt, false, 'stop', 'turn-shaped'));
+  assert.strictEqual(parsed.decision, 'block');
+  assert.match(parsed.reason, /latest runnable edit/i);
+});
+
+test('ground: a live Codex policy rejection cannot count as proof', () => {
+  const home = freshHome();
+  record(home, 'ground-policy-rejection', 'apply_patch', {
+    command: '*** Update File: src/app.ts',
+  }, { content: [{ type: 'text', text: 'patch applied' }] });
+  record(home, 'ground-policy-rejection', 'Bash', { command: 'npm test' }, {
+    content: [{
+      type: 'text',
+      text: '`powershell.exe -Command npm test` rejected: blocked by policy',
+    }],
+  });
+  const parsed = JSON.parse(stop(home, 'ground-policy-rejection', receipt));
+  assert.strictEqual(parsed.decision, 'block');
+  assert.match(parsed.reason, /latest runnable edit/i);
+});
+
+test('ground: successful output mentioning error handling cannot be misclassified', () => {
+  const home = freshHome();
+  record(home, 'ground-success-wording', 'apply_patch', {
+    command: '*** Update File: src/app.ts',
+  });
+  record(home, 'ground-success-wording', 'Bash', { command: 'npm test' }, {
+    content: [{ type: 'text', text: 'Error handling tests passed\nExit code: 0' }],
+  });
+  assert.strictEqual(stop(home, 'ground-success-wording', receipt).trim(), '');
 });
 
 test('ground: an explicitly failed execution does not satisfy the gate', () => {

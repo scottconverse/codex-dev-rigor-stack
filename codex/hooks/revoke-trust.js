@@ -156,7 +156,7 @@ async function main() {
   }
 
   try {
-    await request('initialize', { clientInfo: { name: 'dev_rigor_trust_revoker', title: 'Dev Rigor Trust Revoker', version: '1.6.2' } });
+    await request('initialize', { clientInfo: { name: 'dev_rigor_trust_revoker', title: 'Dev Rigor Trust Revoker', version: '1.6.3' } });
     child.stdin.write(JSON.stringify({ method: 'initialized', params: {} }) + '\n');
     const listed = await request('hooks/list', { cwds: [cwd] });
     const entry = listed && listed.data && listed.data[0];

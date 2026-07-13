@@ -16,14 +16,6 @@ const CODE_HINT = /`|\.(m?[jt]sx?|py|rs|go|java|rb|php|cs?|cpp|html?|css|sh|ps1|
 
 function safeSession(value) { return String(value || '').replace(/[^a-zA-Z0-9_-]/g, ''); }
 
-function markPromptBoundary(session) {
-  if (!session) return;
-  try {
-    fs.mkdirSync(stateDir, { recursive: true });
-    fs.appendFileSync(path.join(stateDir, `ground-v2-${session}.log`), `P ${Date.now()}\n`, 'utf8');
-  } catch (_) { /* routing state must never interfere with the user's prompt */ }
-}
-
 const ROUTES = [
   {
     name: 'release', file: 'release.md',
@@ -51,7 +43,6 @@ function main() {
   let payload;
   try { payload = JSON.parse(fs.readFileSync(0, 'utf8')); } catch (_) { return; }
   const session = safeSession(payload.session_id);
-  markPromptBoundary(session);
   const prompt = typeof payload.prompt === 'string' ? payload.prompt : '';
   if (prompt.length < 8) return;
   const route = ROUTES.find((candidate) => candidate.match(prompt));

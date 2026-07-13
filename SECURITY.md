@@ -1,6 +1,6 @@
 # Security Policy
 
-**Current supported version:** 1.6.2
+**Current supported version:** 1.6.3
 
 ## Security model
 
@@ -16,13 +16,13 @@ changed definitions for review. The runtime uses Node built-ins only, reads life
 from stdin, writes Codex hook JSON to stdout, and stores append-only state beneath
 `CODEX_HOME/dev-rigor-stack/state`.
 
-On Windows, `DevRigorHookActivator-1.6.2.exe` provides that review without a terminal. It
+On Windows, `DevRigorHookActivator-1.6.3.exe` provides that review without a terminal. It
 uses Codex's local app-server protocol, accepts only the exact six expected dev-rigor
 events sourced from the user's `hooks.json`, shows their commands and hashes, requires an
 explicit confirmation, writes those hashes through `config/batchWrite`, and re-reads
 `hooks/list` before reporting success. It cannot trust unrelated hooks.
 
-The 1.6.2 Windows executable is built from the published source but is not Authenticode-signed.
+The 1.6.3 Windows executable is built from the published source but is not Authenticode-signed.
 Browser downloads may therefore trigger Windows SmartScreen. The landing page publishes
 the exact binary SHA-256 and the complete matching C# source; do not continue when the
 downloaded hash differs.
@@ -34,8 +34,13 @@ clean-profile inspection before installing into an active Codex home.
 
 ## Supported versions
 
-Version 1.6.2 is supported. Updating is a fresh repository download or pull followed by
+Version 1.6.3 is supported. Updating is a fresh repository download or pull followed by
 rerunning the installer; backups are enabled by default.
+
+Versions 1.6.0 through 1.6.2 are unsupported. Their Stop-hook state can outlive the coding
+turn that created it and discard later read-only or conversational responses. Uninstall
+those versions before continuing normal work, then install 1.6.3 only after its isolated
+tests and exact hook definitions have been reviewed.
 
 ## Reporting a vulnerability
 

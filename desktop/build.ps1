@@ -29,11 +29,11 @@ $Output = Join-Path $OutputDirectory 'DevRigorHookActivator.exe'
 if ($LASTEXITCODE -ne 0) { throw "Activator build failed with exit code $LASTEXITCODE" }
 
 $VersionInfo = (Get-Item -LiteralPath $Output).VersionInfo
-if ($VersionInfo.FileVersion -ne '1.6.2.0') { throw "Unexpected FileVersion: $($VersionInfo.FileVersion)" }
-if ($VersionInfo.ProductVersion -notlike '1.6.2*') { throw "Unexpected ProductVersion: $($VersionInfo.ProductVersion)" }
+if ($VersionInfo.FileVersion -ne '1.6.3.0') { throw "Unexpected FileVersion: $($VersionInfo.FileVersion)" }
+if ($VersionInfo.ProductVersion -notlike '1.6.3*') { throw "Unexpected ProductVersion: $($VersionInfo.ProductVersion)" }
 if ($VersionInfo.ProductName -ne 'Dev Rigor Stack') { throw "Unexpected ProductName: $($VersionInfo.ProductName)" }
 $AssemblyVersion = [Reflection.AssemblyName]::GetAssemblyName($Output).Version.ToString()
-if ($AssemblyVersion -ne '1.6.2.0') { throw "Unexpected assembly version: $AssemblyVersion" }
+if ($AssemblyVersion -ne '1.6.3.0') { throw "Unexpected assembly version: $AssemblyVersion" }
 
 $SelfTest = Join-Path $OutputDirectory 'OwnershipSelfTest.exe'
 & $Compiler /nologo /target:exe /optimize+ /platform:anycpu `
@@ -80,16 +80,16 @@ Write-Host "SHA256 $Hash"
 
 if ($PublishDirectory) {
   New-Item -ItemType Directory -Force -Path $PublishDirectory | Out-Null
-  $PublishedName = 'DevRigorHookActivator-1.6.2.exe'
+  $PublishedName = 'DevRigorHookActivator-1.6.3.exe'
   $Published = Join-Path $PublishDirectory $PublishedName
   Copy-Item -LiteralPath $Output -Destination $Published -Force
   Copy-Item -LiteralPath (Join-Path $Root 'DevRigorHookActivator.cs') `
-    -Destination (Join-Path $PublishDirectory 'DevRigorHookActivator-1.6.2.cs') -Force
+    -Destination (Join-Path $PublishDirectory 'DevRigorHookActivator-1.6.3.cs') -Force
   Set-Content -LiteralPath "$Published.sha256" -Value "$Hash  $PublishedName" -Encoding ascii
   $SourceHash = (Get-FileHash -LiteralPath (Join-Path $Root 'DevRigorHookActivator.cs') -Algorithm SHA256).Hash.ToLowerInvariant()
   $CompilerVersion = (Get-Item -LiteralPath $Compiler).VersionInfo.FileVersion
   $BuildRecord = [ordered]@{
-    version = '1.6.2'
+    version = '1.6.3'
     binary_sha256 = $Hash
     source_sha256 = $SourceHash
     compiler = '.NET Framework csc.exe'
@@ -99,7 +99,7 @@ if ($PublishDirectory) {
     product_version = $VersionInfo.ProductVersion
     source = 'desktop/DevRigorHookActivator.cs'
   } | ConvertTo-Json
-  Set-Content -LiteralPath (Join-Path $PublishDirectory 'DevRigorHookActivator-1.6.2.build.json') `
+  Set-Content -LiteralPath (Join-Path $PublishDirectory 'DevRigorHookActivator-1.6.3.build.json') `
     -Value $BuildRecord -Encoding ascii
   Write-Host "Published $Published"
 }

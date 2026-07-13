@@ -1,8 +1,8 @@
 # codex-dev-rigor-stack — technical architecture
 
-**Architecture version:** 1.6.2
+**Architecture version:** 1.6.3
 
-**Applies to dev-rigor-stack:** 1.6.2
+**Applies to dev-rigor-stack:** 1.6.3
 
 This document describes the system boundaries, delivery state machine, evidence flow, and
 deployment model. The [user manual](MANUAL.md) explains operation; this document explains
@@ -74,27 +74,31 @@ flowchart TB
     Stops["Stop / SubagentStop"]
     Reflex["Reflex injector\nuniversal proof + receipt contract"]
     Router["Rigor router\ninvestigation · grounding · decompose · release"]
-    Ledger["Append-safe turn ledger\nprompt boundary · edit · execution · receipt checkpoint"]
+    Identity["Authoritative Codex identity\nsession_id + turn_id"]
+    Ledger["Append-safe exact-turn ledger\nedit · execution · block · checkpoint"]
     Gate["Grounding/evidence gate\ncurrent-turn edit checked? receipt present?"]
     Continue["Codex continuation prompt\nrun the missing check / add receipt"]
     Coordinator["Coordinator + 19 standalone entrypoints"]
 
     Events --> Start --> Reflex --> Coordinator
     Events --> Prompt --> Router --> Coordinator
-    Events --> Tools --> Ledger
-    Events --> Stops --> Gate
+    Events --> Tools --> Identity --> Ledger
+    Events --> Stops --> Identity
+    Identity --> Gate
     Ledger --> Gate
     Gate -->|complete| Coordinator
     Gate -->|missing evidence| Continue --> Coordinator
 ```
 
-`Stop` and `SubagentStop` are the authoritative mechanical boundary. `UserPromptSubmit`
-records a turn boundary; an accepted coding receipt records a checkpoint. The gate inspects
-only activity after the latest boundary or checkpoint, so an old edit cannot poison later
-conversation. Within that scope, append order still matters: a test run before a later code
-edit cannot clear the later edit, and an explicitly failed execution cannot clear it.
-Codex's `stop_hook_active` field is honored as the platform anti-loop guard. Session and
-prompt hooks inject the complete operating contract; PostToolUse supplies observable grounding.
+`Stop` and `SubagentStop` are the authoritative mechanical boundary. PostToolUse and Stop
+share state only when both the exact `session_id` and exact `turn_id` match.
+`UserPromptSubmit` routes a discipline but never creates or clears grounding state because
+ambient prompt events are not authoritative turn boundaries. An accepted coding receipt
+records a checkpoint. After one block, a retry with no intervening tool event is released
+and checkpointed even when a client omits `stop_hook_active`; new tool activity re-arms the
+gate. Missing identity or an unwritable block checkpoint fails open instead of risking a
+permanent discard loop. Within a turn, append order still matters: a test run before a
+later edit cannot clear it, and an explicitly failed execution cannot count as proof.
 Codex requires users to review and trust non-managed hook definitions. Each command binds
 its definition to the runtime script SHA-256, verifies a single read buffer, and compiles
 that same buffer; it never hashes one read and executes a second. On Windows, the
@@ -199,7 +203,7 @@ flowchart LR
     Docs["docs/\nstatic landing + manual + architecture"]
     Pages["GitHub Pages\npublic landing URL"]
     Archive["GitHub source archive\npublished installer scripts"]
-    Installer["agent or script installation\ndev-rigor-stack 1.6.2"]
+    Installer["agent or script installation\ndev-rigor-stack 1.6.3"]
     Backup["target/.backup/.../<timestamp>"]
     Home["CODEX_HOME/skills\n19 entrypoints"]
     Runtime["CODEX_HOME/dev-rigor-stack\nactive Node hook runtime + state"]
@@ -252,10 +256,11 @@ unexpected hook configuration is refused and left byte-identical.
 
 ## Version model
 
-Version `1.6.2` continues the product lineage from `1.5.1`. The interim `1.0.0` Codex
+Version `1.6.3` continues the product lineage from `1.5.1`. The interim `1.0.0` Codex
 package number remains historical changelog data, not a new lineage root. Subsequent
 versions advance monotonically from 1.6.0. Version 1.6.1 repaired Desktop activation;
-1.6.2 repairs Stop-hook turn scoping and checkpoint state.
+1.6.2's prompt-boundary repair was withdrawn; 1.6.3 uses exact Codex turn identity and a
+hard retry circuit breaker. Versions 1.6.0–1.6.2 are unsupported.
 
 ## Provenance note
 

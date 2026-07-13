@@ -14,7 +14,7 @@ description: >
 license: MIT
 ---
 
-# Standing dev rigor stack v1.6.2
+# Standing dev rigor stack v1.6.3
 
 Two altitudes. The **per-unit loop** (gates 1–5) applies to EVERY unit of work — a
 fix, a module, a feature. The **release gate** fires once per version, at the tag
@@ -222,7 +222,7 @@ something the model can't take back or wasn't authorized to spend. Instances:
 
 Reconciliation (keeps this from meaning "ask permission constantly") — it's about who
 **originates** the call:
-- **Explicit request** ("tag 1.6.2") = the owner deciding live → execute now, no "are
+- **Explicit request** ("tag 1.6.3") = the owner deciding live → execute now, no "are
   you sure."
 - **Standing authorization** (green-path unit merges are pre-approved) = decided ahead
   → proceed.

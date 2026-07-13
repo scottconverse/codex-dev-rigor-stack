@@ -43,7 +43,7 @@ def main() -> int:
 
     expected = CANONICAL | COMPATIBILITY
     assert set(names) == expected, f"manifest skills differ: {names}"
-    assert manifest["version"] == "1.6.2", "manifest version must be 1.6.2"
+    assert manifest["version"] == "1.6.3", "manifest version must be 1.6.3"
 
     for name in names:
         skill_file = ROOT / "skills" / name / "SKILL.md"
