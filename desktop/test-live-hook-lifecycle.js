@@ -30,13 +30,20 @@ let buffer = '';
 let stderr = '';
 let threadId = '';
 let firstTurnId = '';
-let retryTurnId = '';
+let reportTurnId = '';
+let unprovedTurnId = '';
 let phase = 'initialize';
 let completed = false;
 let timeout;
 const firstItems = new Set();
-const retryItems = new Set();
+const reportItems = new Set();
+const unprovedItems = new Set();
+const reportMessages = [];
+let reportDeltas = '';
 let conversationMessage = '';
+const LONG_REPORT = 'REPORT_STAYS_VISIBLE | ' + Array.from({ length: 24 }, (_, index) =>
+  `Section ${index + 1}: verified lifecycle evidence remains visible without destructive receipt enforcement.`
+).join(' | ');
 
 function send(message) { child.stdin.write(JSON.stringify(message) + '\n'); }
 function fail(error) {
@@ -59,34 +66,56 @@ function startTurn(id, text, outputSchema) {
 }
 function verifyState() {
   const stateDir = path.join(codexHome, 'dev-rigor-stack', 'state');
-  const ledgers = fs.readdirSync(stateDir).filter((name) => name.startsWith('ground-v3-'));
-  if (ledgers.length !== 2) throw new Error(`expected two live coding-turn ledgers, found ${ledgers.length}`);
+  const ledgers = fs.readdirSync(stateDir).filter((name) => name.startsWith('ground-v4-'));
+  if (ledgers.length !== 3) throw new Error(`expected three live coding-turn ledgers, found ${ledgers.length}`);
   const contents = ledgers.map((name) =>
     fs.readFileSync(path.join(stateDir, name), 'utf8').split('\n').filter(Boolean)
   );
-  const happy = contents.find((lines) =>
-    ['E ', 'X ', 'C '].every((prefix) => lines.some((line) => line.startsWith(prefix))) &&
-    !lines.some((line) => line.startsWith('B '))
+  const hasProof = (lines) => lines.some((line) => /^[RTB] /.test(line));
+  const happy = contents.find((lines) => lines.some((line) => line.startsWith('E ')) && hasProof(lines) &&
+    lines.some((line) => line.startsWith('C ')) && !lines.some((line) => line.startsWith('K ')));
+  const report = contents.find((lines) => lines.some((line) => line.startsWith('E ')) && hasProof(lines) &&
+    lines.some((line) => line.startsWith('W ') && line.includes('missing-receipt')) &&
+    lines.some((line) => line.startsWith('C ')) && !lines.some((line) => /^[KU] /.test(line)));
+  const unproved = contents.find((lines) => lines.some((line) => line.startsWith('E ')) &&
+    lines.some((line) => line.startsWith('K ')) && !lines.some((line) => line.startsWith('C ')));
+  if (!happy) throw new Error(`missing happy-path E/proof/C ledger: ${JSON.stringify(contents)}`);
+  if (!report) throw new Error(`missing non-destructive report E/proof/W/C ledger: ${JSON.stringify(contents)}`);
+  if (!unproved) throw new Error(`missing unresolved one-block E/K/no-C ledger: ${JSON.stringify(contents)}`);
+  if (unproved.filter((line) => line.startsWith('K ')).length !== 1) {
+    throw new Error(`unproved turn blocked more than once: ${unproved.join(' | ')}`);
+  }
+  const taskStates = fs.readdirSync(stateDir).filter((name) => name.startsWith('task-v4-')).map((name) =>
+    JSON.parse(fs.readFileSync(path.join(stateDir, name), 'utf8'))
   );
-  const retry = contents.find((lines) =>
-    ['E ', 'X ', 'B ', 'C '].every((prefix) => lines.some((line) => line.startsWith(prefix)))
-  );
-  if (!happy) throw new Error(`missing happy-path E/X/C ledger: ${JSON.stringify(contents)}`);
-  if (!retry) throw new Error(`missing one-block retry E/X/B/C ledger: ${JSON.stringify(contents)}`);
-  if (retry.filter((line) => line.startsWith('B ')).length !== 1) {
-    throw new Error(`retry turn blocked more than once: ${retry.join(' | ')}`);
+  if (!taskStates.some((task) => Array.isArray(task.unresolved) && task.unresolved.length > 0)) {
+    throw new Error('the substantive block was released or remediated without preserving unresolved proof debt');
   }
   if (!firstItems.has('fileChange') || !firstItems.has('commandExecution')) {
     throw new Error(`model turn did not exercise both edit and execution: ${[...firstItems].join(', ')}`);
   }
-  if (!retryItems.has('fileChange') || !retryItems.has('commandExecution')) {
-    throw new Error(`retry turn did not exercise both edit and execution: ${[...retryItems].join(', ')}`);
+  if (!reportItems.has('fileChange') || !reportItems.has('commandExecution')) {
+    throw new Error(`report turn did not exercise both edit and execution: ${[...reportItems].join(', ')}`);
+  }
+  if (!unprovedItems.has('fileChange')) {
+    throw new Error(`unproved turn did not exercise an edit: ${[...unprovedItems].join(', ')}`);
+  }
+  const completedReports = reportMessages.filter((message) => message.text.includes('REPORT_STAYS_VISIBLE'));
+  const uniqueReportText = new Set(completedReports.map((message) => message.text));
+  if (completedReports.length < 1 || uniqueReportText.size !== 1) {
+    throw new Error(`long report was absent or replaced with conflicting content: ${JSON.stringify(reportMessages)}`);
+  }
+  if (reportMessages.some((message) => /proved:/i.test(message.text) && !message.text.includes('REPORT_STAYS_VISIBLE'))) {
+    throw new Error(`a receipt-only response replaced the long report: ${JSON.stringify(reportMessages)}`);
+  }
+  if (reportDeltas && !reportDeltas.includes('REPORT_STAYS_VISIBLE')) {
+    throw new Error('streamed report deltas did not preserve the report sentinel');
   }
   if (!conversationMessage.includes('CONVERSATION_OK')) {
     throw new Error(`later conversation did not complete normally: ${conversationMessage}`);
   }
   process.stdout.write(
-    `Live Codex lifecycle: happy turn ${firstTurnId}; one-block retry ${retryTurnId}; later conversation passed\n`
+    `Live Codex lifecycle: happy ${firstTurnId}; persistent report ${reportTurnId}; one-block unresolved ${unprovedTurnId}; later conversation passed\n`
   );
 }
 
@@ -125,17 +154,26 @@ child.stdout.on('data', (chunk) => {
     } else if (message.id === 3) {
       firstTurnId = message.result.turn.id;
     } else if (message.id === 4) {
-      retryTurnId = message.result.turn.id;
+      reportTurnId = message.result.turn.id;
     } else if (message.id === 5) {
+      unprovedTurnId = message.result.turn.id;
+    } else if (message.id === 6) {
       // Wait for the final turn/completed.
     } else if (message.method === 'item/completed' && phase === 'first') {
       if (message.params && message.params.item && message.params.item.type) {
         firstItems.add(message.params.item.type);
       }
-    } else if (message.method === 'item/completed' && phase === 'retry') {
+    } else if (message.method === 'item/completed' && phase === 'report') {
       if (message.params && message.params.item && message.params.item.type) {
-        retryItems.add(message.params.item.type);
+        reportItems.add(message.params.item.type);
+        if (message.params.item.type === 'agentMessage') reportMessages.push({
+          id: message.params.item.id || '', text: message.params.item.text || '',
+        });
       }
+    } else if (message.method === 'item/agentMessage/delta' && phase === 'report') {
+      reportDeltas += message.params && message.params.delta || '';
+    } else if (message.method === 'item/completed' && phase === 'unproved') {
+      if (message.params && message.params.item && message.params.item.type) unprovedItems.add(message.params.item.type);
     } else if (message.method === 'item/completed' && phase === 'conversation') {
       const item = message.params && message.params.item;
       if (item && item.type === 'agentMessage') conversationMessage += item.text || '';
@@ -146,19 +184,30 @@ child.stdout.on('data', (chunk) => {
         return;
       }
       if (phase === 'first') {
-        phase = 'retry';
+        phase = 'report';
         startTurn(4,
-          "This is the Stop-hook retry circuit-breaker test. Use apply_patch to create retry-live-hook-test.js containing console.log('RETRY_HOOK_OK'). Run node retry-live-hook-test.js with the shell tool. Return the required schema value; it deliberately omits the receipt so the real Stop hook can reject it once.",
+          "This is the disappearing-report acceptance test. Use apply_patch to create report-live-hook-test.js containing console.log('REPORT_HOOK_OK'). Run node report-live-hook-test.js with the shell tool. Then return the required long schema value exactly. It deliberately omits receipt formatting; because substantive proof exists, the answer must stream once and remain visible.",
           {
             type: 'object',
-            properties: { answer: { type: 'string', enum: ['FIRST_ATTEMPT_NO_RECEIPT'] } },
+            properties: { answer: { type: 'string', enum: [LONG_REPORT] } },
             required: ['answer'],
             additionalProperties: false,
           }
         );
-      } else if (phase === 'retry') {
+      } else if (phase === 'report') {
+        phase = 'unproved';
+        startTurn(5,
+          "This is the substantive one-block circuit-breaker test. Use apply_patch to create unproved-live-hook-test.js containing console.log('UNPROVED_HOOK'). Do not run, render, test, or build it. Return the required schema value so the real Stop hook intervenes once and then records unresolved proof debt.",
+          {
+            type: 'object',
+            properties: { answer: { type: 'string', enum: ['UNPROVED_EDIT_RESPONSE'] } },
+            required: ['answer'],
+            additionalProperties: false,
+          }
+        );
+      } else if (phase === 'unproved') {
         phase = 'conversation';
-        startTurn(5, 'Do not use tools. Reply with exactly: CONVERSATION_OK');
+        startTurn(6, 'Do not use tools. Reply with exactly: CONVERSATION_OK');
       } else if (phase === 'conversation') {
         try { verifyState(); } catch (error) { fail(error); return; }
         completed = true;
