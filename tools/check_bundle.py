@@ -42,7 +42,7 @@ def main() -> int:
 
     expected = CANONICAL | COMPATIBILITY
     assert set(names) == expected, f"manifest skills differ: {names}"
-    assert manifest["version"] == "1.0.0", "manifest version must be 1.0.0"
+    assert manifest["version"] == "1.6.0", "manifest version must be 1.6.0"
 
     for name in names:
         skill_file = ROOT / "skills" / name / "SKILL.md"
@@ -60,6 +60,17 @@ def main() -> int:
     ps_names = re.findall(r"'([^']+)'", ps_order.group(1))
     assert ps_names == names, "PowerShell installer order differs from manifest"
     assert sh_order.group(1).split() == names, "shell installer drift"
+
+    hooks = manifest["codex"]["hooks"]
+    assert hooks["status"] == "active", "Codex hooks must be active"
+    for path in (
+        ROOT / "codex" / "hooks" / "dev-rigor-activate.js",
+        ROOT / "codex" / "hooks" / "dev-rigor-router.js",
+        ROOT / "codex" / "hooks" / "dev-rigor-ground.js",
+        ROOT / "codex" / "hooks" / "wire-hooks.js",
+    ):
+        assert path.is_file(), f"missing active Codex hook file: {path}"
+    assert "wire-hooks.js" in ps and "wire-hooks.js" in sh, "installers do not wire Codex hooks"
 
     coordinator = (ROOT / "skills" / "dev-rigor-stack" / "SKILL.md").read_text(encoding="utf-8")
     for name in sorted(CANONICAL - {"dev-rigor-stack"}):

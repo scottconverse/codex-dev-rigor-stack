@@ -1,8 +1,6 @@
 # codex-dev-rigor-stack
 
-**Current Codex bundle: 1.0.0**
-
-**Bundled upstream discipline: 1.5.1**
+**Current version: 1.6.0**
 
 MIT licensed.
 
@@ -46,6 +44,11 @@ consumes the exact published artifact and owns blind-first clean-environment ins
 every product screen/control/path/state, interface-to-function wiring, accessibility,
 update, repair, uninstall, and a numerical coverage ledger.
 
+An active Codex lifecycle layer injects the universal proof reflex at session and subagent
+start, routes prompts to the matching discipline, records edits and successful real executions, and
+uses Stop/SubagentStop to continue work when the latest runnable edit has not been checked successfully
+or the final evidence receipt is missing.
+
 See the [technical architecture](docs/ARCHITECTURE.md) for system context, delivery state,
 evidence/handoff, and deployment drawings.
 
@@ -79,16 +82,15 @@ rewrites.
 - Codex Desktop or another Codex client that loads skills from `CODEX_HOME/skills`
 - Windows PowerShell 5.1+ for `install.ps1`, or Bash/Git Bash for `install.sh`
 - Git only when cloning instead of downloading the source archive
-- Node.js only for testing the retained upstream Claude hook sources; the Codex skills do
-  not require Node at runtime
+- Node.js for the active Codex hook runtime (the hooks use built-ins only)
 
 ## Quick Start
 
 1. Download or clone this repository.
 2. Open a terminal in the repository root.
 3. Run the PowerShell or Bash installer below.
-4. Restart Codex Desktop.
-5. Invoke `$dev-rigor-stack` or any standalone entrypoint.
+4. Open `/hooks`, review and trust the six dev-rigor lifecycle definitions.
+5. Restart Codex Desktop, then invoke `$dev-rigor-stack` or any standalone entrypoint.
 
 PowerShell:
 
@@ -124,17 +126,17 @@ troubleshooting, portability, and the exact Codex hook status.
 
 - Set `CODEX_HOME` to change the Codex home used by the installers.
 - Pass `-Target <path>` to `install.ps1` or `--target <path>` to `install.sh` for an exact
-  skills directory.
+  skills directory. When it is not `<CODEX_HOME>/skills`, also pass `-CodexHome <path>` or
+  `--codex-home <path>` so the runtime and `hooks.json` land in the intended clean profile.
 - Use `-NoBackup` or `--no-backup` only when you intentionally do not want recovery copies.
 - A project may declare a non-default severity threshold before a run, but it cannot lower
   the threshold after findings exist. The stack default is strict-zero.
 
 ## Versioning
 
-`1.0.0` is the version of this **Codex bundle**. Immediately before it, this repository was
-`0.2.0`. The imported development discipline has its own history and was `1.5.1` when the
-Codex bundle became 1.0.0. Keeping both numbers visible prevents a packaging release from
-being confused with a methodology downgrade.
+Version `1.6.0` continues the product lineage from `1.5.1`. The earlier `1.0.0` Codex
+packaging number was an interim version reset; it is preserved in the changelog as history
+but is not the basis for future numbering. Releases advance monotonically from 1.6.0.
 
 ## Strength-Preservation Contract
 
@@ -144,12 +146,16 @@ requirements, Visitor Audit’s strong mechanics, shared handoffs, strict-zero w
 installer parity, and portable-export parity. Missing required siblings make a gate
 invalid; they do not silently trigger a weaker approximation.
 
-## Codex Hook Status
+## Active Codex Hooks
 
-This repository retains the three upstream Claude hook implementations—session reflex,
-prompt router, and grounding check—for provenance and future verified porting. The Codex
-installer **does not wire or activate them** because Codex and Claude hook events and
-payloads differ. The full pull-based discipline lives in the installed skills.
+The installer copies a Codex-native hook runtime to `CODEX_HOME/dev-rigor-stack` and
+merges owned entries into `CODEX_HOME/hooks.json` without removing foreign hooks. Active
+events are `SessionStart`, `SubagentStart`, `UserPromptSubmit`, `PostToolUse`, `Stop`, and
+`SubagentStop`. Codex deliberately requires review/trust for non-managed command hooks;
+until the user trusts these definitions in `/hooks`, they are installed but not enforced.
+
+The original Claude implementation remains under `plugin/` only as provenance. It is not
+part of the active Codex architecture.
 
 ## Project Links
 

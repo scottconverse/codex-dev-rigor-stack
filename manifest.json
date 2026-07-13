@@ -1,14 +1,14 @@
 {
   "name": "codex-dev-rigor-stack",
-  "version": "1.0.0",
+  "version": "1.6.0",
   "upstream": {
     "repo": "https://github.com/scottconverse/dev-rigor-stack",
     "commit": "63be0f72571d41db3ee5909a03a0b645bb28e71e",
     "version": "1.5.1"
   },
   "license": "MIT",
-  "description": "Codex-native dev-rigor-stack 1.0.0: thirteen namespaced standalone capabilities plus six backward-compatible entrypoints for proof-oriented delivery, exhaustive newcomer/UI walkthroughs, public-surface verification, and strict-zero release closure.",
-  "installs_to": "~/.codex/skills by default",
+  "description": "Codex-native dev-rigor-stack 1.6.0: active lifecycle enforcement hooks, thirteen namespaced standalone capabilities, and six backward-compatible entrypoints for proof-oriented delivery, exhaustive newcomer/UI walkthroughs, public-surface verification, and strict-zero release closure.",
+  "installs_to": "~/.codex/skills, ~/.codex/dev-rigor-stack, and merged ~/.codex/hooks.json entries by default",
   "skills": [
     { "name": "dev-rigor-stack", "role": "orchestrates the delivery loop and release gate" },
     { "name": "dev-rigor-stack-continuity", "role": "restores and persists durable project state" },
@@ -33,6 +33,12 @@
   "codex": {
     "installer": "install.ps1",
     "restart_required": true,
-    "hooks": "not wired by default; upstream Claude hooks need a Codex-native port before enabling"
+    "hooks": {
+      "status": "active",
+      "events": ["SessionStart", "SubagentStart", "UserPromptSubmit", "PostToolUse", "Stop", "SubagentStop"],
+      "config": "~/.codex/hooks.json",
+      "runtime": "~/.codex/dev-rigor-stack",
+      "trust_required": true
+    }
   }
 }

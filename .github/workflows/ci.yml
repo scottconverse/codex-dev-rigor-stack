@@ -16,10 +16,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      # Hook suite: router/grounding/wiring/activation behavior + repo content
-      # integrity (NUL bytes, mojibake, BOMs, payload line endings).
-      - name: Hook self-check (42 tests)
+      # Preserve the upstream Claude hook source and separately prove the active Codex port.
+      - name: Upstream Claude hook source self-check (42 tests)
         run: node plugin/hooks/test-hooks.js
+      - name: Active Codex hook self-check
+        run: node codex/hooks/test-hooks.js
       - name: Bundle and capability contracts
         run: |
           python3 tools/check_bundle.py
@@ -30,11 +31,17 @@ jobs:
         run: python3 tools/check_sync.py
       - name: Installer smoke (Linux)
         if: runner.os == 'Linux'
-        run: bash install.sh --target "$RUNNER_TEMP/codex-home/skills" --no-backup
+        run: |
+          bash install.sh --target "$RUNNER_TEMP/codex-home/skills" --no-backup
+          test -f "$RUNNER_TEMP/codex-home/hooks.json"
+          test -f "$RUNNER_TEMP/codex-home/dev-rigor-stack/hooks/dev-rigor-ground.js"
       - name: Installer smoke (Windows)
         if: runner.os == 'Windows'
         shell: powershell
-        run: .\install.ps1 -Target "$env:RUNNER_TEMP\codex-home\skills" -NoBackup
+        run: |
+          .\install.ps1 -Target "$env:RUNNER_TEMP\codex-home\skills" -NoBackup
+          if (-not (Test-Path "$env:RUNNER_TEMP\codex-home\hooks.json")) { throw 'hooks.json missing' }
+          if (-not (Test-Path "$env:RUNNER_TEMP\codex-home\dev-rigor-stack\hooks\dev-rigor-ground.js")) { throw 'hook runtime missing' }
       # The two exporters must produce byte-identical bundles — this is the
       # regression gate for the PS 5.1 mojibake bug (windows job runs real
       # Windows PowerShell 5.1, the shell that had the bug).

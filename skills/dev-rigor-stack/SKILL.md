@@ -14,7 +14,7 @@ description: >
 license: MIT
 ---
 
-# Standing dev rigor stack (Codex bundle v1.0.0; discipline v1.5.1+)
+# Standing dev rigor stack v1.6.0
 
 Two altitudes. The **per-unit loop** (gates 1–5) applies to EVERY unit of work — a
 fix, a module, a feature. The **release gate** fires once per version, at the tag
@@ -222,7 +222,7 @@ something the model can't take back or wasn't authorized to spend. Instances:
 
 Reconciliation (keeps this from meaning "ask permission constantly") — it's about who
 **originates** the call:
-- **Explicit request** ("tag 1.0.0") = the owner deciding live → execute now, no "are
+- **Explicit request** ("tag 1.6.0") = the owner deciding live → execute now, no "are
   you sure."
 - **Standing authorization** (green-path unit merges are pre-approved) = decided ahead
   → proceed.
@@ -250,10 +250,14 @@ Standalone gate: `$dev-rigor-stack-docs-gate`.
 
 The Codex installer bundles and installs every namespaced standalone stage plus the
 backward-compatible **coder-tdd-qa, proof-gate, gauntletgate, audit-lite, audit-team, and
-visitor-audit** entrypoints, so a normal install has every lane present. Upstream Claude
-Code also ships always-on hooks; this Codex
-packaging does not wire them by default because Codex Desktop hook events and payloads
-are different. The full discipline lives in the skills. The degrade path is a fallback for
+visitor-audit** entrypoints, so a normal install has every lane present. It also installs
+and wires the active Codex lifecycle layer: SessionStart/SubagentStart reflex injection,
+UserPromptSubmit routing, PostToolUse grounding, and Stop/SubagentStop evidence checks.
+Codex requires the user to review and trust non-managed hooks through `/hooks`; an
+untrusted, disabled, missing, or failed hook must be reported as unenforced, never
+represented as active. The full discipline remains in the skills, while the hooks make
+the universal reflex, task routing, run-after-latest-edit check, and evidence receipt
+mechanical. The degrade path is a fallback for
 the unusual case (a partial install, stale install, or a skill
 manually removed): if a lane's skill is absent, the coordinator runs the equivalent
 discipline inline, **says so**, and still uses a fresh-context serial pass or bounded

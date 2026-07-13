@@ -24,7 +24,7 @@ strip_frontmatter() {
 }
 
 {
-  echo "# codex-dev-rigor-stack 1.0.0 — portable bundle"
+  echo "# codex-dev-rigor-stack 1.6.0 — portable bundle"
   echo
   echo "Derived from the complete Codex bundle. Paste into any agent's system prompt / AGENTS.md."
   echo "Host-specific mechanics read as plain guidance; canonical capabilities are not removed"
