@@ -1,13 +1,31 @@
 # Changelog
 
-All notable changes to dev-rigor-stack. Codex package history and inherited upstream
-discipline history are identified separately; a version heading does not imply a Git tag
-exists in this Codex repository.
+All notable changes to dev-rigor-stack. A version heading does not imply a Git tag exists
+in this repository.
+
+## 1.6.0 — 2026-07-13
+
+Version 1.6.0 restores monotonic product-line versioning after the interim 1.0.0 Codex
+package number. Future releases advance from 1.6.0.
+
+- **Added active Codex lifecycle enforcement:** SessionStart/SubagentStart reflex,
+  UserPromptSubmit routing, PostToolUse grounding, and Stop/SubagentStop evidence gates.
+- **Strengthened grounding:** only a successful real execution or render after the latest
+  runnable edit clears the gate; an earlier test run, or an explicitly failed later check,
+  no longer excuses a trailing edit.
+- **Added mechanical receipt enforcement:** runnable changes require the exact proved / blast /
+  skipped evidence receipt before a normal stop.
+- **Added safe Codex hook wiring:** installers preserve foreign hooks, refuse corrupt
+  `hooks.json`, back up configuration, and support ownership-safe hook removal.
+- **Corrected architecture:** active Codex hooks now appear in the primary system and
+  deployment flows; Claude source is limited to a provenance note.
+- **Added Codex hook behavior tests** alongside the retained upstream regression suite on
+  Windows and Linux CI.
 
 ## 1.0.0 — 2026-07-13
 
-Codex package release 1.0.0 supersedes Codex bundle 0.2.0 and packages upstream
-discipline 1.5.1; package and methodology versions are intentionally tracked separately.
+Historical interim Codex packaging release. This version reset was later corrected by
+1.6.0 and is not the basis for subsequent version numbers.
 
 - **Strengthened without subtraction:** restored the standalone Visitor Audit link checker
   as a strict superset of both prior implementations: live URLs, local files, redirects,

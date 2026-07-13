@@ -1,10 +1,8 @@
 # codex-dev-rigor-stack — technical architecture
 
-**Architecture version:** 1.0.0
+**Architecture version:** 1.6.0
 
-**Applies to Codex bundle:** 1.0.0
-
-**Bundled upstream discipline:** 1.5.1
+**Applies to dev-rigor-stack:** 1.6.0
 
 This document describes the system boundaries, delivery state machine, evidence flow, and
 deployment model. The [user manual](MANUAL.md) explains operation; this document explains
@@ -29,19 +27,30 @@ how the parts compose and where trust changes hands.
 ```mermaid
 flowchart LR
     Owner["Owner / product decision-maker"]
+    Hooks["Active Codex lifecycle hooks\nreflex · router · grounding gate"]
     Codex["Codex main coordinator"]
     Skills["19 installed skill entrypoints\n13 canonical + 6 compatibility"]
     Repo["Project repository\nsource · tests · docs · CI"]
     Runtime["Real runtime / rendered product"]
     Public["Public distribution\nrepo · docs site · release assets"]
     Evidence["Durable evidence\nclaims · findings · coverage · handoffs"]
+    CI["Cross-platform CI\nhooks · contracts · install smoke · export parity"]
+    Install["install.ps1 / install.sh\n19 skills + hook runtime + hooks.json"]
+    Publish["Publication\nmain · Pages · release surfaces"]
 
     Owner -->|scope, go/no-go, trust decisions| Codex
+    Hooks -->|always-on context + stop continuation| Codex
     Codex -->|route complete contracts| Skills
     Skills -->|read/change/verify| Repo
     Skills -->|exercise real artifact| Runtime
     Skills -->|visitor + acquisition journey| Public
     Repo -->|exact SHA and candidate| Evidence
+    Repo --> CI
+    CI -->|green exact SHA| Evidence
+    Install --> Hooks
+    Install --> Skills
+    Repo --> Publish
+    Publish --> Public
     Runtime -->|screens, controls, traces| Evidence
     Public -->|URLs, bytes, checksums| Evidence
     Evidence -->|decision packet| Codex
@@ -51,6 +60,43 @@ flowchart LR
 The package is not a build system or test framework. It is an orchestration and evidence
 discipline layered over the tools a repository already uses. The coordinator keeps
 judgment; specialized skills provide complete standalone protocols.
+
+## Active Codex enforcement architecture
+
+The active Codex hook layer is a first-class runtime boundary:
+
+```mermaid
+flowchart TB
+    Events["Codex lifecycle events"]
+    Start["SessionStart / SubagentStart"]
+    Prompt["UserPromptSubmit"]
+    Tools["PostToolUse"]
+    Stops["Stop / SubagentStop"]
+    Reflex["Reflex injector\nuniversal proof + receipt contract"]
+    Router["Rigor router\ninvestigation · grounding · decompose · release"]
+    Ledger["Append-safe session ledger\nrunnable edits · successful executions/renders"]
+    Gate["Grounding/evidence gate\nlatest edit successfully checked? receipt present?"]
+    Continue["Codex continuation prompt\nrun the missing check / add receipt"]
+    Coordinator["Coordinator + 19 standalone entrypoints"]
+
+    Events --> Start --> Reflex --> Coordinator
+    Events --> Prompt --> Router --> Coordinator
+    Events --> Tools --> Ledger
+    Events --> Stops --> Gate
+    Ledger --> Gate
+    Gate -->|complete| Coordinator
+    Gate -->|missing evidence| Continue --> Coordinator
+```
+
+`Stop` and `SubagentStop` are the authoritative mechanical boundary. The hook compares
+append order so a test run before a later code edit cannot clear the later edit. Explicitly
+failed executions also cannot clear the edit. Codex's `stop_hook_active` field is honored
+as the platform anti-loop guard. Session and prompt
+hooks inject the complete operating contract; PostToolUse supplies observable grounding.
+Codex requires users to review and trust non-managed hook definitions through `/hooks`.
+Installed but untrusted hooks are not active enforcement.
+The event and trust behavior follow the
+[official Codex hooks contract](https://learn.chatgpt.com/docs/hooks).
 
 ## Delivery state machine
 
@@ -146,22 +192,29 @@ flowchart LR
     Docs["docs/\nstatic landing + manual + architecture"]
     Pages["GitHub Pages\npublic landing URL"]
     Archive["GitHub source archive\npublished installer scripts"]
-    Installer["install.ps1 / install.sh\nCodex bundle 1.0.0"]
+    Installer["install.ps1 / install.sh\ndev-rigor-stack 1.6.0"]
     Backup["target/.backup/.../<timestamp>"]
     Home["CODEX_HOME/skills\n19 entrypoints"]
-    Hooks["plugin/ retained Claude hook sources\nnot wired by Codex installer"]
+    Runtime["CODEX_HOME/dev-rigor-stack\nactive Node hook runtime + state"]
+    HookConfig["CODEX_HOME/hooks.json\n6 merged lifecycle events"]
+    Trust["/hooks review + trust\nrequired before execution"]
+    CI["GitHub Actions\nWindows + Linux gates"]
+    Publish["GitHub Pages / repository surfaces"]
 
-    Source --> Docs --> Pages
+    Source --> CI --> Publish
+    Source --> Docs --> Pages --> Publish
     Source --> Archive --> Installer
     Installer -->|backup managed folders| Backup
     Installer -->|copy complete manifest| Home
-    Source --> Hooks
-    Hooks -. provenance / future port .-> Home
+    Installer --> Runtime
+    Installer -->|preserve foreign entries; merge owned entries| HookConfig
+    HookConfig --> Trust --> Runtime
 ```
 
-The installers are intentionally simple, dependency-free copy operations. They install all
-19 managed folders, back up replaced copies by default, and never activate the retained
-Claude hook layer. Codex reloads skill metadata after restart.
+The script installers install all 19 managed folders plus the active hook runtime, back up
+replaced copies and changed hook configuration, and merge only owned entries. Node.js is a
+runtime requirement for the hooks; no package dependencies are installed. Codex reloads
+skill metadata after restart and executes non-managed hooks only after `/hooks` trust.
 
 ## Runtime and failure boundaries
 
@@ -176,13 +229,21 @@ Claude hook layer. Codex reloads skill metadata after restart.
 
 ## Security boundaries
 
-The installed Codex artifact is Markdown skill content. Installers write managed skill
-folders and timestamped backups. The retained Node hook sources use built-ins only but are
-not configured by the Codex installer. No new network service, credential store, runtime
-dependency, or application endpoint is introduced by installation.
+The installed artifact is Markdown skill content plus a small Node.js lifecycle runtime.
+Installers write managed skill/runtime folders, owned `hooks.json` entries, append-safe
+state, and timestamped backups. The hook runtime uses Node built-ins only and introduces no
+network service, credential store, or application endpoint. Corrupt or structurally
+unexpected hook configuration is refused and left byte-identical.
 
 ## Version model
 
-Codex bundle `1.0.0` packages upstream discipline `1.5.1`. The immediately previous Codex
-bundle was `0.2.0`. Package and methodology versions advance independently and are carried
-as separate fields in `manifest.json`.
+Version `1.6.0` continues the product lineage from `1.5.1`. The interim `1.0.0` Codex
+package number remains historical changelog data, not a new lineage root. Subsequent
+versions advance monotonically from 1.6.0.
+
+## Provenance note
+
+The original Claude Code hook source is retained under `plugin/` for traceability and
+regression comparison. It is not loaded by Codex and is not part of the active runtime
+diagram above. The active implementation is independently adapted to the documented Codex
+event, payload, trust, and continuation contracts under `codex/`.

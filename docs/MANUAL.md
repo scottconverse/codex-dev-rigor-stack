@@ -1,10 +1,8 @@
 # codex-dev-rigor-stack — user manual
 
-**Manual version:** 1.0.0
+**Manual version:** 1.6.0
 
-**Applies to Codex bundle:** 1.0.0
-
-**Bundled upstream discipline:** 1.5.1
+**Applies to dev-rigor-stack:** 1.6.0
 
 This is the operating manual, not a longer README. Part 1 explains the product in plain
 English. Part 2 is the technical manual for installation, operation, evidence, lifecycle,
@@ -18,6 +16,7 @@ and troubleshooting.
 - [Choose an entrypoint](#choose-an-entrypoint)
 - [Operate the stack](#operate-the-stack)
 - [Evidence and handoffs](#evidence-and-handoffs)
+- [Active Codex hooks](#active-codex-hooks)
 - [Update, backup, restore, and uninstall](#update-backup-restore-and-uninstall)
 - [Troubleshooting](#troubleshooting)
 - [Versioning](#versioning)
@@ -86,13 +85,12 @@ ownership away from you.
 
 ### Package model
 
-Codex bundle 1.0.0 installs **all 19 entrypoints**: 13 canonical namespaced skills and 6
+Version 1.6.0 installs **all 19 entrypoints**: 13 canonical namespaced skills and 6
 backward-compatible entrypoints. Each canonical section can be invoked independently or
 through `$dev-rigor-stack`.
 
-The repository retains three upstream Claude hook implementations for provenance. They are
-not wired by the Codex installer. Codex operation is pull-based through skills; no current
-surface should imply those Claude hooks are active in Codex.
+It also installs **active Codex hooks** for the reflex, prompt router, grounding ledger,
+and Stop/SubagentStop evidence gate. The original Claude source remains only as provenance.
 
 ## Install
 
@@ -101,7 +99,7 @@ surface should imply those Claude hooks are active in Codex.
 - Codex Desktop or another client that loads `CODEX_HOME/skills`
 - PowerShell 5.1+ on Windows, or Bash/Git Bash
 - Git only if cloning rather than downloading a source archive
-- Node.js only for tests over the retained upstream hook sources
+- Node.js for the active Codex hooks; the runtime uses built-ins only
 
 ### Windows PowerShell
 
@@ -119,17 +117,20 @@ cd codex-dev-rigor-stack
 ./install.sh
 ```
 
-The default target is `~/.codex/skills`. Existing stack folders are backed up before they
-are replaced. Restart Codex Desktop after installation so it reloads skill metadata.
+The default targets are `~/.codex/skills` for the 19 entrypoints and
+`~/.codex/dev-rigor-stack` for the hook runtime. The installer merges owned entries into
+`~/.codex/hooks.json`, preserving foreign hooks and backing up changed configuration.
+Open `/hooks`, review and trust the dev-rigor definitions, then restart Codex Desktop.
 
 ### Custom target
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\install.ps1 -Target C:\temp\codex-skills
+powershell -ExecutionPolicy Bypass -File .\install.ps1 `
+  -Target C:\temp\codex-home\skills -CodexHome C:\temp\codex-home
 ```
 
 ```sh
-./install.sh --target /tmp/codex-skills
+./install.sh --target /tmp/codex-home/skills --codex-home /tmp/codex-home
 ```
 
 Use a custom target for clean-profile verification, CI, or another compatible host.
@@ -137,8 +138,9 @@ Use a custom target for clean-profile verification, CI, or another compatible ho
 
 ### Verify the installation
 
-The installer must report `Installed 19 skill(s).` Verify that every manifest entry has a
-`SKILL.md` in the target, restart Codex, and invoke a known entrypoint in a new task.
+The installer must report `Installed 19 skill(s).` Verify every manifest entry has a
+`SKILL.md`, `CODEX_HOME/dev-rigor-stack/hooks/dev-rigor-ground.js` exists, and `/hooks`
+shows all six trusted lifecycle events. Restart Codex and invoke a known entrypoint.
 
 ## Choose an entrypoint
 
@@ -264,18 +266,20 @@ lanes rerun the relevant review discipline self-contained and add a verdict, fir
 attestation, and Walkthrough lane. One produces review findings; the other decides whether
 the product may advance.
 
-## Retained upstream hook sources
+## Active Codex hooks
 
-The repository keeps three upstream Claude implementations:
+- **SessionStart/SubagentStart reflex:** injects the universal proof ladder, never-shrink
+  rules, and evidence receipt into the main coordinator and subagents.
+- **UserPromptSubmit router:** injects only the matching investigation, grounding,
+  decomposition, or release protocol.
+- **PostToolUse grounding ledger:** records runnable edits and actual execution/render
+  observations using append-safe per-session state.
+- **Stop/SubagentStop evidence gate:** continues Codex when no real check followed the
+  latest runnable edit, when that check explicitly failed, or when the required evidence receipt is missing.
 
-- **Reflex** injects a compact proof discipline at Claude session/subagent start.
-- **Rigor router** classifies Claude prompts and injects the relevant investigation,
-  grounding, decomposition, or release protocol.
-- **Grounding check** records runnable edits/executions and blocks one unsupported stop.
-
-They are test-covered source assets, not active Codex behavior. The Codex installer does
-not write Claude or Codex hook settings. Any future Codex-native port must first verify the
-real Codex event names, configuration shape, and payloads.
+Codex requires explicit trust for non-managed hooks. Use `/hooks` to verify that all six
+events are present and trusted. If they are untrusted, disabled, or failing, the skills
+remain usable but mechanical enforcement is not active and must not be claimed.
 
 ## Degrade and invalid states
 
@@ -289,8 +293,9 @@ states that path explicitly and still preserves independent/fresh-context judgme
 
 ### Update
 
-Pull or download the new repository version and rerun the installer. It replaces only the
-19 managed skill folders and creates a timestamped backup first.
+Pull or download the new repository version and rerun the installer. It replaces the 19
+managed skill folders and active Codex hook runtime, merges current owned hook definitions,
+and creates timestamped backups first.
 
 ### Backup
 
@@ -307,10 +312,14 @@ the managed folders that existed before that installation.
 
 ### Uninstall
 
-Close Codex Desktop and remove only the 19 folders listed in `manifest.json` from the
-target. Keep `.backup/codex-dev-rigor-stack/` if you may restore later. Restart Codex.
-The Codex installer never wires retained Claude hooks, so normal uninstall has no hook
-settings to reverse.
+Close Codex Desktop. First run the hook remover so foreign hook definitions are preserved:
+
+```text
+node <CODEX_HOME>/dev-rigor-stack/hooks/wire-hooks.js --remove <CODEX_HOME> <CODEX_HOME>/dev-rigor-stack
+```
+
+Then remove the 19 folders listed in `manifest.json` and the managed
+`<CODEX_HOME>/dev-rigor-stack` runtime. Keep backups if you may restore later. Restart Codex.
 
 ## Troubleshooting
 
@@ -324,6 +333,16 @@ Run `powershell -ExecutionPolicy Bypass -File .\install.ps1`.
 - Confirm the target is `CODEX_HOME/skills` or `~/.codex/skills`.
 - Restart Codex Desktop so metadata reloads.
 - Check that a custom-target smoke install was not mistaken for the active Codex home.
+
+### The hooks are installed but do not run
+
+- Open `/hooks` and confirm each dev-rigor definition is trusted and enabled.
+- Confirm `[features].hooks` is not `false` in active Codex configuration or policy.
+- Confirm Node.js is on the PATH visible to Codex, not only an interactive terminal.
+- Confirm `CODEX_HOME/dev-rigor-stack/hooks/` and `CODEX_HOME/hooks.json` point to the same
+  Codex home.
+- Restart Codex after installation or any hook-definition change. Trust is hash-bound, so
+  changed hook definitions require review again.
 
 ### The installer reports fewer than 19 skills
 
@@ -355,19 +374,15 @@ to make it shorter.
 
 ## Versioning
 
-- **Codex bundle 1.0.0** is the current package.
-- **Codex bundle 0.2.0** was the immediately previous repository version.
-- **Upstream discipline 1.5.1** is the methodology snapshot in `manifest.json`.
-
-These lines advance independently. Every current public/documentation surface displays the
-Codex bundle version and does not present the upstream discipline number as the package
-release.
+- **Version 1.6.0** is the current release and continues the product lineage from 1.5.1.
+- The earlier 1.0.0 Codex package number is retained only as historical record of an
+  interim reset; future versions advance monotonically from 1.6.0.
 
 ## Security and honest limits
 
-The installed Codex package is Markdown skill content. Installers copy managed folders and
-create local backups; they do not activate the retained Claude hook layer. The product
-does not guarantee bug-free software. It provides an inspectable process for matching
+The installed package contains Markdown skills plus a small Node.js hook runtime. The
+installer preserves foreign hook entries and Codex requires the user to review/trust the
+owned command hooks. The product does not guarantee bug-free software. It provides an inspectable process for matching
 claims to evidence and refusing unsupported “done” statements.
 
 See the [security policy](../SECURITY.md), [architecture](ARCHITECTURE.md),

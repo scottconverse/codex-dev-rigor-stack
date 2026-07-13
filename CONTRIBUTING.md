@@ -1,17 +1,19 @@
 # Contributing
 
-**Current release:** Codex bundle 1.0.0
+**Current release:** 1.6.0
 
 Thanks for considering it. This repo practices what it ships — contributions walk the
 same gates the stack enforces.
 
 ## Ground rules
 
-- **Every change comes with its check.** Hook changes need a test in
-  `plugin/hooks/test-hooks.js` that fails without the change (watch it fail first).
+- **Every change comes with its check.** Active Codex hook changes need a test in
+  `codex/hooks/test-hooks.js`; retained upstream Claude source changes need a test in
+  `plugin/hooks/test-hooks.js`. Watch the relevant assertion fail first.
   Doc changes must not overclaim — if you say the product does X, the code must do X.
-- **Run the complete suite before pushing:** `node plugin/hooks/test-hooks.js` (42
-  hermetic tests), `python3 tools/check_sync.py`, `python3 tools/check_bundle.py`, and
+- **Run the complete suite before pushing:** `node codex/hooks/test-hooks.js`,
+  `node plugin/hooks/test-hooks.js` (provenance regression suite),
+  `python3 tools/check_sync.py`, `python3 tools/check_bundle.py`, and
   `python3 -m unittest tools.test_stack_contracts tools.test_visitor_audit`. CI repeats
   them on Ubuntu and Windows, smoke-installs all 19 skills, and verifies exporter parity.
 - **Green-path only.** PRs merge when CI is green. No `--admin`, no overrides.
@@ -30,7 +32,7 @@ same gates the stack enforces.
 
 ## Practical notes
 
-- Zero runtime dependencies is deliberate — the hooks use only Node built-ins. Don't
+- Zero package dependencies is deliberate — the active hooks use only Node built-ins. Don't
   add a package.json for the product (dev tooling included).
 - Keep `SKILL.md` / `SKILL-LITE.md` sync blocks byte-identical (`lite:required`) or
   absent (`lite:excluded`); `tools/check_sync.py` gates this.

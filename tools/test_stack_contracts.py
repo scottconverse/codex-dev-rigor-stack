@@ -107,7 +107,7 @@ class StackContractTests(unittest.TestCase):
 
     def test_current_release_is_identified_on_every_document_surface(self) -> None:
         manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
-        self.assertEqual(manifest["version"], "1.0.0")
+        self.assertEqual(manifest["version"], "1.6.0")
         surfaces = {
             "README": ROOT / "README.md",
             "manual": ROOT / "docs" / "MANUAL.md",
@@ -123,7 +123,7 @@ class StackContractTests(unittest.TestCase):
         }
         for name, path in surfaces.items():
             with self.subTest(surface=name):
-                self.assertIn("1.0.0", path.read_text(encoding="utf-8"))
+                self.assertIn("1.6.0", path.read_text(encoding="utf-8"))
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
         self.assertNotIn("Dates are release (tag) dates.", changelog)
         self.assertIn("does not imply a Git tag", changelog)
@@ -151,7 +151,7 @@ class StackContractTests(unittest.TestCase):
             "owner vs coordinator",
             "fan-out and cost",
             "audit-lite / audit-team vs gauntletgate",
-            "retained upstream hook sources",
+            "active codex hooks",
             "degrade and invalid states",
         )
         self.assertGreaterEqual(architecture.count("```mermaid"), 3)
@@ -167,7 +167,7 @@ class StackContractTests(unittest.TestCase):
             "plain english",
             "technical architecture",
             "all 19 entrypoints",
-            "version 1.0.0",
+            "version 1.6.0",
             "read the full user manual",
         )
         manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
@@ -176,6 +176,58 @@ class StackContractTests(unittest.TestCase):
         for target in ("plain-english", "technical-architecture", "entrypoints", "install"):
             self.assertIn(f'id="{target}"', landing)
             self.assertIn(f'href="#{target}"', landing)
+
+    def test_codex_hooks_are_active_wired_and_architecturally_primary(self) -> None:
+        manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
+        hook_status = manifest["codex"]["hooks"]
+        self.assertEqual(hook_status["status"], "active")
+        self.assertEqual(
+            set(hook_status["events"]),
+            {"SessionStart", "SubagentStart", "UserPromptSubmit", "PostToolUse", "Stop", "SubagentStop"},
+        )
+
+        required = (
+            ROOT / "codex" / "hooks" / "dev-rigor-activate.js",
+            ROOT / "codex" / "hooks" / "dev-rigor-router.js",
+            ROOT / "codex" / "hooks" / "dev-rigor-ground.js",
+            ROOT / "codex" / "hooks" / "wire-hooks.js",
+            ROOT / "codex" / "hooks" / "test-hooks.js",
+            ROOT / "codex" / "dev-rigor-reflex.md",
+        )
+        for path in required:
+            self.assertTrue(path.is_file(), f"missing active Codex hook artifact: {path}")
+
+        for installer in (ROOT / "install.ps1", ROOT / "install.sh"):
+            text = installer.read_text(encoding="utf-8")
+            self.assertIn("wire-hooks.js", text)
+            self.assertIn("hooks.json", text)
+        self.assertIn(
+            'target="$codex_home/skills"',
+            (ROOT / "install.sh").read_text(encoding="utf-8"),
+        )
+
+        landing = (ROOT / "docs" / "index.html").read_text(encoding="utf-8")
+        architecture = (ROOT / "docs" / "ARCHITECTURE.md").read_text(encoding="utf-8")
+        primary_figure = landing.split("<figure>", 1)[1].split("</figure>", 1)[0]
+        self.assertNotIn("CLAUDE", primary_figure.upper())
+        self.assert_terms(
+            primary_figure,
+            "active codex hooks",
+            "sessionstart",
+            "userpromptsubmit",
+            "posttooluse",
+            "stop",
+            "19 entrypoints",
+        )
+        self.assert_terms(
+            architecture,
+            "active codex hook",
+            "reflex",
+            "router",
+            "grounding",
+            "hooks.json",
+            "trust",
+        )
 
 
 if __name__ == "__main__":
