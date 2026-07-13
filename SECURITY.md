@@ -1,6 +1,6 @@
 # Security Policy
 
-**Current supported version:** 1.7.0
+**Candidate under review:** 1.7.0. **Approved installation version:** none.
 
 ## Security model
 
@@ -19,16 +19,18 @@ bounded metadata rather than raw sensitive command arguments. Correlation tokens
 stale/mismatched evidence but are not a security boundary against a process that can read
 the task salt.
 
-On Windows, `DevRigorHookActivator-1.7.0.exe` provides that review without a terminal. It
-uses Codex's local app-server protocol, accepts only the exact seven expected dev-rigor
-events sourced from the user's `hooks.json`, shows their commands and hashes, requires an
-explicit confirmation, writes those hashes through `config/batchWrite`, and re-reads
-`hooks/list` before reporting success. It cannot trust unrelated hooks.
+The Windows graphical activator source implements that review without a terminal. It uses
+Codex's local app-server protocol, accepts only the exact seven expected dev-rigor events
+sourced from the user's `hooks.json`, shows their commands and hashes, requires an explicit
+confirmation, writes those hashes through `config/batchWrite`, and re-reads `hooks/list`
+before reporting success. It cannot trust unrelated hooks. While publication is withheld,
+maintainers can generate a local review executable in the gitignored `candidate-artifacts/`
+directory; no executable or checksum is tracked or offered for download.
 
-The 1.7.0 Windows executable is built from the published source but is not Authenticode-signed.
-Browser downloads may therefore trigger Windows SmartScreen. The landing page publishes
-the exact binary SHA-256 and the complete matching C# source; do not continue when the
-downloaded hash differs.
+Any future approved Windows executable will be built from the matching source and may
+trigger Windows SmartScreen unless it is Authenticode-signed. Its release must publish the
+exact binary SHA-256 and complete matching C# source; do not continue when a downloaded
+hash differs.
 
 The installers write only to the selected skills target, Codex hook runtime/configuration,
 and their staging, rollback, and backup trees. Injected mid-commit and backup-finalization

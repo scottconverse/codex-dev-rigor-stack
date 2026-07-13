@@ -235,10 +235,10 @@ flowchart LR
     Home["CODEX_HOME/skills\n19 entrypoints"]
     Runtime["CODEX_HOME/dev-rigor-stack\nactive Node hook runtime + state"]
     HookConfig["CODEX_HOME/hooks.json\n7 merged lifecycle events"]
-    Activator["Windows graphical activator\nreview 6 commands + current hashes"]
+    Activator["Windows graphical activator\nreview 7 hooks + current hashes"]
     AppServer["Codex app server\nhooks/list + config/batchWrite + hooks/list"]
     Trust["Codex hash-bound trust\nrequired before execution"]
-    Candidate["candidate-artifacts/\nnot served by Pages"]
+    Candidate["local review build\ncandidate-artifacts/ (gitignored)"]
     OwnerGate{"independent TAG GO\n+ explicit owner go/no-go"}
     Download["authorized release download\nactivator EXE + SHA-256"]
     CI["GitHub Actions\nWindows + Linux gates"]

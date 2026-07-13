@@ -9,8 +9,11 @@ Task-scoped substantive enforcement redesign. This candidate preserves 1.6.3's e
 isolation and one-block circuit breaker while correcting the state and policy model that
 made earlier receipt enforcement destructive.
 
-Independent review returned `TAG NO-GO`; this candidate remains unreleased and its Pages
-downloads are disabled. Remediation adds an invocation-bound `PreToolUse` worktree snapshot
+Independent review returned `TAG NO-GO`; this candidate remains unreleased. Every tracked
+executable and associated candidate/download artifact has been removed from both the Pages
+tree and the repository candidate tree. Local review builds are gitignored, and the build
+script refuses publication while `release-state.json` says publication is unauthorized.
+Remediation adds an invocation-bound `PreToolUse` worktree snapshot
 before `PostToolUse`, prevents harmless or unknown shell commands from becoming proof,
 detects opaque tracked-source writes, binds proof IDs to execution fingerprints and target
 checkpoints, surfaces non-destructive warnings in the UI, reports accurate block/checkpoint/

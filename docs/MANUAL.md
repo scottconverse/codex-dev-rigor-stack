@@ -109,7 +109,8 @@ and Stop/SubagentStop evidence gate. The original Claude source remains only as 
    definitions, then commits them as one rollback-protected transaction while preserving
    unrelated hooks and creating backups.
 3. Wait for a tagged release, an explicit owner go/no-go, and restored publication links.
-   Candidate executables are deliberately unavailable from GitHub Pages during review.
+   No candidate executable or checksum is tracked or published during review. Maintainer
+   review builds exist only in the local gitignored `candidate-artifacts/` directory.
 4. Once publication is authorized, verify the tagged release's checksum before opening it.
    Stop if Codex reports a mismatch.
 5. Read all seven rows. Selecting a row exposes its exact command, source, matcher, and
@@ -144,9 +145,10 @@ The default targets are `~/.codex/skills` for the 19 entrypoints and
 `~/.codex/dev-rigor-stack` for the hook runtime. The installer merges owned entries into
 `~/.codex/hooks.json`, preserving foreign hooks and backing up changed configuration.
 The staged skills, runtime, and hook configuration commit together or restore the prior set.
-On Windows, open `DevRigorHookActivator-1.7.0.exe`, review and approve the exact seven
-hashes, and require its verified result before restarting Codex Desktop. Other Codex
-clients may use their own supported hook-review UI.
+After publication is authorized, Windows users open the release's
+`DevRigorHookActivator-1.7.0.exe`, review and approve the exact seven hashes, and require
+its verified result before restarting Codex Desktop. Other Codex clients may use their
+own supported hook-review UI.
 
 ### Custom target
 
@@ -443,7 +445,8 @@ the script path can run `powershell -ExecutionPolicy Bypass -File .\install.ps1`
 
 ### The hooks are installed but do not run
 
-- Open `DevRigorHookActivator-1.7.0.exe` and confirm each dev-rigor definition is trusted.
+- For an authorized release, open its `DevRigorHookActivator-1.7.0.exe` and confirm each
+  dev-rigor definition is trusted. No activator is available while 1.7.0 remains on hold.
 - Confirm `[features].hooks` is not `false` in active Codex configuration or policy.
 - Confirm Node.js is on the PATH visible to Codex.
 - Confirm `CODEX_HOME/dev-rigor-stack/hooks/` and `CODEX_HOME/hooks.json` point to the same
