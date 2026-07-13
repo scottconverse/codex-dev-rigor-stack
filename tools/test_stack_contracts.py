@@ -124,6 +124,9 @@ class StackContractTests(unittest.TestCase):
         for name, path in surfaces.items():
             with self.subTest(surface=name):
                 self.assertIn("1.0.0", path.read_text(encoding="utf-8"))
+        changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+        self.assertNotIn("Dates are release (tag) dates.", changelog)
+        self.assertIn("does not imply a Git tag", changelog)
 
     def test_deliverable_docs_are_complete_and_two_voice(self) -> None:
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
