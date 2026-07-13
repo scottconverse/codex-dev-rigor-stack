@@ -153,11 +153,32 @@ def clean_scenario() -> None:
         assert (home / "config.toml").read_bytes() == foreign_config
 
 
+def pristine_scenario() -> None:
+    with tempfile.TemporaryDirectory(prefix="dev-rigor-upgrade-pristine-") as temporary:
+        home = Path(temporary) / "home"
+        env = {**os.environ, "CI": "1"}
+        run(command("install.ps1" if os.name == "nt" else "install.sh", home), env, 0)
+        install_fake_revoker(home)
+        installed = fingerprint(home)
+        env["DEV_RIGOR_UNINSTALL_TEST_FAIL_AT"] = "mid-remove"
+        run(command("uninstall.ps1" if os.name == "nt" else "uninstall.sh", home, uninstall=True), env, 1)
+        assert fingerprint(home) == installed, "failed pristine uninstall did not restore its exact installed state"
+        assert not (home / "config.toml").exists(), "rollback retained trust config created by the failed revoker"
+        env.pop("DEV_RIGOR_UNINSTALL_TEST_FAIL_AT")
+        run(command("uninstall.ps1" if os.name == "nt" else "uninstall.sh", home, uninstall=True), env, 0)
+        assert not (home / "dev-rigor-stack").exists(), "pristine uninstall retained the owned runtime"
+        assert all(not (home / "skills" / name).exists() for name in SKILLS), "pristine uninstall retained an owned skill"
+        hooks = json.loads((home / "hooks.json").read_text(encoding="utf-8"))
+        assert "dev-rigor-" not in json.dumps(hooks), "pristine uninstall retained an owned hook definition"
+        assert not (home / "config.toml").exists(), "pristine uninstall created trust configuration"
+
+
 def main() -> int:
     for version in ("1.6.1", "1.6.2", "1.6.3"):
         scenario(version)
     clean_scenario()
-    print("upgrade matrix: 1.6.1, 1.6.2, 1.6.3, clean, foreign hooks/trust PASS")
+    pristine_scenario()
+    print("upgrade matrix: 1.6.1, 1.6.2, 1.6.3, pristine, foreign hooks/trust PASS")
     return 0
 
 

@@ -1,7 +1,7 @@
 ---
 name: visitor-audit
 metadata:
-  version: 1.6.3
+  version: 1.7.0
 description: >
   Run a visitor-grade audit of public-facing pages, rendered docs, READMEs, release
   pages, announcements, and published assets. Read every surface fully as rendered,
@@ -11,7 +11,7 @@ description: >
   announcing a page/site/release as done, and after every deploy. CI is not a substitute.
 ---
 
-# Visitor Audit — PUBLIC SURFACE gate (v1.6.3)
+# Visitor Audit — PUBLIC SURFACE gate (v1.7.0)
 
 Verify the artifact as a first-time visitor experiences it, never through source diffs
 or CI proxies. This lane is distinct from product walkthrough: walkthrough asks whether

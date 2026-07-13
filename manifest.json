@@ -1,13 +1,13 @@
 {
   "name": "codex-dev-rigor-stack",
-  "version": "1.6.3",
+  "version": "1.7.0",
   "upstream": {
     "repo": "https://github.com/scottconverse/dev-rigor-stack",
     "commit": "63be0f72571d41db3ee5909a03a0b645bb28e71e",
     "version": "1.5.1"
   },
   "license": "MIT",
-  "description": "Codex-native dev-rigor-stack 1.6.3: active lifecycle enforcement hooks with graphical Desktop trust, thirteen namespaced standalone capabilities, and six backward-compatible entrypoints for proof-oriented delivery, exhaustive newcomer/UI walkthroughs, public-surface verification, and strict-zero release closure.",
+  "description": "Codex-native dev-rigor-stack 1.7.0: task-scoped lifecycle safeguards with substantive proof debt, owner-controlled ON/WARN/OFF modes, graphical Desktop trust, nineteen standalone entrypoints, exhaustive newcomer/UI walkthroughs, public-surface verification, and strict-zero release closure.",
   "installs_to": "~/.codex/skills, ~/.codex/dev-rigor-stack, and merged ~/.codex/hooks.json entries by default",
   "skills": [
     { "name": "dev-rigor-stack", "role": "orchestrates the delivery loop and release gate" },
@@ -32,7 +32,8 @@
   ],
   "codex": {
     "installer": "install.ps1",
-    "desktop_hook_activator": "docs/downloads/DevRigorHookActivator-1.6.3.exe",
+    "uninstaller": "uninstall.ps1",
+    "desktop_hook_activator": "docs/downloads/DevRigorHookActivator-1.7.0.exe",
     "restart_required": true,
     "hooks": {
       "status": "active",

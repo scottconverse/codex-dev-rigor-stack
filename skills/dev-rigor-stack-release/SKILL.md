@@ -16,7 +16,11 @@ Bind every check to the exact candidate commit and artifacts. Before owner go/no
 6. Verify version consistency, changelog, license, secrets scan, dependencies, rollback
    trigger/owner, and artifact hashes/signatures.
 7. Drive every real finding to 0/0/0/0/0; re-run at the blast radius of each fix.
-8. Stop for the owner's go/no-go on tag/publish/deploy unless already explicitly granted.
+8. Require `DevRigorSTATUS` to report no unresolved proof debt for the release task and
+   every authoritatively associated subagent. If mechanical status is unavailable, inspect
+   the canonical evidence records and mark the release INVALID until every debt is resolved
+   by proof bound to the same affected edit set or a verified superseding edit set.
+9. Stop for the owner's go/no-go on tag/publish/deploy unless already explicitly granted.
 
 After authorized publication, the release remains OPEN:
 

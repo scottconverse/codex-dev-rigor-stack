@@ -4,7 +4,7 @@
 // Authenticated, disposable-profile integration check. This is intentionally
 // separate from CI's deterministic app-server trust test: it proves that the
 // installed client actually emits PostToolUse and Stop for a real model turn.
-const { spawn } = require('child_process');
+const { execFileSync, spawn } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -22,6 +22,7 @@ if (path.resolve(codexHome).toLowerCase() === activeHome.toLowerCase()) {
 if (!fs.existsSync(cwd) || !fs.statSync(cwd).isDirectory() || fs.readdirSync(cwd).length !== 0) {
   throw new Error('The live lifecycle work directory must exist and be empty.');
 }
+execFileSync('git', ['init', '--quiet', cwd], { stdio: 'ignore' });
 
 const command = process.platform === 'win32' ? (process.env.ComSpec || 'cmd.exe') : 'codex';
 const args = process.platform === 'win32' ? ['/d', '/s', '/c', 'codex app-server'] : ['app-server'];
@@ -65,6 +66,15 @@ function startTurn(id, text, outputSchema) {
   send({ method: 'turn/start', id, params });
 }
 function verifyState() {
+  if (!firstItems.has('fileChange') || !firstItems.has('commandExecution')) {
+    throw new Error(`happy turn did not exercise both edit and execution: ${[...firstItems].join(', ')}`);
+  }
+  if (!reportItems.has('fileChange') || !reportItems.has('commandExecution')) {
+    throw new Error(`report turn did not exercise both edit and execution: ${[...reportItems].join(', ')}`);
+  }
+  if (!unprovedItems.has('fileChange')) {
+    throw new Error(`unproved turn did not exercise an edit: ${[...unprovedItems].join(', ')}`);
+  }
   const stateDir = path.join(codexHome, 'dev-rigor-stack', 'state');
   const ledgers = fs.readdirSync(stateDir).filter((name) => name.startsWith('ground-v4-'));
   if (ledgers.length !== 3) throw new Error(`expected three live coding-turn ledgers, found ${ledgers.length}`);
@@ -90,15 +100,6 @@ function verifyState() {
   );
   if (!taskStates.some((task) => Array.isArray(task.unresolved) && task.unresolved.length > 0)) {
     throw new Error('the substantive block was released or remediated without preserving unresolved proof debt');
-  }
-  if (!firstItems.has('fileChange') || !firstItems.has('commandExecution')) {
-    throw new Error(`model turn did not exercise both edit and execution: ${[...firstItems].join(', ')}`);
-  }
-  if (!reportItems.has('fileChange') || !reportItems.has('commandExecution')) {
-    throw new Error(`report turn did not exercise both edit and execution: ${[...reportItems].join(', ')}`);
-  }
-  if (!unprovedItems.has('fileChange')) {
-    throw new Error(`unproved turn did not exercise an edit: ${[...unprovedItems].join(', ')}`);
   }
   const completedReports = reportMessages.filter((message) => message.text.includes('REPORT_STAYS_VISIBLE'));
   const uniqueReportText = new Set(completedReports.map((message) => message.text));
@@ -149,7 +150,7 @@ child.stdout.on('data', (chunk) => {
       threadId = message.result.thread.id;
       phase = 'first';
       startTurn(3,
-        "This is a local hook integration test. Use apply_patch to create live-hook-test.js containing console.log('LIVE_HOOK_OK'). Then run node live-hook-test.js with the shell tool. End with the required proved, blast, and skipped evidence receipt."
+        "This is a local hook integration test. Do not inspect the directory or run git status. Your first action must be apply_patch: create live-hook-test.js containing console.log('LIVE_HOOK_OK'). Then run node live-hook-test.js with the shell tool. End with the required proved, blast, and skipped evidence receipt."
       );
     } else if (message.id === 3) {
       firstTurnId = message.result.turn.id;
@@ -186,7 +187,7 @@ child.stdout.on('data', (chunk) => {
       if (phase === 'first') {
         phase = 'report';
         startTurn(4,
-          "This is the disappearing-report acceptance test. Use apply_patch to create report-live-hook-test.js containing console.log('REPORT_HOOK_OK'). Run node report-live-hook-test.js with the shell tool. Then return the required long schema value exactly. It deliberately omits receipt formatting; because substantive proof exists, the answer must stream once and remain visible.",
+          "This is the disappearing-report acceptance test. Do not inspect the directory or run git status. Your first action must be apply_patch: create report-live-hook-test.js containing console.log('REPORT_HOOK_OK'). Run node report-live-hook-test.js with the shell tool. Then return the required long schema value exactly. It deliberately omits receipt formatting; because substantive proof exists, the answer must stream once and remain visible.",
           {
             type: 'object',
             properties: { answer: { type: 'string', enum: [LONG_REPORT] } },
@@ -197,7 +198,7 @@ child.stdout.on('data', (chunk) => {
       } else if (phase === 'report') {
         phase = 'unproved';
         startTurn(5,
-          "This is the substantive one-block circuit-breaker test. Use apply_patch to create unproved-live-hook-test.js containing console.log('UNPROVED_HOOK'). Do not run, render, test, or build it. Return the required schema value so the real Stop hook intervenes once and then records unresolved proof debt.",
+          "This is the substantive one-block circuit-breaker test. Do not inspect the directory or run git status. Your first and only tool action must be apply_patch: create unproved-live-hook-test.js containing console.log('UNPROVED_HOOK'). Do not run, render, test, or build it. Return the required schema value so the real Stop hook intervenes once and then records unresolved proof debt.",
           {
             type: 'object',
             properties: { answer: { type: 'string', enum: ['UNPROVED_EDIT_RESPONSE'] } },
@@ -224,6 +225,6 @@ child.on('exit', (code) => {
 });
 
 send({ method: 'initialize', id: 1, params: {
-  clientInfo: { name: 'dev_rigor_live_test', title: 'Dev Rigor Live Test', version: '1.6.3' },
+  clientInfo: { name: 'dev_rigor_live_test', title: 'Dev Rigor Live Test', version: '1.7.0' },
 } });
 timeout = setTimeout(() => fail(new Error('Timed out waiting for live Codex lifecycle')), 180000);

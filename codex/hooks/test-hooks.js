@@ -286,7 +286,7 @@ test('ground: stop_hook_active without a prior block does not silently clear dir
   assert.match(parsed.reason, /latest runnable edit/i);
 });
 
-test('ground: new tool activity after a block re-arms the current turn', () => {
+test('ground: proof after a block can resolve the current turn without a second block', () => {
   const home = freshHome();
   record(home, 'ground-rearm-after-block', 'apply_patch', { command: '*** Update File: src/app.ts' });
   const first = JSON.parse(stop(home, 'ground-rearm-after-block', receipt));
@@ -294,6 +294,21 @@ test('ground: new tool activity after a block re-arms the current turn', () => {
   record(home, 'ground-rearm-after-block', 'Bash', { command: 'npm test' }, { exit_code: 0 });
   assert.strictEqual(stop(home, 'ground-rearm-after-block', 'Done without a receipt.').trim(), '');
   assert.ok(stateLines(home).some((line) => line.startsWith('W ') && /missing-receipt/.test(line)));
+});
+
+test('ground: inspection or another unproved edit after a block cannot cause a second block', () => {
+  const home = freshHome();
+  record(home, 'ground-one-block-tools', 'apply_patch', { command: '*** Update File: src/app.ts' });
+  assert.strictEqual(JSON.parse(stop(home, 'ground-one-block-tools', 'Done.')).decision, 'block');
+  record(home, 'ground-one-block-tools', 'Bash', { command: 'git status --short' }, { exit_code: 0 });
+  record(home, 'ground-one-block-tools', 'apply_patch', { command: '*** Update File: src/helper.ts' });
+  assert.strictEqual(stop(home, 'ground-one-block-tools', 'Still unproved.').trim(), '');
+  const lines = stateLines(home);
+  assert.strictEqual(lines.filter((line) => line.startsWith('K ')).length, 1);
+  assert.ok(lines.some((line) => line.startsWith('U ')), 'the non-destructive release must remain visible');
+  const debts = taskState(home).unresolved;
+  assert.strictEqual(debts.length, 2, 'the original and superseding unproved edit sets must remain visible');
+  assert.ok(debts.some((debt) => debt.edits.length === 2), 'the superseding debt must contain both affected edits');
 });
 
 test('ground: missing turn_id fails open, creates no ledger, and warns once on the task', () => {
@@ -359,7 +374,7 @@ test('ground: inability to persist a block fails open instead of creating a retr
   }
 });
 
-test('ground: legacy 1.6.1 and 1.6.2 ledgers remain audit history and cannot poison v3 turns', () => {
+test('ground: legacy 1.6.1 and 1.6.2 ledgers remain audit history and cannot poison v4 turns', () => {
   const home = freshHome();
   const state = path.join(home, 'dev-rigor-stack', 'state');
   fs.mkdirSync(state, { recursive: true });
@@ -449,6 +464,17 @@ test('ground: successful output mentioning error handling cannot be misclassifie
   assert.strictEqual(stop(home, 'ground-success-wording', receipt).trim(), '');
 });
 
+test('ground: successful process status outranks incidental policy-rejection wording', () => {
+  const home = freshHome();
+  record(home, 'ground-policy-wording', 'apply_patch', { command: '*** Update File: src/app.ts' });
+  record(home, 'ground-policy-wording', 'Bash', { command: 'npm test' }, {
+    exit_code: 0,
+    content: [{ type: 'text', text: 'test passed: unauthorized request is rejected by policy' }],
+  });
+  assert.strictEqual(stop(home, 'ground-policy-wording', receipt).trim(), '');
+  assert.ok(stateLines(home).some((line) => line.startsWith('T ')));
+});
+
 test('ground: an explicitly failed execution does not satisfy the gate', () => {
   const home = freshHome();
   record(home, 'ground-failed', 'apply_patch', { command: '*** Update File: src/app.ts' });
@@ -518,6 +544,20 @@ test('ground: structured passing test result outranks incidental failure text', 
   assert.ok(stateLines(home).some((line) => line.startsWith('T ')));
 });
 
+test('ground: any failure across multiple structured test results wins', () => {
+  const home = freshHome();
+  record(home, 'ground-structured-many', 'apply_patch', { command: '*** Update File: src/app.ts' });
+  record(home, 'ground-structured-many', 'Bash', { command: 'npm test' }, {
+    exit_code: 0,
+    phases: [
+      { test_result: { passed: 5, failed: 0 } },
+      { test_result: { passed: 3, failed: 1 } },
+    ],
+  });
+  const parsed = JSON.parse(stop(home, 'ground-structured-many', receipt));
+  assert.strictEqual(parsed.decision, 'block');
+});
+
 test('ground: obvious shell writes re-arm proof without storing raw sensitive arguments', () => {
   const home = freshHome();
   const secret = 'super-secret-token-value';
@@ -539,6 +579,13 @@ test('ground: formatter and generator changes use G and require later proof', ()
   const parsed = JSON.parse(stop(home, 'ground-generated', receipt));
   assert.strictEqual(parsed.decision, 'block');
   assert.ok(stateLines(home).some((line) => line.startsWith('G ')));
+});
+
+test('ground: check-only formatters do not fabricate generated changes', () => {
+  const home = freshHome();
+  record(home, 'ground-format-check', 'Bash', { command: 'prettier --check .' }, { exit_code: 0 });
+  assert.strictEqual(stop(home, 'ground-format-check', 'Formatting check passed.').trim(), '');
+  assert.ok(!stateLines(home).some((line) => line.startsWith('G ')));
 });
 
 test('ground: qualifying evidence token is bound to task, turn, edit set, and result', () => {

@@ -1,8 +1,8 @@
 # codex-dev-rigor-stack — user manual
 
-**Manual version:** 1.6.3
+**Manual version:** 1.7.0
 
-**Applies to dev-rigor-stack:** 1.6.3
+**Applies to dev-rigor-stack:** 1.7.0
 
 This is the operating manual, not a longer README. Part 1 explains the product in plain
 English. Part 2 is the technical manual for installation, operation, evidence, lifecycle,
@@ -85,7 +85,7 @@ ownership away from you.
 
 ### Package model
 
-Version 1.6.3 installs **all 19 entrypoints**: 13 canonical namespaced skills and 6
+Version 1.7.0 installs **all 19 entrypoints**: 13 canonical namespaced skills and 6
 backward-compatible entrypoints. Each canonical section can be invoked independently or
 through `$dev-rigor-stack`.
 
@@ -104,15 +104,15 @@ and Stop/SubagentStop evidence gate. The original Claude source remains only as 
 ### Codex Desktop installation — no terminal
 
 1. Open a normal Codex Desktop task and ask:
-   `Install release 1.6.3 from scottconverse/codex-dev-rigor-stack using the repository's own installer, not a single-skill copy. Verify all 19 skills, the managed hook runtime, hooks.json, and the six owned definitions.`
+   `Install release 1.7.0 from scottconverse/codex-dev-rigor-stack using the repository's own installer, not a single-skill copy. Verify all 19 skills, the managed hook runtime, hooks.json, and the six owned definitions.`
 2. Codex stages all 19 skill folders, the hook runtime, and the merged six owned
    definitions, then commits them as one rollback-protected transaction while preserving
    unrelated hooks and creating backups.
 3. Download and double-click
-   [DevRigorHookActivator-1.6.3.exe](https://scottconverse.github.io/codex-dev-rigor-stack/downloads/DevRigorHookActivator-1.6.3.exe).
-   Version 1.6.3 is not code-signed, so a browser-downloaded copy may trigger Windows
+   [DevRigorHookActivator-1.7.0.exe](https://scottconverse.github.io/codex-dev-rigor-stack/downloads/DevRigorHookActivator-1.7.0.exe).
+   Version 1.7.0 is not code-signed, so a browser-downloaded copy may trigger Windows
    SmartScreen. Before opening it, ask Codex Desktop:
-   `Verify the downloaded DevRigorHookActivator-1.6.3.exe in my Downloads folder against the published SHA-256. Do not open it if they differ.`
+   `Verify the downloaded DevRigorHookActivator-1.7.0.exe in my Downloads folder against the published SHA-256. Do not open it if they differ.`
    This performs the checksum step without asking you to use a terminal. Stop if Codex reports
    a mismatch.
 4. Read all six rows. Selecting a row exposes its exact command, source, matcher, and
@@ -147,7 +147,7 @@ The default targets are `~/.codex/skills` for the 19 entrypoints and
 `~/.codex/dev-rigor-stack` for the hook runtime. The installer merges owned entries into
 `~/.codex/hooks.json`, preserving foreign hooks and backing up changed configuration.
 The staged skills, runtime, and hook configuration commit together or restore the prior set.
-On Windows, open `DevRigorHookActivator-1.6.3.exe`, review and approve the exact six
+On Windows, open `DevRigorHookActivator-1.7.0.exe`, review and approve the exact six
 hashes, and require its verified result before restarting Codex Desktop. Other Codex
 clients may use their own supported hook-review UI.
 
@@ -298,18 +298,34 @@ the product may advance.
 
 ## Active Codex hooks
 
-- **SessionStart/SubagentStart reflex:** injects the universal proof ladder, never-shrink
-  rules, and evidence receipt into the main coordinator and subagents.
-- **UserPromptSubmit router:** injects only the matching investigation, grounding,
-  decomposition, or release protocol. It never creates or clears grounding state.
-- **PostToolUse grounding ledger:** records runnable edits and actual execution/render
-  observations in append-safe state keyed by the exact Codex `session_id` and `turn_id`.
-- **Stop/SubagentStop evidence gate:** evaluates only the current turn, continues Codex
-  when no real check followed its latest runnable edit, when that check explicitly failed,
-  or when the required coding receipt is missing. An accepted receipt checkpoints the
-  dirty state; a later edit re-arms it. One block followed by a retry with no new tool event
-  is released and checkpointed even if the client omits `stop_hook_active`, preventing a
-  repeated response-discard loop. Missing turn identity or unwritable retry state fails open.
+- **SessionStart/SubagentStart activator:** injects the compact universal safeguards.
+  Coding and release prompts still load the complete applicable contracts. Compaction
+  restores the task mode and routed discipline rather than resetting them.
+- **UserPromptSubmit router and task controls:** routes investigation, grounding,
+  decomposition, and release work. The exact owner commands `DevRigorON`,
+  `DevRigorWARN`, `DevRigorOFF`, and `DevRigorSTATUS` affect only the current task.
+  Quoted or embedded command text is inert.
+- **PostToolUse evidence recorder:** records important direct edits (`E`), tool-generated
+  source changes (`G`), inspections (`I`), runs/renders (`R`), tests (`T`), builds (`B`),
+  and failures (`F`). It stores hashes and bounded metadata, not raw sensitive commands.
+- **Stop/SubagentStop substantive gate:** evaluates the authoritative current turn. In
+  `ON`, an important edit without a later qualifying run/render/test/build may block once.
+  The retry is released to keep conversation usable, but records `U: released-unproved`
+  and persistent proof debt instead of a successful checkpoint. `WARN` records the same
+  gap without blocking; `OFF` disables mechanical blocking for that task. Missing or
+  invalid receipt formatting after real proof is only a visible warning and never removes
+  a report. Evidence clears debt only when bound to the same edit set or a verified
+  superseding set that contains every affected edit.
+
+Task modes survive retries and compaction. A subagent inherits a live parent mode only
+when Codex supplies authoritative parent identity; otherwise it visibly fails open in
+`WARN` and never guesses. A parent `OFF` or later mode change propagates to associated
+running and future subagents. Controls never leak into another task.
+
+Evidence IDs correlate the task, turn, edit set, evidence class, result, and checkpoint
+with the canonical local ledger. They prevent accidental stale reuse; they are not a
+security boundary against a model that can read its own task state. Tokens and ledgers
+exclude secrets and raw sensitive command arguments.
 
 Codex requires explicit trust for non-managed hooks. On Windows, use the graphical
 activator to inspect and approve the exact six current hashes. It discovers them with
@@ -386,19 +402,24 @@ For a manual maintainer restore:
 For a no-terminal uninstall, open a Codex Desktop task and ask:
 `Uninstall dev-rigor-stack. First run the managed revoke-trust.js through Codex app-server and verify exactly 6/6 owned trusted hashes were removed while foreign trust state was preserved. Then remove only the 19 managed skills, six owned hook definitions, and managed runtime; preserve every unrelated skill, hook, trust entry, and backup.`
 Codex must revoke trust before removing the definitions/runtime, preserve foreign hooks,
-and report every path changed.
+and report every path changed. The repository uninstaller treats trust, owned hook
+definitions, runtime, and all 19 skills as one transaction: an interrupted uninstall
+restores the starting state byte-for-byte; a successful uninstall removes all owned
+components and keeps foreign configuration. Restoring an older version is a separate,
+explicit restore operation.
 Restart Codex Desktop afterward.
 
-Maintainers may instead close Codex Desktop after first revoking the exact owned trust
-receipts, then run the hook remover so foreign hook definitions are preserved:
+Maintainers may run the transactional uninstaller after closing Codex Desktop:
 
-```text
-node <CODEX_HOME>/dev-rigor-stack/hooks/revoke-trust.js <CODEX_HOME> <working-directory>
-node <CODEX_HOME>/dev-rigor-stack/hooks/wire-hooks.js --remove <CODEX_HOME> <CODEX_HOME>/dev-rigor-stack
+```powershell
+powershell -ExecutionPolicy Bypass -File .\uninstall.ps1
 ```
 
-Then remove the 19 folders listed in `manifest.json` and the managed
-`<CODEX_HOME>/dev-rigor-stack` runtime. Keep backups if you may restore later. Restart Codex.
+```sh
+./uninstall.sh
+```
+
+Keep backups if you may restore later. Restart Codex afterward.
 
 ## Troubleshooting
 
@@ -416,7 +437,7 @@ the script path can run `powershell -ExecutionPolicy Bypass -File .\install.ps1`
 
 ### The hooks are installed but do not run
 
-- Open `DevRigorHookActivator-1.6.3.exe` and confirm each dev-rigor definition is trusted.
+- Open `DevRigorHookActivator-1.7.0.exe` and confirm each dev-rigor definition is trusted.
 - Confirm `[features].hooks` is not `false` in active Codex configuration or policy.
 - Confirm Node.js is on the PATH visible to Codex.
 - Confirm `CODEX_HOME/dev-rigor-stack/hooks/` and `CODEX_HOME/hooks.json` point to the same
@@ -455,12 +476,14 @@ to make it shorter.
 
 ## Versioning
 
-- **Version 1.6.3** is the current release and continues the product lineage from 1.5.1.
+- **Version 1.7.0** is the current release and continues the product lineage from 1.5.1.
 - The earlier 1.0.0 Codex package number is retained only as historical record of an
   interim reset; future versions advance monotonically from 1.6.0. Version 1.6.1 repaired
   Desktop graphical activation. Version 1.6.2's prompt-boundary repair was incomplete;
-  1.6.3 uses exact Codex turn identity and a hard retry circuit breaker. Versions
-  1.6.0–1.6.2 are unsupported.
+  1.6.3 introduced exact Codex turn identity and a hard retry circuit breaker. Version
+  1.7.0 preserves exact-turn isolation and adds task modes, typed evidence, non-destructive
+  receipt handling, persistent proof debt, safe compaction/subagent behavior, and
+  transactional upgrade/uninstall. Versions 1.6.0–1.6.2 are unsupported.
 
 ## Security and honest limits
 

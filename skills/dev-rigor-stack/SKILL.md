@@ -14,7 +14,7 @@ description: >
 license: MIT
 ---
 
-# Standing dev rigor stack v1.6.3
+# Standing dev rigor stack v1.7.0
 
 Two altitudes. The **per-unit loop** (gates 1–5) applies to EVERY unit of work — a
 fix, a module, a feature. The **release gate** fires once per version, at the tag
@@ -59,7 +59,7 @@ reason it was rejected) — lives in a **remote-tracked, append-safe artifact**,
 only in context:
 
 - **The artifact** — remote-tracked (survives session/machine changes) and append-safe,
-  so interleaved sessions (Codex Desktop, Codex CLI, Claude, many machines) don't clobber each other; that's
+  so interleaved clients, sessions, and machines don't clobber each other; that's
   why a comment-append store beats a lone in-repo file that merge-conflicts. Mechanism is
   the project's to pick, not the skill's — point at one that already exists (a
   project-memory vault such as the `claude-dev-loop` skill if present, a pinned decision
@@ -178,6 +178,10 @@ sub-agent — the coordinator never reviews its own orchestration.
   overclaiming, every link live).
 - **Rollback defined before the tag** — name the trigger (what signal reverts) and the
   owner who calls it.
+- **No unresolved proof debt** — `DevRigorSTATUS` and the canonical evidence records must
+  show that every affected edit set is proved. A circuit-released response remains open
+  debt and makes the release INVALID; later evidence clears it only for the same edit set
+  or a verified superseding set containing every affected edit.
 - **STOP → owner go/no-go on the tag.** The coordinator drives everything to ready,
   then hands the decision to the owner. Merging slices is pre-authorized; declaring the
   release real (the tag) is not.
@@ -222,7 +226,7 @@ something the model can't take back or wasn't authorized to spend. Instances:
 
 Reconciliation (keeps this from meaning "ask permission constantly") — it's about who
 **originates** the call:
-- **Explicit request** ("tag 1.6.3") = the owner deciding live → execute now, no "are
+- **Explicit request** ("tag 1.7.0") = the owner deciding live → execute now, no "are
   you sure."
 - **Standing authorization** (green-path unit merges are pre-approved) = decided ahead
   → proceed.
@@ -251,13 +255,17 @@ Standalone gate: `$dev-rigor-stack-docs-gate`.
 The Codex installer bundles and installs every namespaced standalone stage plus the
 backward-compatible **coder-tdd-qa, proof-gate, gauntletgate, audit-lite, audit-team, and
 visitor-audit** entrypoints, so a normal install has every lane present. It also installs
-and wires the active Codex lifecycle layer: SessionStart/SubagentStart reflex injection,
-UserPromptSubmit routing, PostToolUse grounding, and Stop/SubagentStop evidence checks.
-Codex requires the user to review and trust non-managed hooks through `/hooks`; an
-untrusted, disabled, missing, or failed hook must be reported as unenforced, never
-represented as active. The full discipline remains in the skills, while the hooks make
-the universal reflex, task routing, run-after-latest-edit check, and evidence receipt
-mechanical. The degrade path is a fallback for
+and wires the active Codex lifecycle layer: SessionStart/SubagentStart core activation,
+UserPromptSubmit routing/task controls, PostToolUse typed evidence, and
+Stop/SubagentStop substantive proof checks. Codex requires the user to review and trust
+the six non-managed hooks; Codex Desktop users do that in the graphical activator, not a
+terminal-only command. An untrusted, disabled, missing, or failed hook must be reported as
+unenforced, never represented as active. The full discipline remains in the skills. The
+hooks mechanically require a real qualifying check after important direct/generated
+edits, expose unresolved proof debt, and warn—but do not destructively block—when only
+receipt formatting is missing. Exact `DevRigorON`, `DevRigorWARN`, `DevRigorOFF`, and
+`DevRigorSTATUS` commands are task-scoped owner controls; they do not weaken the evidence
+needed for a valid gate. The degrade path is a fallback for
 the unusual case (a partial install, stale install, or a skill
 manually removed): if a lane's skill is absent, the coordinator runs the equivalent
 discipline inline, **says so**, and still uses a fresh-context serial pass or bounded

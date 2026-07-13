@@ -15,7 +15,7 @@ const IMPORTANT_NAME = /(?:^|[\\/])(?:Dockerfile|Makefile|package-lock\.json|pnp
 const RECEIPT = /proved:\s*\S[\s\S]*blast:\s*\S[\s\S]*skipped:\s*\S/i;
 const INSPECTION_COMMAND = /^\s*(?:git\s+(?:status|diff|log|show|rev-parse|branch)\b|rg\b|grep\b|Get-Content\b|Select-String\b|Get-ChildItem\b|cat\b|ls\b|dir\b)/i;
 const DIRECT_WRITE = /(?:^|[;|&]\s*)(?:Set-Content|Add-Content|Out-File)\b|(?:^|[^>])>{1,2}(?!>)/i;
-const GENERATOR = /\b(?:generate|codegen|formatter?|format\b|prettier|eslint\s+[^\r\n]*--fix|migration|migrate)\b/i;
+const MUTATING_GENERATOR = /\b(?:generate|codegen|migration|migrate)\b|\bprettier\b[^\r\n]*--write\b|\beslint\b[^\r\n]*--fix\b|\bgofmt\b[^\r\n]*(?:-w\b|-w=)|\bdotnet\s+format\b(?![^\r\n]*--verify-no-changes)|\bcargo\s+fmt\b(?![^\r\n]*--check)|\brustfmt\b(?![^\r\n]*--check)/i;
 
 function hash(...values) {
   const digest = crypto.createHash('sha256');
@@ -158,26 +158,23 @@ function textValues(value, found = []) {
 }
 
 function explicitFailure(value) {
-  if (!value || typeof value !== 'object') {
-    return typeof value === 'string' && /\b(?:rejected|blocked)\s+(?:by|under)\s+(?:policy|the user)\b/i.test(value);
-  }
+  if (!value || typeof value !== 'object') return false;
   if (value.is_error === true || value.error === true || value.success === false || value.executed === false) return true;
   if (typeof value.status === 'string' && /^(?:rejected|declined|blocked|cancelled)$/i.test(value.status)) return true;
   return Object.values(value).some((child) => explicitFailure(child));
 }
 
-function structuredResult(value) {
-  if (!value || typeof value !== 'object') return null;
+function structuredResult(value, seen = { found: false, failed: false }) {
+  if (!value || typeof value !== 'object') return seen;
   for (const [key, child] of Object.entries(value)) {
     if (/^(?:test_result|testResult|test_results|testResults|build_result|buildResult|build_results|buildResults)$/.test(key) && child && typeof child === 'object') {
-      if (Number.isFinite(child.failed)) return child.failed > 0 ? false : true;
-      if (typeof child.success === 'boolean') return child.success;
-      if (typeof child.passed === 'boolean') return child.passed;
+      if (Number.isFinite(child.failed)) { seen.found = true; if (child.failed > 0) seen.failed = true; }
+      else if (typeof child.success === 'boolean') { seen.found = true; if (!child.success) seen.failed = true; }
+      else if (typeof child.passed === 'boolean') { seen.found = true; if (!child.passed) seen.failed = true; }
     }
-    const nested = structuredResult(child);
-    if (nested !== null) return nested;
+    structuredResult(child, seen);
   }
-  return null;
+  return seen;
 }
 
 function processResult(value, seen = { zero: false }) {
@@ -194,13 +191,15 @@ function processResult(value, seen = { zero: false }) {
 function executionPassed(response) {
   if (explicitFailure(response)) return false;
   const structured = structuredResult(response);
-  if (structured !== null) return structured;
+  if (structured.found) return !structured.failed;
   const process = processResult(response);
   if (process.nonzero) return false;
   if (process.zero) return true;
   const text = textValues(response).join('\n');
   if (/(?:exit(?:ed)?(?:\s+with)?(?:\s+code)?|status)\s*[:=]?\s*[1-9]\d*/i.test(text) ||
       /(?:^|\n)\s*(?:error|failure|failed|rejected|declined|cancelled)(?:\s*[:=]|\s*$)/im.test(text) ||
+      /(?:^|\n)\s*(?:(?:execution|command|tool call)\s+)?(?:was\s+)?(?:rejected|blocked)\s+by\s+(?:policy|the user)\b/im.test(text) ||
+      /(?:^|\n)[^\r\n]{0,240}\brejected:\s*blocked by policy\b/im.test(text) ||
       /\b[1-9]\d*\s+(?:tests?\s+)?failed\b/i.test(text)) return false;
   return true;
 }
@@ -289,7 +288,7 @@ function main() {
         append(session, turn, `${eventClass} proof-id:${token} edit-set:${set} result:pass`);
       }
       const generated = changedPaths(payload.tool_response);
-      if (generated.length || GENERATOR.test(command)) {
+      if (generated.length || MUTATING_GENERATOR.test(command)) {
         const candidates = generated.length ? generated : [`generated:${hash(command)}`];
         candidates.forEach((file) => recordEdit(session, turn, task, 'G', file));
         changed = true;
@@ -308,11 +307,9 @@ function main() {
   let lastProof = -1;
   let lastBlock = -1;
   let lastRelease = -1;
-  let lastTool = -1;
   let proofId = '';
   ledger.forEach((line, index) => {
     if (index <= scopeStart) return;
-    if (/^[EIGRTBF] /.test(line)) lastTool = index;
     if (/^[EG] /.test(line)) lastEdit = index;
     if (/^[RTB] /.test(line)) {
       lastProof = index;
@@ -323,9 +320,8 @@ function main() {
     if (line.startsWith('U ')) lastRelease = index;
   });
 
-  if (lastRelease > lastBlock && lastTool < lastBlock) return;
-  if (lastBlock >= 0 && lastTool < lastBlock) {
-    if (!append(session, turn, 'U released-unproved')) return;
+  if (lastBlock >= 0 && lastProof < lastEdit) {
+    if (lastRelease < lastBlock && !append(session, turn, 'U released-unproved')) return;
     addDebt(task, session, turn);
     saveTask(session, task);
     return;

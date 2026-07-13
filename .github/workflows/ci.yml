@@ -28,6 +28,7 @@ jobs:
           python3 tools/test_desktop_activator.py
           python3 tools/test_visitor_audit.py
           python3 tools/test_upgrade_matrix.py
+          python3 tools/test_verifier_mutations.py
       # SKILL.md <-> SKILL-LITE.md sync blocks must be byte-identical.
       - name: Sync-block check
         run: python3 tools/check_sync.py
@@ -85,7 +86,7 @@ jobs:
           $env:CODEX_HOME = "$env:RUNNER_TEMP\codex-home"
           .\desktop\build.ps1 -OutputDirectory "$env:RUNNER_TEMP\activator-build" -RunIntegrationTest -IntegrationCwd "$env:GITHUB_WORKSPACE"
           .\desktop\verify-binary-equivalence.ps1 `
-            -PublishedExecutable ".\docs\downloads\DevRigorHookActivator-1.6.3.exe" `
+            -PublishedExecutable ".\docs\downloads\DevRigorHookActivator-1.7.0.exe" `
             -RebuiltExecutable "$env:RUNNER_TEMP\activator-build\DevRigorHookActivator.exe"
           # Prove the uninstall/reinstall trust lifecycle: revoke exact owned hashes,
           # preserve foreign state in the revoker contract, remove definitions, reinstall,

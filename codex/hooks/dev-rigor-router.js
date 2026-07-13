@@ -44,7 +44,7 @@ function controlOutput(task, changed) {
   const latest = task.proofs.length ? task.proofs[task.proofs.length - 1] : null;
   const text = [
     'DEV-RIGOR TASK STATUS',
-    'version: 1.7.0-candidate',
+    'version: 1.7.0',
     `mode: ${task.mode}`,
     `dirty edit: ${task.dirtyEdits.length ? 'yes' : 'no'}`,
     `unresolved proof: ${task.unresolved.length ? 'yes' : 'no'}`,

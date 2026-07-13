@@ -1,8 +1,8 @@
 # codex-dev-rigor-stack — technical architecture
 
-**Architecture version:** 1.6.3
+**Architecture version:** 1.7.0
 
-**Applies to dev-rigor-stack:** 1.6.3
+**Applies to dev-rigor-stack:** 1.7.0
 
 This document describes the system boundaries, delivery state machine, evidence flow, and
 deployment model. The [user manual](MANUAL.md) explains operation; this document explains
@@ -72,33 +72,49 @@ flowchart TB
     Prompt["UserPromptSubmit"]
     Tools["PostToolUse"]
     Stops["Stop / SubagentStop"]
-    Reflex["Reflex injector\nuniversal proof + receipt contract"]
-    Router["Rigor router\ninvestigation · grounding · decompose · release"]
-    Identity["Authoritative Codex identity\nsession_id + turn_id"]
-    Ledger["Append-safe exact-turn ledger\nedit · execution · block · checkpoint"]
-    Gate["Grounding/evidence gate\ncurrent-turn edit checked? receipt present?"]
-    Continue["Codex continuation prompt\nrun the missing check / add receipt"]
+    Core["Compact core injector\nsubstantive proof + owner controls"]
+    Router["Rigor router\ncomplete discipline + task mode"]
+    Identity["Authoritative Codex identity\ntask + turn + parent association"]
+    Ledger["Privacy-bounded evidence state\nE/G/I/R/T/B/F/K/U/C"]
+    Gate["Substantive evidence gate\ncurrent edit set proved?"]
+    Debt["Task proof debt\nunresolved affected edit sets"]
+    Continue["One continuation prompt\nrun the narrowest qualifying check"]
     Coordinator["Coordinator + 19 standalone entrypoints"]
 
-    Events --> Start --> Reflex --> Coordinator
+    Events --> Start --> Core --> Coordinator
     Events --> Prompt --> Router --> Coordinator
     Events --> Tools --> Identity --> Ledger
     Events --> Stops --> Identity
     Identity --> Gate
     Ledger --> Gate
-    Gate -->|complete| Coordinator
-    Gate -->|missing evidence| Continue --> Coordinator
+    Gate -->|proved or WARN/OFF| Coordinator
+    Gate -->|first unproved stop in ON| Continue --> Coordinator
+    Gate -->|circuit release| Debt
+    Debt -->|same or proved superseding edit set| Gate
 ```
 
 `Stop` and `SubagentStop` are the authoritative mechanical boundary. PostToolUse and Stop
-share state only when both the exact `session_id` and exact `turn_id` match.
-`UserPromptSubmit` routes a discipline but never creates or clears grounding state because
-ambient prompt events are not authoritative turn boundaries. An accepted coding receipt
-records a checkpoint. After one block, a retry with no intervening tool event is released
-and checkpointed even when a client omits `stop_hook_active`; new tool activity re-arms the
-gate. Missing identity or an unwritable block checkpoint fails open instead of risking a
-permanent discard loop. Within a turn, append order still matters: a test run before a
-later edit cannot clear it, and an explicitly failed execution cannot count as proof.
+share turn evidence only when Codex supplies the exact task and turn identity. The task
+record separately carries `ON`, `WARN`, or `OFF`, dirty edit identities, typed proofs, and
+unresolved debt. Exact owner commands affect only that task; authoritatively associated
+subagents read the parent mode live, while an unbound subagent visibly fails open in
+`WARN`. Compaction restores mode and routed discipline from task state.
+
+The evidence recorder distinguishes direct edits (`E`), generated source edits (`G`),
+inspection (`I`), run/render (`R`), test (`T`), build (`B`), and explicit/structured
+failure (`F`). Result precedence is explicit policy/tool failure, structured test/build
+result, process exit status, then bounded text inference only when structured evidence is
+absent. Raw sensitive command arguments are not persisted. Correlation tokens bind task,
+turn, edit set, evidence class, and result; they detect stale/mismatched evidence but are
+not represented as a security boundary against a process that can read task state.
+
+In `ON`, an unproved important edit can cause one substantive block. A retry with no new
+tool event is released to prevent response-discard loops, records `U: released-unproved`,
+and leaves release-visible proof debt rather than a checkpoint. Missing/invalid receipt
+formatting after real proof is a warning, never a destructive block. Debt clears only
+when evidence is bound to the same affected edit set or a proved superseding set containing
+every indebted edit. Missing identity or unwritable state fails open with a once-per-state
+visible warning.
 Codex requires users to review and trust non-managed hook definitions. Each command binds
 its definition to the runtime script SHA-256, verifies a single read buffer, and compiles
 that same buffer; it never hashes one read and executes a second. On Windows, the
@@ -203,7 +219,7 @@ flowchart LR
     Docs["docs/\nstatic landing + manual + architecture"]
     Pages["GitHub Pages\npublic landing URL"]
     Archive["GitHub source archive\npublished installer scripts"]
-    Installer["agent or script installation\ndev-rigor-stack 1.6.3"]
+    Installer["agent or script installation\ndev-rigor-stack 1.7.0"]
     Backup["target/.backup/.../<timestamp>"]
     Home["CODEX_HOME/skills\n19 entrypoints"]
     Runtime["CODEX_HOME/dev-rigor-stack\nactive Node hook runtime + state"]
@@ -228,8 +244,11 @@ flowchart LR
 ```
 
 The script installers stage all 19 managed folders, the active hook runtime, and the merged
-`hooks.json`, then commit or roll back that set together. They back up
-replaced copies and changed hook configuration, and merge only owned entries. Node.js is a
+`hooks.json`, then commit or roll back that set together. Migration is verified from broken
+1.6.1, withdrawn 1.6.2, 1.6.3, clean, and foreign-hook/trust profiles. The transactional
+uninstaller removes owned trust, definitions, runtime, and skills on success; any failed
+transaction restores its complete starting state byte-for-byte. Foreign configuration is
+preserved, and restoring an older version remains a separate explicit operation. Node.js is a
 runtime requirement for the hooks; no package dependencies are installed. Codex reloads
 skill metadata after restart and executes non-managed hooks only after Codex records the
 reviewed current hashes. The Windows activator never edits `config.toml` directly; it uses
@@ -256,11 +275,14 @@ unexpected hook configuration is refused and left byte-identical.
 
 ## Version model
 
-Version `1.6.3` continues the product lineage from `1.5.1`. The interim `1.0.0` Codex
+Version `1.7.0` continues the product lineage from `1.5.1`. The interim `1.0.0` Codex
 package number remains historical changelog data, not a new lineage root. Subsequent
 versions advance monotonically from 1.6.0. Version 1.6.1 repaired Desktop activation;
-1.6.2's prompt-boundary repair was withdrawn; 1.6.3 uses exact Codex turn identity and a
-hard retry circuit breaker. Versions 1.6.0–1.6.2 are unsupported.
+1.6.2's prompt-boundary repair was withdrawn; 1.6.3 introduced exact Codex turn identity
+and a hard retry circuit breaker. Version 1.7.0 preserves that isolation and adds
+task-scoped controls, typed proof, non-destructive receipt handling, persistent proof debt,
+safe compaction/subagent behavior, and transactional migration/uninstall. Versions
+1.6.0–1.6.2 are unsupported.
 
 ## Provenance note
 

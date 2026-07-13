@@ -1,6 +1,6 @@
 # Contributing
 
-**Current release:** 1.6.3
+**Current release:** 1.7.0
 
 Thanks for considering it. This repo practices what it ships — contributions walk the
 same gates the stack enforces.
@@ -15,7 +15,8 @@ same gates the stack enforces.
   `node plugin/hooks/test-hooks.js` (provenance regression suite),
   `python3 tools/check_sync.py`, `python3 tools/check_bundle.py`, and
   `python3 -m unittest tools.test_stack_contracts tools.test_desktop_activator
-  tools.test_visitor_audit`. On Windows, also build `desktop/build.ps1`; CI runs its
+  tools.test_visitor_audit`, `python3 tools/test_upgrade_matrix.py`, and
+  `python3 tools/test_verifier_mutations.py`. On Windows, also build `desktop/build.ps1`; CI runs its
   compiled ownership and fresh-process production app-server tests, compares the rebuilt
   executable with the published binary after normalizing compiler identity bytes, injects
   transactional-installer failures, and verifies exporter parity on Ubuntu and Windows.

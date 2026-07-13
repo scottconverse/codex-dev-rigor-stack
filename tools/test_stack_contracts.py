@@ -107,7 +107,7 @@ class StackContractTests(unittest.TestCase):
 
     def test_current_release_is_identified_on_every_document_surface(self) -> None:
         manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
-        self.assertEqual(manifest["version"], "1.6.3")
+        self.assertEqual(manifest["version"], "1.7.0")
         surfaces = {
             "README": ROOT / "README.md",
             "manual": ROOT / "docs" / "MANUAL.md",
@@ -123,7 +123,7 @@ class StackContractTests(unittest.TestCase):
         }
         for name, path in surfaces.items():
             with self.subTest(surface=name):
-                self.assertIn("1.6.3", path.read_text(encoding="utf-8"))
+                self.assertIn("1.7.0", path.read_text(encoding="utf-8"))
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
         self.assertNotIn("Dates are release (tag) dates.", changelog)
         self.assertIn("does not imply a Git tag", changelog)
@@ -167,7 +167,7 @@ class StackContractTests(unittest.TestCase):
             "plain english",
             "technical architecture",
             "all 19 entrypoints",
-            "version 1.6.3",
+            "version 1.7.0",
             "read the full user manual",
         )
         manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
@@ -199,7 +199,7 @@ class StackContractTests(unittest.TestCase):
 
         ground = (ROOT / "codex" / "hooks" / "dev-rigor-ground.js").read_text(encoding="utf-8")
         router = (ROOT / "codex" / "hooks" / "dev-rigor-router.js").read_text(encoding="utf-8")
-        self.assert_terms(ground, "payload.session_id", "payload.turn_id", "ground-v3-", "retry-circuit-released")
+        self.assert_terms(ground, "payload.session_id", "payload.turn_id", "ground-v4-", "released-unproved")
         self.assertNotIn("ground-v2-", ground)
         self.assertNotIn("ground-v", router)
 
@@ -236,6 +236,30 @@ class StackContractTests(unittest.TestCase):
             "hooks.json",
             "trust",
         )
+
+    def test_task_controls_and_proof_debt_are_release_visible(self) -> None:
+        core = (ROOT / "codex" / "dev-rigor-core.md").read_text(encoding="utf-8")
+        reflex = (ROOT / "codex" / "dev-rigor-reflex.md").read_text(encoding="utf-8")
+        manual = (ROOT / "docs" / "MANUAL.md").read_text(encoding="utf-8")
+        release = self.text("dev-rigor-stack-release")
+        coordinator = self.text("dev-rigor-stack")
+        for text in (core, reflex, manual):
+            self.assert_terms(text, "devrigoron", "devrigorwarn", "devrigoroff", "devrigorstatus")
+        self.assert_terms(reflex, "generated", "unresolved proof debt", "security boundary")
+        self.assert_terms(manual, "released-unproved", "same edit set", "authoritative parent identity")
+        self.assert_terms(release, "devrigorstatus", "unresolved proof debt", "mark the release invalid")
+        self.assert_terms(coordinator, "no unresolved proof debt", "verified superseding set")
+
+    def test_transactional_uninstaller_and_upgrade_matrix_ship_with_the_bundle(self) -> None:
+        manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["codex"]["uninstaller"], "uninstall.ps1")
+        for path in (ROOT / "uninstall.ps1", ROOT / "uninstall.sh", ROOT / "tools" / "test_upgrade_matrix.py"):
+            self.assertTrue(path.is_file(), f"missing transactional lifecycle artifact: {path}")
+        matrix = (ROOT / "tools" / "test_upgrade_matrix.py").read_text(encoding="utf-8")
+        self.assert_terms(matrix, "1.6.1", "1.6.2", "1.6.3", "pristine_scenario", "foreign hooks/trust")
+        ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+        self.assertIn("test_upgrade_matrix.py", ci)
+        self.assertIn("test_verifier_mutations.py", ci)
 
 
 if __name__ == "__main__":

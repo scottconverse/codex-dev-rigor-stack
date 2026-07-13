@@ -110,7 +110,7 @@ child.on('exit', (code) => {
 
 send({
   method: 'initialize', id: 1,
-  params: { clientInfo: { name: 'dev_rigor_ci', title: 'Dev Rigor CI', version: '1.6.3' } },
+  params: { clientInfo: { name: 'dev_rigor_ci', title: 'Dev Rigor CI', version: '1.7.0' } },
 });
 
 timeout = setTimeout(() => {
