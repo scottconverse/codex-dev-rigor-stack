@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>dev-rigor-stack — make "done" mean proven</title>
-<meta name="description" content="Codex dev-rigor-stack 1.0: thirteen independently invokable capabilities, six compatibility entrypoints, exhaustive newcomer/UI audits, and strict-zero release closure. MIT.">
+<title>dev-rigor-stack 1.0.0 — make "done" mean proven</title>
+<meta name="description" content="Codex dev-rigor-stack 1.0.0: all 19 entrypoints, exhaustive newcomer/UI audits, public-surface verification, and strict-zero release closure. MIT.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9C%85%3C/text%3E%3C/svg%3E">
 <meta property="og:type" content="website">
 <meta property="og:title" content="dev-rigor-stack — make &quot;done&quot; mean proven">
@@ -26,7 +26,11 @@
   body{margin:0;background:var(--bg);color:var(--fg);
     font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
   .wrap{max-width:880px;margin:0 auto;padding:0 20px}
-  header{padding:64px 0 24px;text-align:center}
+  header{padding:50px 0 24px;text-align:center}
+  nav{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;padding:18px 0 0;font-size:.92rem}
+  nav a{text-decoration:none;font-weight:600}
+  .version{display:inline-block;margin-bottom:14px;padding:4px 11px;border:1px solid var(--border);
+    border-radius:999px;background:var(--card);color:var(--muted);font-size:.83rem;font-weight:700}
   h1{font-size:2.6rem;margin:0 0 .3em;letter-spacing:-.02em}
   .tag{font-size:1.25rem;color:var(--muted);margin:0 auto;max-width:40ch}
   .cta{margin-top:28px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
@@ -76,38 +80,47 @@
 <body>
 <div class="wrap">
 
+<nav aria-label="Primary navigation">
+  <a href="#plain-english">Plain English</a>
+  <a href="#technical-architecture">Technical architecture</a>
+  <a href="#entrypoints">All 19 entrypoints</a>
+  <a href="#install">Install</a>
+</nav>
+
 <header>
+  <div class="version">Version 1.0.0 · upstream discipline 1.5.1</div>
   <h1>dev-rigor-stack</h1>
   <p class="tag">A Codex-native delivery discipline — so "done" means <em>proven by the real artifact</em>, not "looks right."</p>
   <div class="cta">
     <a class="btn primary" href="https://github.com/scottconverse/codex-dev-rigor-stack">View on GitHub</a>
-    <a class="btn ghost" href="https://github.com/scottconverse/codex-dev-rigor-stack/blob/main/docs/MANUAL.md">Read the manual</a>
+    <a class="btn ghost" href="https://github.com/scottconverse/codex-dev-rigor-stack/blob/main/docs/MANUAL.md">Read the full user manual</a>
+    <a class="btn ghost" href="https://github.com/scottconverse/codex-dev-rigor-stack/blob/main/docs/ARCHITECTURE.md">Architecture drawings</a>
   </div>
 </header>
 
-<h2>What it is</h2>
+<h2 id="plain-english">Plain English — what it does</h2>
 <p>AI coding agents are confident, and confidence isn't correctness. An agent says "done"
 when it means "I wrote code that looks right" — a different claim from "I proved it runs,"
 different again from "I proved it's correct." This stack closes that gap: every change is
 exercised the way a real user hits it before anyone calls it finished, and the call to make
-a release <em>real</em> stays with a human. It ships as thirteen namespaced standalone
-Codex capabilities plus six backward-compatible entrypoints. The upstream Claude package
-also carries three always-on hooks — a <strong>reflex</strong> that primes every session, a
+a release <em>real</em> stays with a human. It installs all 19 entrypoints together:
+thirteen namespaced standalone Codex capabilities plus six backward-compatible names.
+The repository also retains three upstream Claude hook sources — a <strong>reflex</strong>, a
 <strong>rigor router</strong> that injects the matching task protocol per prompt, and a
-<strong>grounding check</strong> that blocks "done" on code nothing ever ran — and it
-exports to any other agent as plain text.</p>
+<strong>grounding check</strong> — for provenance and future verified porting. The Codex
+installer does not wire those Claude hooks; the complete discipline lives in the skills.</p>
 
-<h2>How it works</h2>
+<h2 id="technical-architecture">Technical architecture</h2>
 <p>Two altitudes, one rule: <strong>nothing advances on a claim, only on evidence.</strong>
 Every unit of work — a fix, a feature, a refactor — walks a five-gate loop. Once per version,
 a heavier release gate runs over everything that merged, and ends at a human's go/no-go on the
-tag. An always-on layer primes every session, routes the right discipline to each prompt, and
-enforces a run-before-done floor; a continuity bookend keeps decisions from being lost across
-days and machines.</p>
+tag. Typed evidence artifacts carry run, commit, claim, finding, coverage, and handoff
+identity between stages. A continuity bookend keeps decisions from being lost across days
+and machines.</p>
 
 <figure>
   <div class="scroll">
-  <svg viewBox="0 0 920 474" role="img" aria-label="The delivery flow: an always-on layer (reflex, rigor router, grounding check) primes a five-gate loop (PLAN, BUILD, VERIFY, REVIEW, MERGE); merges feed a release gate driven to zero findings, then an owner decides the tag; a continuity bookend wraps the whole effort.">
+  <svg viewBox="0 0 920 474" role="img" aria-label="The delivery flow: retained upstream Claude hook sources sit above a five-gate Codex skill loop (PLAN, BUILD, VERIFY, REVIEW, MERGE); merges feed a release gate driven to zero findings, then an owner decides the tag; continuity wraps the effort.">
     <defs>
       <marker id="ar" markerWidth="9" markerHeight="9" refX="7.5" refY="4.5" orient="auto">
         <path d="M0,0 L9,4.5 L0,9 z" fill="var(--muted)"/></marker>
@@ -124,10 +137,10 @@ days and machines.</p>
       .cont{fill:none;stroke:var(--border);stroke-width:1.5;stroke-dasharray:6 5}
     </style>
 
-    <!-- reflex band -->
+    <!-- retained upstream hook band -->
     <rect class="g" x="36" y="12" width="848" height="50" rx="10"/>
-    <text class="t" x="460" y="34" text-anchor="middle">ALWAYS-ON LAYER — reflex · rigor router · grounding check</text>
-    <text class="s" x="460" y="52" text-anchor="middle">the proof ladder every session · the matching task protocol per prompt · an enforced run-before-done floor</text>
+    <text class="t" x="460" y="34" text-anchor="middle">RETAINED UPSTREAM CLAUDE HOOK SOURCES — NOT WIRED BY CODEX</text>
+    <text class="s" x="460" y="52" text-anchor="middle">reflex · rigor router · grounding check — provenance and future verified porting</text>
     <path class="fa" d="M285,64 L285,86" marker-end="url(#arA)"/>
     <path class="fa" d="M460,64 L460,86" marker-end="url(#arA)"/>
     <path class="fa" d="M635,64 L635,86" marker-end="url(#arA)"/>
@@ -186,6 +199,29 @@ days and machines.</p>
   </svg>
   </div>
   <figcaption>The delivery flow. Findings loop back until they're gone; only a human tags the release.</figcaption>
+</figure>
+
+<h3>Evidence moves forward without losing identity</h3>
+<p>Every standalone stage can emit or consume the same evidence contract. Visitor Audit
+owns the public path through the exact download; Walkthrough verifies that artifact’s
+version and hash before installing it in a clean environment. Downstream stages may add
+evidence, but cannot rewrite upstream findings or coverage.</p>
+
+<figure>
+  <div class="scroll">
+  <svg viewBox="0 0 920 250" role="img" aria-label="Evidence architecture: repository candidate and public surfaces feed claims, findings and coverage; Visitor Audit hands an exact published installer to Walkthrough; the combined evidence produces a strict-zero gate result for the owner.">
+    <defs><marker id="arE" markerWidth="9" markerHeight="9" refX="7.5" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="var(--muted)"/></marker></defs>
+    <style>.eb{fill:var(--card);stroke:var(--border);stroke-width:1.5}.eg{fill:var(--accent);fill-opacity:.1;stroke:var(--accent);stroke-width:1.5}.et{fill:var(--fg);font-weight:600;font-size:13px}.es{fill:var(--muted);font-size:11px}.ef{stroke:var(--muted);stroke-width:1.6;fill:none}</style>
+    <rect class="eb" x="24" y="32" width="160" height="62" rx="9"/><text class="et" x="104" y="58" text-anchor="middle">Candidate + public</text><text class="es" x="104" y="77" text-anchor="middle">SHA · URLs · bytes</text>
+    <rect class="eb" x="230" y="18" width="176" height="90" rx="9"/><text class="et" x="318" y="45" text-anchor="middle">Visitor Audit</text><text class="es" x="318" y="65" text-anchor="middle">rendered surfaces · links</text><text class="es" x="318" y="82" text-anchor="middle">exact acquisition handoff</text>
+    <rect class="eb" x="452" y="18" width="176" height="90" rx="9"/><text class="et" x="540" y="45" text-anchor="middle">Walkthrough</text><text class="es" x="540" y="65" text-anchor="middle">clean install · every path</text><text class="es" x="540" y="82" text-anchor="middle">visuals · wiring · lifecycle</text>
+    <rect class="eg" x="674" y="18" width="220" height="90" rx="9"/><text class="et" x="784" y="45" text-anchor="middle">Gate result</text><text class="es" x="784" y="65" text-anchor="middle">claims + findings + coverage</text><text class="es" x="784" y="82" text-anchor="middle">strict-zero decision packet</text>
+    <path class="ef" d="M184,63 L226,63" marker-end="url(#arE)"/><path class="ef" d="M406,63 L448,63" marker-end="url(#arE)"/><path class="ef" d="M628,63 L670,63" marker-end="url(#arE)"/>
+    <rect class="eb" x="230" y="146" width="398" height="62" rx="9"/><text class="et" x="429" y="172" text-anchor="middle">Shared artifact contract</text><text class="es" x="429" y="191" text-anchor="middle">run manifest · claims · findings · coverage ledger · immutable handoff</text>
+    <path class="ef" d="M318,108 L318,142" marker-end="url(#arE)"/><path class="ef" d="M540,108 L540,142" marker-end="url(#arE)"/><path class="ef" d="M628,177 L784,177 L784,112" marker-end="url(#arE)"/>
+  </svg>
+  </div>
+  <figcaption>The public artifact, clean-room product journey, and gate verdict remain traceable to one identity.</figcaption>
 </figure>
 
 <div class="gates">
@@ -275,7 +311,7 @@ before trusting it, never merge red or with <code>--admin</code>, never review y
 never claim beyond the check you actually ran, and owner decisions (tag, publish, deploy,
 spend, delete) stay the owner's.</p>
 
-<h2>What's in the box</h2>
+<h2 id="entrypoints">All 19 entrypoints</h2>
 <table>
   <tr><th>Component</th><th>Role</th></tr>
   <tr><td><code>dev-rigor-stack</code></td><td>the stack — orchestrates the loop + release gate</td></tr>
@@ -291,18 +327,22 @@ spend, delete) stay the owner's.</p>
   <tr><td><code>dev-rigor-stack-gauntletgate</code></td><td>ADVANCEMENT — lite/walkthrough/full stage gate</td></tr>
   <tr><td><code>dev-rigor-stack-merge-gate</code></td><td>MERGE — exact-SHA green-path evidence decision</td></tr>
   <tr><td><code>dev-rigor-stack-docs-gate</code></td><td>DOCS — rendered truth and deliverable completeness</td></tr>
-  <tr><td><code>dev-rigor reflex</code></td><td><em>upstream Claude hook</em> — not wired by the Codex installer</td></tr>
-  <tr><td><code>rigor router</code></td><td><em>always-on hook</em> — classifies each prompt, injects only the matching task protocol (bug → investigation, UI → grounding, multi-part → decomposition, tag → release)</td></tr>
-  <tr><td><code>grounding check</code></td><td><em>always-on hook</em> — blocks ending a session that edited runnable code without ever executing anything</td></tr>
+  <tr><td><code>6 compatibility names</code></td><td><code>coder-tdd-qa</code>, <code>proof-gate</code>, <code>audit-lite</code>, <code>audit-team</code>, <code>gauntletgate</code>, and <code>visitor-audit</code> retain their complete contracts</td></tr>
 </table>
-<p class="muted">All thirteen canonical capabilities, six compatibility entrypoints, and retained upstream hook sources are MIT — the
-installer installs all of them. <code>audit-lite</code>/<code>audit-team</code> and
-<code>gauntletgate</code> overlap by design: the same review discipline in two packagings —
-the standalone audits are the per-unit <em>review reports</em>, while <code>gauntletgate</code>
-is the release-altitude <em>advancement gate</em> (its lite/full lanes re-run that discipline
-self-contained, plus a pass/fail verdict). A report vs. a gate.</p>
+<p class="muted">All thirteen canonical capabilities and six compatibility entrypoints are
+installed together. <code>audit-lite</code>/<code>audit-team</code> and
+<code>gauntletgate</code> overlap by design: the standalone audits are per-unit
+<em>review reports</em>; gauntletgate is the release-altitude <em>advancement gate</em>.</p>
 
-<h2>Get started</h2>
+<h3>Retained source, not installed Codex behavior</h3>
+<table>
+  <tr><th>Upstream Claude source</th><th>Status in this Codex package</th></tr>
+  <tr><td><code>dev-rigor reflex</code></td><td><em>upstream Claude hook</em> — not wired by the Codex installer</td></tr>
+  <tr><td><code>rigor router</code></td><td><em>retained upstream hook source</em> — not active in Codex; classifies Claude prompts in the upstream package</td></tr>
+  <tr><td><code>grounding check</code></td><td><em>retained upstream hook source</em> — not active in Codex; enforces run-before-done in the upstream package</td></tr>
+</table>
+
+<h2 id="install">Get started</h2>
 <p><strong>For Codex Desktop:</strong></p>
 <pre>git clone https://github.com/scottconverse/codex-dev-rigor-stack
 cd codex-dev-rigor-stack
@@ -318,8 +358,16 @@ wire Claude-specific hooks.</p>
 the repository; it copies the skills into the configured Codex home.</p>
 <p><strong>For other agents</strong> (ChatGPT, Gemini, or a plain system prompt): run
 <code>./export/export-portable.sh</code> and paste the generated <code>portable-bundle.md</code>
-into its system prompt. Claude-specific mechanics read as plain guidance — nothing is
-diluted from the Claude side to serve the export.</p>
+into its system prompt. The export is derived from the complete canonical skills; canonical
+capabilities are never removed merely to make the bundle shorter.</p>
+
+<h2>Version model</h2>
+<div class="callout">
+  <p><strong>Current Codex bundle: 1.0.0.</strong> The immediately previous Codex repository
+  version was <strong>0.2.0</strong>. The bundled upstream development discipline is
+  <strong>1.5.1</strong>. Package and methodology versions advance independently, so both
+  are shown rather than collapsing them into one misleading number.</p>
+</div>
 
 <h2>Honest scope</h2>
 <div class="cols">
@@ -338,7 +386,7 @@ diluted from the Claude side to serve the export.</p>
 </div>
 
 <footer>
-  <p>MIT-licensed. Skills and hooks by Scott Converse. Prior art, gratefully credited: the
+  <p>Codex bundle 1.0.0 · MIT-licensed. Skills and retained upstream hook sources by Scott Converse. Prior art, gratefully credited: the
   reflex's always-on <em>form</em> is from
   <a href="https://github.com/DietrichGebert/ponytail">ponytail</a> (DietrichGebert, MIT);
   per-task routing and verification grounding were proven transferable by

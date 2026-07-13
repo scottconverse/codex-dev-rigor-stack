@@ -1,6 +1,8 @@
 #!/usr/bin/env sh
 set -eu
 
+version="1.0.0"
+
 repo_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 skills_src="$repo_dir/skills"
 target="${CODEX_HOME:-$HOME/.codex}/skills"
@@ -28,7 +30,7 @@ stamp=$(date +%Y%m%d-%H%M%S)
 backup_root="$target/.backup/codex-dev-rigor-stack/$stamp"
 
 mkdir -p "$target"
-echo "Installing codex-dev-rigor-stack skills -> $target"
+echo "Installing codex-dev-rigor-stack $version skills -> $target"
 
 installed=0
 for name in $order; do

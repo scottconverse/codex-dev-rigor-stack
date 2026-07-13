@@ -7,7 +7,7 @@
     "version": "1.5.1"
   },
   "license": "MIT",
-  "description": "Codex-native dev-rigor-stack 1.0: thirteen namespaced standalone capabilities plus six backward-compatible entrypoints for proof-oriented delivery, exhaustive newcomer/UI walkthroughs, public-surface verification, and strict-zero release closure.",
+  "description": "Codex-native dev-rigor-stack 1.0.0: thirteen namespaced standalone capabilities plus six backward-compatible entrypoints for proof-oriented delivery, exhaustive newcomer/UI walkthroughs, public-surface verification, and strict-zero release closure.",
   "installs_to": "~/.codex/skills by default",
   "skills": [
     { "name": "dev-rigor-stack", "role": "orchestrates the delivery loop and release gate" },

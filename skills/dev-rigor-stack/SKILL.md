@@ -222,7 +222,7 @@ something the model can't take back or wasn't authorized to spend. Instances:
 
 Reconciliation (keeps this from meaning "ask permission constantly") — it's about who
 **originates** the call:
-- **Explicit request** ("tag 0.2.0") = the owner deciding live → execute now, no "are
+- **Explicit request** ("tag 1.0.0") = the owner deciding live → execute now, no "are
   you sure."
 - **Standing authorization** (green-path unit merges are pre-approved) = decided ahead
   → proceed.

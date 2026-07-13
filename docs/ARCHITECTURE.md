@@ -1,149 +1,188 @@
-# Architecture
+# codex-dev-rigor-stack — technical architecture
 
-The stack has **two altitudes** and a **continuity bookend**. The per-unit loop runs on
-every change; the release gate runs once per version; continuity wraps the whole effort
-so nothing durable is lost across sessions or machines.
+**Architecture version:** 1.0.0
 
-## Control flow
+**Applies to Codex bundle:** 1.0.0
+
+**Bundled upstream discipline:** 1.5.1
+
+This document describes the system boundaries, delivery state machine, evidence flow, and
+deployment model. The [user manual](MANUAL.md) explains operation; this document explains
+how the parts compose and where trust changes hands.
+
+## Architectural principles
+
+1. **Evidence is typed by claim.** Source inspection cannot prove runtime, UI, installer,
+   or public-distribution claims.
+2. **Worker is not judge.** Build, adversarial verification, review, and release judgment
+   are separated by role or fresh context.
+3. **Blast radius sets depth.** Review rigor follows impact, not diff size.
+4. **Artifacts keep identity.** Commit SHA, installer hash, environment, coverage, and
+   handoff identity remain stable across gates.
+5. **Capability does not silently degrade.** Missing required siblings or evidence make a
+   gate INVALID; they do not authorize a compact approximation.
+6. **External value stays owner-controlled.** Tagging, publishing, destructive external
+   actions, spending, and risk acceptance remain human decisions unless explicitly authorized.
+
+## System context
+
+```mermaid
+flowchart LR
+    Owner["Owner / product decision-maker"]
+    Codex["Codex main coordinator"]
+    Skills["19 installed skill entrypoints\n13 canonical + 6 compatibility"]
+    Repo["Project repository\nsource · tests · docs · CI"]
+    Runtime["Real runtime / rendered product"]
+    Public["Public distribution\nrepo · docs site · release assets"]
+    Evidence["Durable evidence\nclaims · findings · coverage · handoffs"]
+
+    Owner -->|scope, go/no-go, trust decisions| Codex
+    Codex -->|route complete contracts| Skills
+    Skills -->|read/change/verify| Repo
+    Skills -->|exercise real artifact| Runtime
+    Skills -->|visitor + acquisition journey| Public
+    Repo -->|exact SHA and candidate| Evidence
+    Runtime -->|screens, controls, traces| Evidence
+    Public -->|URLs, bytes, checksums| Evidence
+    Evidence -->|decision packet| Codex
+    Codex -->|release-ready evidence| Owner
+```
+
+The package is not a build system or test framework. It is an orchestration and evidence
+discipline layered over the tools a repository already uses. The coordinator keeps
+judgment; specialized skills provide complete standalone protocols.
+
+## Delivery state machine
+
+```mermaid
+stateDiagram-v2
+    [*] --> Plan
+    Plan --> Build: acceptance + test list + blast radius
+    Build --> Verify: valid RED → GREEN → widened run
+    Verify --> Review: claim survives refutation
+    Verify --> Build: claim refuted
+    Review --> Build: confirmed finding
+    Review --> MergeGate: strict scoped review clean
+    MergeGate --> Main: exact SHA + CI green
+    MergeGate --> Build: stale SHA or red evidence
+    Main --> ReleaseCandidate: version scope complete
+    ReleaseCandidate --> ReleaseFix: gauntlet/docs/visitor/walkthrough finding
+    ReleaseFix --> ReleaseCandidate: affected lanes rerun
+    ReleaseCandidate --> OwnerDecision: strict-zero + valid coverage + rollback ready
+    OwnerDecision --> Main: no-go
+    OwnerDecision --> Published: owner go
+    Published --> LiveClosure: cache-busted visitor + exact-artifact walkthrough
+    LiveClosure --> Published: finding routes to correction/rollback
+    LiveClosure --> [*]: strict-zero live evidence
+```
+
+The per-unit loop and release gate operate at different altitudes. Every change uses the
+unit loop. The aggregate version uses the release gate once the integration line is ready.
+
+## Skill composition
+
+| Layer | Canonical skill | Complete responsibility |
+| --- | --- | --- |
+| Coordinate | `dev-rigor-stack` | Route unit/release stages and preserve gate invariants |
+| Continuity | `dev-rigor-stack-continuity` | Restore and persist cross-session decisions |
+| PLAN | `dev-rigor-stack-plan` | Acceptance, tests, blast radius, routing |
+| BUILD | `dev-rigor-stack-build` | Full TDD/QA contract and evidence receipt |
+| VERIFY | `dev-rigor-stack-proof-gate` | Claim refutation and anti-theater proof |
+| REVIEW | `dev-rigor-stack-audit-lite` | Fast scoped independent review |
+| REVIEW | `dev-rigor-stack-audit-team` | Five-role high-blast review |
+| PRODUCT | `dev-rigor-stack-walkthrough` | Blind acquisition, installer lifecycle, complete UI/UX/wiring coverage |
+| PUBLIC | `dev-rigor-stack-visitor-audit` | Rendered public surfaces, controls, assets, claims, acquisition handoff |
+| ADVANCE | `dev-rigor-stack-gauntletgate` | Lite/walkthrough/full advancement verdict |
+| MERGE | `dev-rigor-stack-merge-gate` | Exact-SHA green-path decision |
+| DOCS | `dev-rigor-stack-docs-gate` | README/manual/architecture/landing truth and completeness |
+| RELEASE | `dev-rigor-stack-release` | Candidate-to-live strict-zero closure |
+
+Compatibility skills preserve their full contracts: `coder-tdd-qa`, `proof-gate`,
+`audit-lite`, `audit-team`, `gauntletgate`, and `visitor-audit`.
+
+## Evidence and handoff architecture
 
 ```mermaid
 flowchart TB
-    subgraph CONT["Session & machine continuity (bookend — not a gate)"]
-        direction LR
-        START["Start: pull + re-validate stale-able decisions"]
-        ENDS["End: write + push + confirm remote moved"]
-    end
+    RM["run-manifest.json\nrun · commit · artifacts · platforms"]
+    CL["claims.json\nobservable promises"]
+    FD["findings.json\nseverity · reproduction · evidence"]
+    CV["coverage-ledger.json\ndenominators + item results"]
+    HO["handoff.json\nimmutable identity + open findings"]
+    GR["gate-result.json\nPASS / FAIL / INVALID / BLOCKED / PARTIAL"]
 
-    CONT --> LOOP
+    RM --> CL
+    RM --> FD
+    RM --> CV
+    CL --> HO
+    FD --> HO
+    CV --> HO
+    HO --> GR
 
-    subgraph LOOP["Per-unit loop — every unit of work"]
-        direction TB
-        P["1 · PLAN<br/>$dev-rigor-stack-plan"]
-        B["2 · BUILD<br/>$dev-rigor-stack-build · test-first"]
-        V["3 · VERIFY<br/>$dev-rigor-stack-proof-gate"]
-        R["4 · REVIEW<br/>audit-lite / audit-team<br/>+ walkthrough for UI<br/>+ visitor for public surfaces"]
-        M["5 · MERGE<br/>$dev-rigor-stack-merge-gate"]
-        P --> B --> V --> R --> M
-        V -. "low-blast: collapse" .-> R
-    end
-
-    M --> REL
-
-    subgraph REL["Release gate — once per version, before the tag"]
-        direction TB
-        G["$dev-rigor-stack-gauntletgate all<br/>→ 0/0/0/0/0"]
-        C["claim-refutation on README / manual / landing"]
-        D["deliverable docs real & complete"]
-        VA["candidate Visitor Audit<br/>+ clean-machine Walkthrough"]
-        RB["rollback trigger + owner named"]
-        G --> C --> D --> VA --> RB
-    end
-
-    REL --> TAG{"OWNER go/no-go<br/>on the tag"}
-    TAG -->|go| SHIP["tag / release / deploy"]
-    TAG -->|no| LOOP
-    SHIP --> LIVE["live Visitor Audit<br/>public acquisition handoff"]
-    LIVE --> WALK["full published Walkthrough<br/>download → install → every UI path<br/>→ update/repair/uninstall"]
-    WALK --> CLOSE["0/0/0/0/0<br/>announce + close"]
-
-    R -->|finding| B
-    G -->|finding| B
+    Visitor["Visitor Audit\npublic URL → exact installer"] -->|acquisition handoff| HO
+    HO -->|verify hash/version/commit| Walk["Walkthrough\nclean environment → full product journey"]
+    Walk --> FD
+    Walk --> CV
+    GR --> Decision["Merge or owner release decision"]
 ```
 
-A red result at any gate returns to the phase that owns it — findings from REVIEW or the
-release gauntlet route back into BUILD. Nothing routes *around* a gate.
+Evidence is additive. A downstream stage may add proof but may not rewrite upstream
+findings, coverage, or artifact identity. Coverage is valid only when every inventoried
+item resolves to tested, blocked, unverifiable, or explicitly excluded with a reason.
 
-## Skill composition — which skill serves which gate
+### Visitor/Walkthrough trust boundary
+
+Visitor Audit owns discovery through download. Walkthrough owns the downloaded artifact
+through installation and product lifecycle. The boundary record contains product page,
+release page, installer URL, platform, version, filename, bytes, checksum/signature,
+requirements, install claims, and unresolved questions. Substituting a local build breaks
+the public-newcomer claim and makes the run INVALID.
+
+## Deployment architecture
 
 ```mermaid
 flowchart LR
-    DRS["dev-rigor-stack<br/>(orchestrator)"]
-    DRS --> B2["BUILD → dev-rigor-stack-build"]
-    DRS --> V2["VERIFY → dev-rigor-stack-proof-gate"]
-    DRS --> R2["REVIEW → audit-lite / audit-team"]
-    DRS --> W2["PRODUCT JOURNEY → dev-rigor-stack-walkthrough"]
-    DRS --> P2["PUBLIC SURFACE → dev-rigor-stack-visitor-audit"]
-    DRS --> G2["RELEASE → gauntlet + proof + docs<br/>+ candidate/live visitor + walkthrough"]
+    Source["Public GitHub repository\nmain branch"]
+    Docs["docs/\nstatic landing + manual + architecture"]
+    Pages["GitHub Pages\npublic landing URL"]
+    Archive["GitHub source archive\npublished installer scripts"]
+    Installer["install.ps1 / install.sh\nCodex bundle 1.0.0"]
+    Backup["target/.backup/.../<timestamp>"]
+    Home["CODEX_HOME/skills\n19 entrypoints"]
+    Hooks["plugin/ retained Claude hook sources\nnot wired by Codex installer"]
+
+    Source --> Docs --> Pages
+    Source --> Archive --> Installer
+    Installer -->|backup managed folders| Backup
+    Installer -->|copy complete manifest| Home
+    Source --> Hooks
+    Hooks -. provenance / future port .-> Home
 ```
 
-The orchestrator holds the discipline; each gate delegates to the skill built for it. The
-installer bundles all of these, so a normal install has every lane; if a skill is somehow
-absent (a partial or `--target` install), the coordinator runs the equivalent discipline
-inline, says so, and still spawns a fresh sub-agent — it never reviews its own work.
+The installers are intentionally simple, dependency-free copy operations. They install all
+19 managed folders, back up replaced copies by default, and never activate the retained
+Claude hook layer. Codex reloads skill metadata after restart.
 
-`audit-lite`/`audit-team` and `gauntletgate` overlap by design: the same review discipline
-in two packagings. The standalone audits are the per-unit *review reports*; gauntletgate is
-the release-altitude *advancement gate* whose `lite`/`full` lanes re-run that discipline
-self-contained and add a pass/fail verdict. A report vs. a gate.
+## Runtime and failure boundaries
 
-Visitor Audit and Walkthrough deliberately overlap at one verified boundary. Visitor Audit
-reads and operates the public front door, follows every link and safe public control,
-inspects visuals, verifies published assets/claims, and emits the exact installer
-acquisition handoff. Walkthrough consumes that artifact in a verified clean machine and
-owns installer lifecycle, every product screen/control/distinct path/state, visual and
-accessibility quality, and interface-to-function wiring. Candidate evidence informs
-go/no-go; cache-busted live Visitor plus full published Walkthrough permit closure.
+- **Missing skill or evidence:** gate result is INVALID, not a weaker pass.
+- **Confirmed defect:** finding routes to the owning BUILD scope and affected gates rerun.
+- **Host-generated checker noise:** classify out only with fetched evidence; do not change
+  correct product behavior to satisfy a false positive.
+- **Unsafe external action:** mark blocked unless explicitly authorized; never omit it.
+- **Stale commit/artifact:** merge/release gate rejects the evidence packet.
+- **Live publication defect:** keep rollback readiness active and route to correction or
+  the defined rollback decision.
 
-## The always-on layer — three hooks
+## Security boundaries
 
-The skills are pull-based — invoked when the coordinator judges a task needs them. Shipped
-alongside are **three hooks** that push the discipline in, each at a different moment:
+The installed Codex artifact is Markdown skill content. Installers write managed skill
+folders and timestamped backups. The retained Node hook sources use built-ins only but are
+not configured by the Codex installer. No new network service, credential store, runtime
+dependency, or application endpoint is introduced by installation.
 
-```mermaid
-flowchart LR
-    SS["SessionStart /<br/>SubagentStart"] --> RX["reflex<br/>one-page distillation:<br/>proof ladder · never-shrink · receipt"]
-    UP["UserPromptSubmit"] --> RT{"rigor router<br/>classify the prompt"}
-    RT -->|bug words| I["investigation protocol"]
-    RT -->|UI / artifact words| GD["render/run grounding"]
-    RT -->|multi-part work| DC["decomposition +<br/>per-story evidence"]
-    RT -->|release words| RL["release discipline"]
-    RT -->|no match| SIL["silence"]
-    PT["PostToolUse"] --> LG["ledger: runnable edits ·<br/>execution calls"]
-    ST["Stop"] --> CK{"edited runnable code,<br/>never ran anything?"}
-    CK -->|yes| BLK["block once:<br/>run the narrowest real check"]
-    CK -->|no| OK["allow stop"]
-```
+## Version model
 
-- The **reflex** (`SessionStart`/`SubagentStart`) primes every session with the one-page
-  distillation and delegates the heavy mechanics back to the skills. Text:
-  `plugin/dev-rigor-reflex.md`.
-- The **rigor router** (`UserPromptSubmit`) classifies each prompt and injects only the
-  matching protocol from `plugin/disciplines/`, at most once per discipline per session —
-  the right discipline at the right moment, without always-on-everything context cost.
-  Release outranks other matches; a broken UI is a bug first (investigation outranks
-  grounding).
-- The **grounding check** (`PostToolUse` + `Stop`) is the enforced floor: a per-session
-  ledger of runnable-file edits vs. execution calls, and a one-time stop-block when a
-  session edited runnable code but never executed anything. It respects
-  `stop_hook_active`, blocks at most once per session, and fails open on any error —
-  a broken hook must never break a session.
-
-All three are convenience layers, not new gates; the full discipline lives in the skills.
-Concept credit: per-task routing and verification grounding were proven transferable by
-[fablize](https://github.com/fivetaku/fablize)'s Fable-vs-Opus comparison (MIT) —
-clean-room implementations here, no fablize code used.
-
-## The two roles
-
-- **Coordinator** (the top model / main thread) — plans, classifies blast radius, holds
-  the honesty line, gates every merge, and dispatches workers. Decides everything
-  reversible, in-spec, and in-sandbox. It **never originates an owner decision**.
-- **Owner** (the human) — the one call the coordinator can't make: declaring a release
-  real (the tag), and anything irreversible, trust-boundary-crossing, or externally
-  valuable. Merging a green-path slice is pre-authorized; tagging is not.
-
-## Fan-out and cost
-
-Heavy or parallel work (test generation across combinations, sweeping for latent
-siblings, adversarial verification) fans out to cheaper models through the host's
-workflow/orchestration tool — never a bare recursing agent. Each worker states its tier
-and moderates its own rigor by it (the fan-out preamble ships in the
-[dev-rigor-stack skill](../skills/dev-rigor-stack/SKILL.md)). The coordinator stays lean
-and does no grunt work.
-
-## Why "proven," not "green"
-
-The spine of the stack is one rule, inherited from `proof-gate`: **a claim is proven only
-by exercising the real artifact through the path a real consumer hits.** A green check is
-not proof; a check you've confirmed can go *red* is. Every gate is an application of that
-rule at a different scope — a unit, a release, or the verification itself.
+Codex bundle `1.0.0` packages upstream discipline `1.5.1`. The immediately previous Codex
+bundle was `0.2.0`. Package and methodology versions advance independently and are carried
+as separate fields in `manifest.json`.

@@ -7,6 +7,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+$Version = '1.0.0'
 
 $Repo = $PSScriptRoot
 $SkillsSrc = Join-Path $Repo 'skills'
@@ -24,7 +25,7 @@ $Stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $BackupRoot = Join-Path $Target ".backup\codex-dev-rigor-stack\$Stamp"
 
 New-Item -ItemType Directory -Force -Path $Target | Out-Null
-Write-Host "Installing codex-dev-rigor-stack skills -> $Target"
+Write-Host "Installing codex-dev-rigor-stack $Version skills -> $Target"
 
 $installed = 0
 foreach ($Name in $Order) {
