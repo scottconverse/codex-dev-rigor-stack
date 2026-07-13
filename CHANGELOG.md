@@ -22,6 +22,8 @@ All notable changes to dev-rigor-stack. Dates are release (tag) dates.
 - **Added:** shared run-manifest, claims, findings, coverage-ledger, handoff, and gate-result
   contracts with artifact identity and invalid-coverage rules.
 - **Added:** behavioral and contract tests plus Linux/Windows installer smoke tests in CI.
+- **Fixed from live Visitor evidence:** remote Markdown sources are identified from their
+  content type, final URL, and content rather than being misparsed as HTML with zero links.
 
 ## Unreleased (pre-1.0 history)
 
