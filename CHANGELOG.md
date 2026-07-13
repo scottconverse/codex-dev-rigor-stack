@@ -1,6 +1,8 @@
 # Changelog
 
-All notable changes to dev-rigor-stack. Dates are release (tag) dates.
+All notable changes to dev-rigor-stack. Codex package history and inherited upstream
+discipline history are identified separately; a version heading does not imply a Git tag
+exists in this Codex repository.
 
 ## 1.0.0 — 2026-07-13
 
