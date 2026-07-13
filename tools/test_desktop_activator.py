@@ -16,13 +16,13 @@ OWNERSHIP_TEST = ROOT / "desktop" / "OwnershipSelfTest.cs"
 INTEGRATION_TEST = ROOT / "desktop" / "ActivatorIntegrationSelfTest.cs"
 UI_TEST = ROOT / "desktop" / "ActivatorUiSelfTest.cs"
 BINARY_EQUIVALENCE = ROOT / "desktop" / "verify-binary-equivalence.ps1"
-DOWNLOAD = ROOT / "docs" / "downloads" / "DevRigorHookActivator-1.6.1.exe"
+DOWNLOAD = ROOT / "docs" / "downloads" / "DevRigorHookActivator-1.6.2.exe"
 
 
 class DesktopActivatorContractTests(unittest.TestCase):
-    def test_version_is_monotonic_desktop_hotfix(self) -> None:
+    def test_version_is_monotonic_stop_state_hotfix(self) -> None:
         manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
-        self.assertEqual(manifest["version"], "1.6.1")
+        self.assertEqual(manifest["version"], "1.6.2")
         self.assertEqual(manifest["codex"]["hooks"]["activation"], "graphical-review")
 
     def test_activator_uses_codex_supported_app_server_contract(self) -> None:
@@ -105,12 +105,12 @@ class DesktopActivatorContractTests(unittest.TestCase):
         self.assertIn("DevRigorHookActivator.exe", text)
         self.assertIn("System.Windows.Forms.dll", text)
 
-    def test_every_executable_version_surface_is_1_6_1(self) -> None:
+    def test_every_executable_version_surface_is_1_6_2(self) -> None:
         source = SOURCE.read_text(encoding="utf-8")
         for declaration in (
-            'AssemblyVersion("1.6.1.0")',
-            'AssemblyFileVersion("1.6.1.0")',
-            'AssemblyInformationalVersion("1.6.1")',
+            'AssemblyVersion("1.6.2.0")',
+            'AssemblyFileVersion("1.6.2.0")',
+            'AssemblyInformationalVersion("1.6.2")',
             'AssemblyProduct("Dev Rigor Stack")',
         ):
             self.assertIn(declaration, source)
@@ -182,10 +182,10 @@ class DesktopActivatorContractTests(unittest.TestCase):
         self.assertIn("uninstall/reinstall trust lifecycle", ci)
 
     def test_published_binary_has_a_source_bound_build_record(self) -> None:
-        record = DOWNLOAD.with_name("DevRigorHookActivator-1.6.1.build.json")
+        record = DOWNLOAD.with_name("DevRigorHookActivator-1.6.2.build.json")
         self.assertTrue(record.is_file())
         data = json.loads(record.read_text(encoding="utf-8"))
-        self.assertEqual(data["version"], "1.6.1")
+        self.assertEqual(data["version"], "1.6.2")
         self.assertEqual(data["binary_sha256"], hashlib.sha256(DOWNLOAD.read_bytes()).hexdigest())
         self.assertEqual(data["source_sha256"], hashlib.sha256(SOURCE.read_bytes()).hexdigest())
         self.assertIn("compiler_version", data)
@@ -220,7 +220,7 @@ class DesktopActivatorContractTests(unittest.TestCase):
 
     def test_landing_download_and_checksum_match_published_executable(self) -> None:
         landing = (ROOT / "docs" / "index.html").read_text(encoding="utf-8")
-        self.assertIn('href="downloads/DevRigorHookActivator-1.6.1.exe"', landing)
+        self.assertIn('href="downloads/DevRigorHookActivator-1.6.2.exe"', landing)
         self.assertTrue(DOWNLOAD.is_file(), "published activator executable is missing")
         digest = hashlib.sha256(DOWNLOAD.read_bytes()).hexdigest()
         checksum = DOWNLOAD.with_suffix(DOWNLOAD.suffix + ".sha256").read_text(encoding="ascii")
@@ -236,7 +236,7 @@ class DesktopActivatorContractTests(unittest.TestCase):
         self.assertEqual(subsystem, 2, "executable must use the Windows GUI subsystem")
 
     def test_published_source_is_the_exact_build_source(self) -> None:
-        published = DOWNLOAD.with_name("DevRigorHookActivator-1.6.1.cs")
+        published = DOWNLOAD.with_name("DevRigorHookActivator-1.6.2.cs")
         self.assertEqual(published.read_bytes(), SOURCE.read_bytes())
 
 

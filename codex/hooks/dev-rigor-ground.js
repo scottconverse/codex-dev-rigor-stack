@@ -13,7 +13,9 @@ const RUNNABLE_EXT = /\.(html?|svg|m?[jt]sx?|cjs|py|ps1|sh|bash|css|scss|vue|sve
 const RECEIPT = /proved:\s*\S[\s\S]*blast:\s*\S[\s\S]*skipped:\s*\S/i;
 
 function safeSession(value) { return String(value || '').replace(/[^a-zA-Z0-9_-]/g, ''); }
-function ledgerPath(session) { return path.join(stateDir, `ground-${safeSession(session)}.log`); }
+// v2 intentionally starts a new ledger namespace. The 1.6.1 ledger had no
+// checkpoints, so treating it as live state would carry stale edits forever.
+function ledgerPath(session) { return path.join(stateDir, `ground-v2-${safeSession(session)}.log`); }
 
 function append(session, line) {
   try {
@@ -81,10 +83,15 @@ function main() {
 
   if (mode !== 'check' || payload.stop_hook_active) return;
   const ledger = readLedger(session);
+  let scopeStart = -1;
+  ledger.forEach((line, index) => {
+    if (line.startsWith('P ') || line.startsWith('C ')) scopeStart = index;
+  });
   let lastEdit = -1;
   let lastExecution = -1;
   const edited = new Set();
   ledger.forEach((line, index) => {
+    if (index <= scopeStart) return;
     if (line.startsWith('E ')) { lastEdit = index; edited.add(path.extname(line.slice(2)) || '?'); }
     if (line.startsWith('X ')) lastExecution = index;
   });
@@ -102,7 +109,10 @@ function main() {
     block(
       'Dev-rigor evidence gate: a real execution followed the latest runnable edit, but the required evidence receipt is missing. End with: proved: <exact check + result> · blast: <level> · skipped: <gate + reason or none>.'
     );
+    return;
   }
+
+  append(session, 'C\treceipt-accepted');
 }
 
 main();

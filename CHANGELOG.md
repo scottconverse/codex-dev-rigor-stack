@@ -3,6 +3,27 @@
 All notable changes to dev-rigor-stack. A version heading does not imply a Git tag exists
 in this repository.
 
+## 1.6.2 — 2026-07-13
+
+Stop-hook state-machine hotfix. Version 1.6.1 kept the last runnable edit live for the
+entire session, so later read-only reports and ordinary conversation could be discarded
+unless they repeated a coding evidence receipt.
+
+- **Scoped enforcement to the current user turn:** every `UserPromptSubmit` records a
+  prompt boundary; Stop/SubagentStop inspect only activity after the latest prompt boundary
+  or accepted receipt.
+- **Added explicit receipt checkpoints:** a successful execution plus a compliant
+  `proved / blast / skipped` receipt clears that coding unit's dirty state.
+- **Preserved re-arming:** any later runnable edit creates a new dirty state and still
+  requires a later successful execution/render and receipt.
+- **Prevented retry loops:** Codex's `stop_hook_active` retry passes without recursively
+  invoking the same rejection; the next genuine user prompt starts a clean scope.
+- **Quarantined legacy state without deleting evidence:** 1.6.1 ledgers remain on disk as
+  audit history, while 1.6.2 writes and reads a new `ground-v2-*` namespace.
+- **Added regression proof:** tests cover checkpoint clearing, later-edit re-arming,
+  cross-turn isolation, active retry behavior, current-turn enforcement, and legacy-ledger
+  quarantine while retaining every prior hook contract test.
+
 ## 1.6.1 — 2026-07-13
 
 Desktop activation hotfix. Version 1.6.0 installed the active hook definitions but

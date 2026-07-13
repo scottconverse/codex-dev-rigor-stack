@@ -8,7 +8,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$Version = '1.6.1'
+$Version = '1.6.2'
 
 $Repo = $PSScriptRoot
 $SkillsSrc = Join-Path $Repo 'skills'
@@ -158,4 +158,4 @@ finally {
 }
 
 Write-Host "Active Codex hooks installed with content-bound SHA-256 guards: SessionStart, SubagentStart, UserPromptSubmit, PostToolUse, Stop, SubagentStop."
-Write-Host "Open DevRigorHookActivator-1.6.1.exe, review the six definitions, approve their exact hashes, then restart Codex Desktop."
+Write-Host "Open DevRigorHookActivator-1.6.2.exe, review the six definitions, approve their exact hashes, then restart Codex Desktop."
