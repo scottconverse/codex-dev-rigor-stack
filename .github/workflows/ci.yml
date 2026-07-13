@@ -84,7 +84,7 @@ jobs:
           $env:CODEX_HOME = "$env:RUNNER_TEMP\codex-home"
           .\desktop\build.ps1 -OutputDirectory "$env:RUNNER_TEMP\activator-build" -RunIntegrationTest -IntegrationCwd "$env:GITHUB_WORKSPACE"
           .\desktop\verify-binary-equivalence.ps1 `
-            -PublishedExecutable ".\docs\downloads\DevRigorHookActivator-1.6.2.exe" `
+            -PublishedExecutable ".\docs\downloads\DevRigorHookActivator-1.6.3.exe" `
             -RebuiltExecutable "$env:RUNNER_TEMP\activator-build\DevRigorHookActivator.exe"
           # Prove the uninstall/reinstall trust lifecycle: revoke exact owned hashes,
           # preserve foreign state in the revoker contract, remove definitions, reinstall,

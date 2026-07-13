@@ -3,11 +3,48 @@
 All notable changes to dev-rigor-stack. A version heading does not imply a Git tag exists
 in this repository.
 
+## 1.6.3 — 2026-07-13
+
+Stop-hook safety repair. Versions 1.6.0–1.6.2 could carry a runnable edit beyond the
+turn that created it. Version 1.6.2 tried to infer turn boundaries from
+`UserPromptSubmit`, but Codex already supplies authoritative `session_id` and `turn_id`
+values, and ambient prompt events are not reliable turn boundaries. Those versions are
+unsupported and should be uninstalled or replaced.
+
+- **Scoped state to Codex's real identity:** PostToolUse and Stop/SubagentStop now share
+  one append-only `ground-v3-*` ledger per exact `(session_id, turn_id)` pair. IDs are
+  hashed without lossy sanitization, preventing cross-session, cross-turn, and filename
+  collisions.
+- **Removed prompt-boundary inference:** UserPromptSubmit routes disciplines only. It can
+  neither clear nor create grounding state, including when Codex emits ambient prompt
+  events without a corresponding Stop.
+- **Added a hard retry circuit breaker:** after one evidence block, the retry is released
+  and checkpointed when no new tool event occurred—even if a client omits or misreports
+  `stop_hook_active`. New tool activity re-arms evaluation.
+- **Made failure safe:** missing turn identity and inability to persist retry state fail
+  open instead of creating a global or permanent response-discard loop.
+- **Corrected real result parsing:** failed executions reported inside nested Codex
+  response content, explicit failure fields, or live policy-rejection text cannot count
+  as successful proof, while successful output such as “Error handling tests passed” is
+  not misclassified by broad keyword matching.
+- **Quarantined all old state:** 1.6.0/1.6.1 and 1.6.2 ledgers remain inert audit history;
+  1.6.3 reads only the new turn-scoped namespace.
+- **Expanded regression coverage:** 41 hook tests now cover ambient events, normal
+  conversation after edits, same-turn retries with and without `stop_hook_active`,
+  re-arming, subagents, missing IDs, read-only state, legacy ledgers, identity collisions,
+  concurrent writes, nested failed tool responses, and live policy rejection.
+- **Added an authenticated disposable-profile capstone:** the real Codex 0.143.0
+  app-server performs a happy edit/run/checkpoint turn, a forced receipt-free turn that
+  records exactly one block before retry release, and a later ordinary conversation.
+
 ## 1.6.2 — 2026-07-13
 
-Stop-hook state-machine hotfix. Version 1.6.1 kept the last runnable edit live for the
+Withdrawn state-machine hotfix. Version 1.6.1 kept the last runnable edit live for the
 entire session, so later read-only reports and ordinary conversation could be discarded
 unless they repeated a coding evidence receipt.
+
+This attempted repair used `UserPromptSubmit` as an inferred turn boundary. That model
+was incomplete and is superseded by 1.6.3's exact Codex turn identity.
 
 - **Scoped enforcement to the current user turn:** every `UserPromptSubmit` records a
   prompt boundary; Stop/SubagentStop inspect only activity after the latest prompt boundary

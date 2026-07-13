@@ -1,6 +1,6 @@
 # codex-dev-rigor-stack
 
-**Current version: 1.6.2**
+**Current version: 1.6.3**
 
 MIT licensed.
 
@@ -45,11 +45,13 @@ every product screen/control/path/state, interface-to-function wiring, accessibi
 update, repair, uninstall, and a numerical coverage ledger.
 
 An active Codex lifecycle layer injects the universal proof reflex at session and subagent
-start, routes prompts to the matching discipline, records prompt boundaries, edits, and
-successful real executions, and uses Stop/SubagentStop to continue work when the current
-turn's latest runnable edit has not been checked successfully or its coding deliverable is
-missing the evidence receipt. Accepted receipts checkpoint the turn; later conversation is
-not burdened by an old edit, and a later edit re-arms the gate.
+start and routes prompts to the matching discipline. PostToolUse records runnable edits and
+real executions in a ledger keyed by Codex's exact `(session_id, turn_id)` pair;
+UserPromptSubmit never creates or clears grounding state. Stop/SubagentStop inspect only
+that exact turn and continue coding work when its latest runnable edit has not been checked
+successfully or its deliverable is missing the evidence receipt. Accepted receipts
+checkpoint the turn. A blocked retry is released after one block when no new tool event
+occurred, so an omitted `stop_hook_active` flag cannot create a response-discard loop.
 
 See the [technical architecture](docs/ARCHITECTURE.md) for system context, delivery state,
 evidence/handoff, and deployment drawings.
@@ -91,9 +93,9 @@ rewrites.
 
 ### Codex Desktop — no terminal
 
-1. In a normal Codex Desktop task, ask: `Install release 1.6.2 from scottconverse/codex-dev-rigor-stack using the repository's own installer, not a single-skill copy. Verify all 19 skills, the managed hook runtime, hooks.json, and the six owned definitions.`
+1. In a normal Codex Desktop task, ask: `Install release 1.6.3 from scottconverse/codex-dev-rigor-stack using the repository's own installer, not a single-skill copy. Verify all 19 skills, the managed hook runtime, hooks.json, and the six owned definitions.`
 2. Download and double-click
-   [DevRigorHookActivator-1.6.2.exe](https://scottconverse.github.io/codex-dev-rigor-stack/downloads/DevRigorHookActivator-1.6.2.exe).
+   [DevRigorHookActivator-1.6.3.exe](https://scottconverse.github.io/codex-dev-rigor-stack/downloads/DevRigorHookActivator-1.6.3.exe).
 3. Inspect the six rows and their exact command/hash details. Choose
    **Review and trust these 6 hooks**, then approve the confirmation.
 4. Confirm the app reports all six as trusted. Restart Codex Desktop.
@@ -153,11 +155,12 @@ troubleshooting, portability, and the exact Codex hook status.
 
 ## Versioning
 
-Version `1.6.2` continues the product lineage from `1.5.1`. The earlier `1.0.0` Codex
+Version `1.6.3` continues the product lineage from `1.5.1`. The earlier `1.0.0` Codex
 packaging number was an interim version reset; it is preserved in the changelog as history
 but is not the basis for future numbering. Releases advance monotonically from 1.6.0.
-Version 1.6.1 repaired Desktop activation; 1.6.2 repairs Stop-hook turn scoping and
-checkpoint state.
+Version 1.6.1 repaired Desktop activation. Version 1.6.2 attempted Stop-hook scoping but
+still inferred turns from prompt events. Version 1.6.3 replaces that model with exact
+Codex turn identity and a hard retry circuit breaker. Versions 1.6.0–1.6.2 are unsupported.
 
 ## Strength-Preservation Contract
 
@@ -178,6 +181,11 @@ client's supported hook-review UI), they are installed but not enforced. The act
 then performs a second `hooks/list` read and reports success only when Codex returns all
 six as trusted. Codex trust covers the definitions; the inline content guards bind those
 definitions to the exact runtime bytes they execute.
+
+Discovery and trust prove configuration, not event delivery. After a Codex client update,
+run a live hook smoke test and confirm a coding turn creates edit, execution, and checkpoint
+events in one turn-scoped ledger. A client that does not emit PostToolUse for its write and
+execution tools is not fully enforced and must not be represented as such.
 
 The original Claude implementation remains under `plugin/` only as provenance. It is not
 part of the active Codex architecture.

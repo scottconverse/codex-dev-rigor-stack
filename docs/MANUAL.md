@@ -1,8 +1,8 @@
 # codex-dev-rigor-stack — user manual
 
-**Manual version:** 1.6.2
+**Manual version:** 1.6.3
 
-**Applies to dev-rigor-stack:** 1.6.2
+**Applies to dev-rigor-stack:** 1.6.3
 
 This is the operating manual, not a longer README. Part 1 explains the product in plain
 English. Part 2 is the technical manual for installation, operation, evidence, lifecycle,
@@ -85,7 +85,7 @@ ownership away from you.
 
 ### Package model
 
-Version 1.6.2 installs **all 19 entrypoints**: 13 canonical namespaced skills and 6
+Version 1.6.3 installs **all 19 entrypoints**: 13 canonical namespaced skills and 6
 backward-compatible entrypoints. Each canonical section can be invoked independently or
 through `$dev-rigor-stack`.
 
@@ -104,15 +104,15 @@ and Stop/SubagentStop evidence gate. The original Claude source remains only as 
 ### Codex Desktop installation — no terminal
 
 1. Open a normal Codex Desktop task and ask:
-   `Install release 1.6.2 from scottconverse/codex-dev-rigor-stack using the repository's own installer, not a single-skill copy. Verify all 19 skills, the managed hook runtime, hooks.json, and the six owned definitions.`
+   `Install release 1.6.3 from scottconverse/codex-dev-rigor-stack using the repository's own installer, not a single-skill copy. Verify all 19 skills, the managed hook runtime, hooks.json, and the six owned definitions.`
 2. Codex stages all 19 skill folders, the hook runtime, and the merged six owned
    definitions, then commits them as one rollback-protected transaction while preserving
    unrelated hooks and creating backups.
 3. Download and double-click
-   [DevRigorHookActivator-1.6.2.exe](https://scottconverse.github.io/codex-dev-rigor-stack/downloads/DevRigorHookActivator-1.6.2.exe).
-   Version 1.6.2 is not code-signed, so a browser-downloaded copy may trigger Windows
+   [DevRigorHookActivator-1.6.3.exe](https://scottconverse.github.io/codex-dev-rigor-stack/downloads/DevRigorHookActivator-1.6.3.exe).
+   Version 1.6.3 is not code-signed, so a browser-downloaded copy may trigger Windows
    SmartScreen. Before opening it, ask Codex Desktop:
-   `Verify the downloaded DevRigorHookActivator-1.6.2.exe in my Downloads folder against the published SHA-256. Do not open it if they differ.`
+   `Verify the downloaded DevRigorHookActivator-1.6.3.exe in my Downloads folder against the published SHA-256. Do not open it if they differ.`
    This performs the checksum step without asking you to use a terminal. Stop if Codex reports
    a mismatch.
 4. Read all six rows. Selecting a row exposes its exact command, source, matcher, and
@@ -147,7 +147,7 @@ The default targets are `~/.codex/skills` for the 19 entrypoints and
 `~/.codex/dev-rigor-stack` for the hook runtime. The installer merges owned entries into
 `~/.codex/hooks.json`, preserving foreign hooks and backing up changed configuration.
 The staged skills, runtime, and hook configuration commit together or restore the prior set.
-On Windows, open `DevRigorHookActivator-1.6.2.exe`, review and approve the exact six
+On Windows, open `DevRigorHookActivator-1.6.3.exe`, review and approve the exact six
 hashes, and require its verified result before restarting Codex Desktop. Other Codex
 clients may use their own supported hook-review UI.
 
@@ -300,14 +300,16 @@ the product may advance.
 
 - **SessionStart/SubagentStart reflex:** injects the universal proof ladder, never-shrink
   rules, and evidence receipt into the main coordinator and subagents.
-- **UserPromptSubmit router:** records a new turn boundary, then injects only the matching
-  investigation, grounding, decomposition, or release protocol.
+- **UserPromptSubmit router:** injects only the matching investigation, grounding,
+  decomposition, or release protocol. It never creates or clears grounding state.
 - **PostToolUse grounding ledger:** records runnable edits and actual execution/render
-  observations using append-safe per-session state.
+  observations in append-safe state keyed by the exact Codex `session_id` and `turn_id`.
 - **Stop/SubagentStop evidence gate:** evaluates only the current turn, continues Codex
   when no real check followed its latest runnable edit, when that check explicitly failed,
   or when the required coding receipt is missing. An accepted receipt checkpoints the
-  dirty state; a later edit re-arms it.
+  dirty state; a later edit re-arms it. One block followed by a retry with no new tool event
+  is released and checkpointed even if the client omits `stop_hook_active`, preventing a
+  repeated response-discard loop. Missing turn identity or unwritable retry state fails open.
 
 Codex requires explicit trust for non-managed hooks. On Windows, use the graphical
 activator to inspect and approve the exact six current hashes. It discovers them with
@@ -414,7 +416,7 @@ the script path can run `powershell -ExecutionPolicy Bypass -File .\install.ps1`
 
 ### The hooks are installed but do not run
 
-- Open `DevRigorHookActivator-1.6.2.exe` and confirm each dev-rigor definition is trusted.
+- Open `DevRigorHookActivator-1.6.3.exe` and confirm each dev-rigor definition is trusted.
 - Confirm `[features].hooks` is not `false` in active Codex configuration or policy.
 - Confirm Node.js is on the PATH visible to Codex.
 - Confirm `CODEX_HOME/dev-rigor-stack/hooks/` and `CODEX_HOME/hooks.json` point to the same
@@ -453,10 +455,12 @@ to make it shorter.
 
 ## Versioning
 
-- **Version 1.6.2** is the current release and continues the product lineage from 1.5.1.
+- **Version 1.6.3** is the current release and continues the product lineage from 1.5.1.
 - The earlier 1.0.0 Codex package number is retained only as historical record of an
   interim reset; future versions advance monotonically from 1.6.0. Version 1.6.1 repaired
-  Desktop graphical activation; 1.6.2 repairs Stop-hook turn scoping and checkpoints.
+  Desktop graphical activation. Version 1.6.2's prompt-boundary repair was incomplete;
+  1.6.3 uses exact Codex turn identity and a hard retry circuit breaker. Versions
+  1.6.0–1.6.2 are unsupported.
 
 ## Security and honest limits
 

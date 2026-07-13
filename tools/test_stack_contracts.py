@@ -107,7 +107,7 @@ class StackContractTests(unittest.TestCase):
 
     def test_current_release_is_identified_on_every_document_surface(self) -> None:
         manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
-        self.assertEqual(manifest["version"], "1.6.2")
+        self.assertEqual(manifest["version"], "1.6.3")
         surfaces = {
             "README": ROOT / "README.md",
             "manual": ROOT / "docs" / "MANUAL.md",
@@ -123,7 +123,7 @@ class StackContractTests(unittest.TestCase):
         }
         for name, path in surfaces.items():
             with self.subTest(surface=name):
-                self.assertIn("1.6.2", path.read_text(encoding="utf-8"))
+                self.assertIn("1.6.3", path.read_text(encoding="utf-8"))
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
         self.assertNotIn("Dates are release (tag) dates.", changelog)
         self.assertIn("does not imply a Git tag", changelog)
@@ -167,7 +167,7 @@ class StackContractTests(unittest.TestCase):
             "plain english",
             "technical architecture",
             "all 19 entrypoints",
-            "version 1.6.2",
+            "version 1.6.3",
             "read the full user manual",
         )
         manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
@@ -196,6 +196,12 @@ class StackContractTests(unittest.TestCase):
         )
         for path in required:
             self.assertTrue(path.is_file(), f"missing active Codex hook artifact: {path}")
+
+        ground = (ROOT / "codex" / "hooks" / "dev-rigor-ground.js").read_text(encoding="utf-8")
+        router = (ROOT / "codex" / "hooks" / "dev-rigor-router.js").read_text(encoding="utf-8")
+        self.assert_terms(ground, "payload.session_id", "payload.turn_id", "ground-v3-", "retry-circuit-released")
+        self.assertNotIn("ground-v2-", ground)
+        self.assertNotIn("ground-v", router)
 
         for installer in (ROOT / "install.ps1", ROOT / "install.sh"):
             text = installer.read_text(encoding="utf-8")
