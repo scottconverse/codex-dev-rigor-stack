@@ -1,6 +1,6 @@
 # codex-dev-rigor-stack
 
-**Current version: 1.6.3**
+**Current version: 1.7.0**
 
 MIT licensed.
 
@@ -44,14 +44,14 @@ consumes the exact published artifact and owns blind-first clean-environment ins
 every product screen/control/path/state, interface-to-function wiring, accessibility,
 update, repair, uninstall, and a numerical coverage ledger.
 
-An active Codex lifecycle layer injects the universal proof reflex at session and subagent
-start and routes prompts to the matching discipline. PostToolUse records runnable edits and
-real executions in a ledger keyed by Codex's exact `(session_id, turn_id)` pair;
-UserPromptSubmit never creates or clears grounding state. Stop/SubagentStop inspect only
-that exact turn and continue coding work when its latest runnable edit has not been checked
-successfully or its deliverable is missing the evidence receipt. Accepted receipts
-checkpoint the turn. A blocked retry is released after one block when no new tool event
-occurred, so an omitted `stop_hook_active` flag cannot create a response-discard loop.
+An active Codex lifecycle layer injects a compact universal core at session and subagent
+start and routes coding/release prompts to the complete matching discipline. PostToolUse
+records important edits, generated source changes, and typed execution evidence in
+task-scoped state keyed by Codex's authoritative identities. Stop/SubagentStop may block
+once only when the current coding turn lacks substantive proof. It never destroys a
+proved report merely because receipt formatting is absent or invalid. A circuit release
+leaves explicit unresolved proof debt instead of pretending the work passed, and release
+gates expose that debt until evidence bound to the affected edit set resolves it.
 
 See the [technical architecture](docs/ARCHITECTURE.md) for system context, delivery state,
 evidence/handoff, and deployment drawings.
@@ -93,9 +93,9 @@ rewrites.
 
 ### Codex Desktop — no terminal
 
-1. In a normal Codex Desktop task, ask: `Install release 1.6.3 from scottconverse/codex-dev-rigor-stack using the repository's own installer, not a single-skill copy. Verify all 19 skills, the managed hook runtime, hooks.json, and the six owned definitions.`
+1. In a normal Codex Desktop task, ask: `Install release 1.7.0 from scottconverse/codex-dev-rigor-stack using the repository's own installer, not a single-skill copy. Verify all 19 skills, the managed hook runtime, hooks.json, and the six owned definitions.`
 2. Download and double-click
-   [DevRigorHookActivator-1.6.3.exe](https://scottconverse.github.io/codex-dev-rigor-stack/downloads/DevRigorHookActivator-1.6.3.exe).
+   [DevRigorHookActivator-1.7.0.exe](https://scottconverse.github.io/codex-dev-rigor-stack/downloads/DevRigorHookActivator-1.7.0.exe).
 3. Inspect the six rows and their exact command/hash details. Choose
    **Review and trust these 6 hooks**, then approve the confirmation.
 4. Confirm the app reports all six as trusted. Restart Codex Desktop.
@@ -155,12 +155,15 @@ troubleshooting, portability, and the exact Codex hook status.
 
 ## Versioning
 
-Version `1.6.3` continues the product lineage from `1.5.1`. The earlier `1.0.0` Codex
+Version `1.7.0` continues the product lineage from `1.5.1`. The earlier `1.0.0` Codex
 packaging number was an interim version reset; it is preserved in the changelog as history
 but is not the basis for future numbering. Releases advance monotonically from 1.6.0.
 Version 1.6.1 repaired Desktop activation. Version 1.6.2 attempted Stop-hook scoping but
-still inferred turns from prompt events. Version 1.6.3 replaces that model with exact
-Codex turn identity and a hard retry circuit breaker. Versions 1.6.0–1.6.2 are unsupported.
+still inferred turns from prompt events. Version 1.6.3 replaced that model with exact
+Codex turn identity and a hard retry circuit breaker. Version 1.7.0 keeps that isolation
+and redesigns enforcement around task-scoped modes, typed substantive evidence,
+non-destructive receipt warnings, persistent proof debt, safe compaction/subagent
+inheritance, and transactional migration/uninstall. Versions 1.6.0–1.6.2 are unsupported.
 
 ## Strength-Preservation Contract
 

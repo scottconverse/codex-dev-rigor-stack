@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>dev-rigor-stack 1.6.3 — make "done" mean proven</title>
-<meta name="description" content="Codex dev-rigor-stack 1.6.3: active enforcement hooks with graphical Desktop trust, all 19 entrypoints, exhaustive newcomer/UI audits, public-surface verification, and strict-zero release closure. MIT.">
+<title>dev-rigor-stack 1.7.0 — make "done" mean proven</title>
+<meta name="description" content="Codex dev-rigor-stack 1.7.0: task-scoped substantive safeguards, graphical Desktop trust, all 19 entrypoints, exhaustive newcomer/UI audits, public-surface verification, and strict-zero release closure. MIT.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9C%85%3C/text%3E%3C/svg%3E">
 <meta property="og:type" content="website">
 <meta property="og:title" content="dev-rigor-stack — make &quot;done&quot; mean proven">
@@ -96,12 +96,12 @@
 
 <main id="main-content" tabindex="-1">
 <header>
-  <div class="version">Version 1.6.3</div>
+  <div class="version">Version 1.7.0</div>
   <h1>dev-rigor-stack</h1>
   <p class="tag">A Codex-native delivery discipline — so "done" means <em>proven by the real artifact</em>, not "looks right."</p>
   <div class="cta">
     <a class="btn primary" href="#install">Install in Codex Desktop</a>
-    <a class="btn ghost" href="downloads/DevRigorHookActivator-1.6.3.exe" download>Download hook activator (after installation)</a>
+    <a class="btn ghost" href="downloads/DevRigorHookActivator-1.7.0.exe" download>Download hook activator (after installation)</a>
     <a class="btn ghost" href="https://github.com/scottconverse/codex-dev-rigor-stack">View on GitHub</a>
     <a class="btn ghost" href="https://github.com/scottconverse/codex-dev-rigor-stack/blob/main/docs/MANUAL.md">Read the full user manual</a>
     <a class="btn ghost" href="https://github.com/scottconverse/codex-dev-rigor-stack/blob/main/docs/ARCHITECTURE.md">Architecture drawings</a>
@@ -111,14 +111,14 @@
 <h2 id="install">Install and activate in Codex Desktop</h2>
 <div class="callout">
   <ol>
-    <li>In a normal Codex Desktop task, ask: <code>Install release 1.6.3 from scottconverse/codex-dev-rigor-stack using the repository's own installer, not a single-skill copy. Verify all 19 skills, the managed hook runtime, hooks.json, and the six owned definitions.</code></li>
-    <li><a href="downloads/DevRigorHookActivator-1.6.3.exe" download>Download and double-click the graphical hook activator</a> only after Codex confirms installation.</li>
+    <li>In a normal Codex Desktop task, ask: <code>Install release 1.7.0 from scottconverse/codex-dev-rigor-stack using the repository's own installer, not a single-skill copy. Verify all 19 skills, the managed hook runtime, hooks.json, and the six owned definitions.</code></li>
+    <li><a href="downloads/DevRigorHookActivator-1.7.0.exe" download>Download and double-click the graphical hook activator</a> only after Codex confirms installation.</li>
     <li>Use Up and Down Arrow or the mouse to inspect all six rows and exact details. Choose <strong>Review and trust these 6 hooks</strong>, then approve the confirmation.</li>
     <li>Require <strong>Verified — all 6 hooks trusted</strong>, then restart Codex Desktop.</li>
   </ol>
-  <p class="resource-links"><a href="downloads/DevRigorHookActivator-1.6.3.exe.sha256">Published SHA-256 checksum</a> ·
-  <a href="downloads/DevRigorHookActivator-1.6.3.cs">complete activator source</a> ·
-  <a href="downloads/DevRigorHookActivator-1.6.3.build.json">source-bound build record</a></p>
+  <p class="resource-links"><a href="downloads/DevRigorHookActivator-1.7.0.exe.sha256">Published SHA-256 checksum</a> ·
+  <a href="downloads/DevRigorHookActivator-1.7.0.cs">complete activator source</a> ·
+  <a href="downloads/DevRigorHookActivator-1.7.0.build.json">source-bound build record</a></p>
   <p class="muted">The executable is not code-signed, so Windows may show a SmartScreen warning. Before opening it, ask Codex Desktop to verify the downloaded executable in your Downloads folder against the published SHA-256. Never continue if it differs.</p>
 </div>
 
@@ -129,10 +129,11 @@ different again from "I proved it's correct." This stack closes that gap: every 
 exercised the way a real user hits it before anyone calls it finished, and the call to make
 a release <em>real</em> stays with a human. It installs all 19 entrypoints together:
 thirteen namespaced standalone Codex capabilities plus six backward-compatible names.
-The active Codex hook layer injects the proof reflex into every session and subagent,
-routes each work prompt to its matching protocol, records a boundary for each real user
-turn, and continues a Stop when that turn's latest runnable edit has not been checked or
-its coding evidence receipt is missing.</p>
+The active Codex hook layer injects compact task-scoped safeguards, routes coding and
+release prompts to the complete matching protocol, records important direct/generated
+edits and typed evidence, and may continue an unproved coding turn once. It never destroys
+a proved report because receipt formatting is missing. Circuit releases remain visible as
+proof debt rather than being mislabeled complete.</p>
 
 <h2 id="technical-architecture">Technical architecture</h2>
 <p>Two altitudes, one rule: <strong>nothing advances on a claim, only on evidence.</strong>
@@ -164,7 +165,7 @@ and machines.</p>
     <!-- active Codex hook band -->
     <rect class="g" x="36" y="12" width="848" height="50" rx="10"/>
     <text class="t" x="460" y="34" text-anchor="middle">ACTIVE CODEX HOOKS → COORDINATOR + 19 ENTRYPOINTS</text>
-    <text class="s" x="460" y="52" text-anchor="middle">SessionStart/SubagentStart · UserPromptSubmit boundary/router · PostToolUse ledger · Stop/SubagentStop gate</text>
+    <text class="s" x="460" y="52" text-anchor="middle">SessionStart/SubagentStart core · UserPromptSubmit router/controls · PostToolUse evidence · Stop/SubagentStop gate</text>
     <path class="fa" d="M285,64 L285,86" marker-end="url(#arA)"/>
     <path class="fa" d="M460,64 L460,86" marker-end="url(#arA)"/>
     <path class="fa" d="M635,64 L635,86" marker-end="url(#arA)"/>
@@ -259,14 +260,17 @@ evidence, but cannot rewrite upstream findings or coverage.</p>
 
 <h2>Active Codex enforcement</h2>
 <p>The hook layer is active architecture, not decorative guidance. The
-<strong>reflex</strong> loads the never-shrink rules and evidence receipt into the coordinator
-and every subagent. The <strong>router</strong> injects only the task protocol that matches the
-prompt. The <strong>grounding ledger</strong> records runnable edits, actual executions or
-renders, blocks, and accepted checkpoints under Codex's exact
-<code>session_id + turn_id</code>. UserPromptSubmit cannot clear it. At Stop and
-SubagentStop, the gate evaluates only that exact turn. A blocked retry with no new tool
-event is released and checkpointed, so a missing client retry flag cannot create an endless
-response-discard loop. Later conversation is isolated, while a later edit re-arms the gate.
+<strong>core activator</strong> loads the never-shrink safeguards into the coordinator and
+associated subagents. The <strong>router</strong> injects the complete matching protocol and
+recognizes exact task-only owner controls: <code>DevRigorON</code>,
+<code>DevRigorWARN</code>, <code>DevRigorOFF</code>, and <code>DevRigorSTATUS</code>.
+The <strong>evidence recorder</strong> distinguishes direct edits, generated changes,
+inspections, runs/renders, tests, builds, and authoritative failures without persisting raw
+sensitive commands. At Stop and SubagentStop, the gate evaluates the authoritative current
+turn. In ON mode an unproved important edit can block once; a retry is released but leaves
+unresolved proof debt. Missing receipt formatting after substantive proof is a warning,
+never a destructive block. Compaction preserves task state, and subagent inheritance occurs
+only with authoritative parent identity; otherwise it visibly fails open in WARN.
 Codex requires the user to review and trust
 non-managed hooks. The Windows graphical activator shows the exact six commands and hashes,
 requires explicit approval, writes trust through Codex's app server, and re-reads all six
@@ -365,10 +369,10 @@ installed together. <code>audit-lite</code>/<code>audit-team</code> and
 <div class="table-scroll" tabindex="0" role="region" aria-label="Active lifecycle coverage; scroll horizontally if needed">
 <table>
   <tr><th>Codex event</th><th>Enforced behavior</th></tr>
-  <tr><td><code>SessionStart / SubagentStart</code></td><td>inject the universal dev-rigor reflex and evidence receipt contract</td></tr>
-  <tr><td><code>UserPromptSubmit</code></td><td>route investigation, grounding, decomposition, or release discipline without mutating grounding state</td></tr>
-  <tr><td><code>PostToolUse</code></td><td>append runnable edits and execution/render observations to turn-scoped state</td></tr>
-  <tr><td><code>Stop / SubagentStop</code></td><td>continue current-turn coding work when its latest runnable edit lacks a later successful check or receipt; checkpoint accepted receipts</td></tr>
+  <tr><td><code>SessionStart / SubagentStart</code></td><td>inject compact safeguards; restore mode/routing after compaction; inherit only from an authoritative parent</td></tr>
+  <tr><td><code>UserPromptSubmit</code></td><td>route complete disciplines and apply exact task-only ON/WARN/OFF/STATUS controls</td></tr>
+  <tr><td><code>PostToolUse</code></td><td>record privacy-bounded edit, generated-change, inspection, run, test, build, and failure evidence</td></tr>
+  <tr><td><code>Stop / SubagentStop</code></td><td>enforce substantive proof once; warn on receipt formatting; preserve unresolved proof debt without loops</td></tr>
 </table>
 </div>
 
@@ -391,11 +395,14 @@ capabilities are never removed merely to make the bundle shorter.</p>
 
 <h2>Version model</h2>
 <div class="callout">
-  <p><strong>Current version: 1.6.3.</strong> It continues the product lineage from 1.5.1.
+  <p><strong>Current version: 1.7.0.</strong> It continues the product lineage from 1.5.1.
   The earlier 1.0.0 Codex packaging number remains historical; future versions advance
   monotonically from 1.6.0. Version 1.6.1 repaired Desktop graphical activation.
-  Version 1.6.2's prompt-boundary repair was incomplete; 1.6.3 uses exact Codex turn
-  identity and a hard retry circuit breaker. Versions 1.6.0–1.6.2 are unsupported.</p>
+  Version 1.6.2's prompt-boundary repair was incomplete; 1.6.3 introduced exact Codex
+  turn identity and a hard retry circuit breaker. Version 1.7.0 adds task controls, typed
+  evidence, non-destructive receipt handling, persistent proof debt, safe
+  compaction/subagent behavior, and transactional migration/uninstall. Versions
+  1.6.0–1.6.2 are unsupported.</p>
 </div>
 
 <h2>Honest scope</h2>
@@ -416,7 +423,7 @@ capabilities are never removed merely to make the bundle shorter.</p>
 
 </main>
 <footer>
-  <p>dev-rigor-stack 1.6.3 · MIT-licensed. Codex skills and active hook port by Scott Converse. Prior art, gratefully credited: the
+  <p>dev-rigor-stack 1.7.0 · MIT-licensed. Codex skills and active hook port by Scott Converse. Prior art, gratefully credited: the
   reflex's always-on <em>form</em> is from
   <a href="https://github.com/DietrichGebert/ponytail">ponytail</a> (DietrichGebert, MIT);
   per-task routing and verification grounding were proven transferable by

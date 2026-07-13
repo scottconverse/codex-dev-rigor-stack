@@ -3,6 +3,42 @@
 All notable changes to dev-rigor-stack. A version heading does not imply a Git tag exists
 in this repository.
 
+## 1.7.0 — 2026-07-13
+
+Task-scoped substantive enforcement redesign. This release preserves 1.6.3's exact-turn
+isolation and one-block circuit breaker while correcting the state and policy model that
+made earlier receipt enforcement destructive.
+
+- **Separated substance from formatting:** an important direct or generated edit still
+  requires a later qualifying run, render, test, or build. Missing or invalid receipt text
+  after real proof is now a visible warning and cannot discard a report.
+- **Made proof debt explicit:** the one-block circuit release records
+  `U: released-unproved`, never a successful checkpoint. Debt remains visible to status
+  and release gates until evidence is bound to the same affected edit set or a verified
+  superseding set containing every affected edit.
+- **Added task-only owner controls:** exact `DevRigorON`, `DevRigorWARN`,
+  `DevRigorOFF`, and `DevRigorSTATUS` commands survive retry and compaction, propagate
+  only to authoritatively associated subagents, and never leak to another task. Unbound
+  subagents visibly fail open in WARN rather than guessing a parent.
+- **Typed evidence instead of output folklore:** records direct edits (`E`), generated
+  source changes (`G`), inspections (`I`), runs/renders (`R`), tests (`T`), builds (`B`),
+  explicit/structured failure (`F`), block (`K`), circuit release (`U`), warning (`W`),
+  and checkpoint (`C`). Result precedence is policy/tool failure, structured test/build
+  result, process status, then bounded text inference only when structured evidence is absent.
+- **Bound evidence safely:** correlation IDs bind task, turn, edit set, evidence class,
+  result, and checkpoint while excluding raw sensitive commands and secrets. They detect
+  accidental stale reuse and are explicitly not represented as a security boundary.
+- **Bounded state growth and failure:** inactive state is retained for seven days within a
+  five-megabyte budget, current task files are preserved, POSIX permissions are owner-only,
+  and missing identity/state persistence fails open with a once-per-state warning.
+- **Made migration and uninstall transactional:** upgrade tests cover broken 1.6.1,
+  withdrawn 1.6.2, 1.6.3, clean profiles, and profiles containing foreign hooks/trust.
+  Failed upgrade or uninstall restores the starting state byte-for-byte; successful
+  uninstall removes all owned components while preserving foreign configuration.
+- **Proved the real disappearing-report path:** the authenticated disposable Codex
+  app-server lifecycle verifies that a long proved report remains present, an unproved
+  coding turn blocks only once and retains debt, and later conversation passes normally.
+
 ## 1.6.3 — 2026-07-13
 
 Stop-hook safety repair. Versions 1.6.0–1.6.2 could carry a runnable edit beyond the
