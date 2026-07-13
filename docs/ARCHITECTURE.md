@@ -1,8 +1,8 @@
 # codex-dev-rigor-stack — technical architecture
 
-**Architecture version:** 1.6.1
+**Architecture version:** 1.6.2
 
-**Applies to dev-rigor-stack:** 1.6.1
+**Applies to dev-rigor-stack:** 1.6.2
 
 This document describes the system boundaries, delivery state machine, evidence flow, and
 deployment model. The [user manual](MANUAL.md) explains operation; this document explains
@@ -74,8 +74,8 @@ flowchart TB
     Stops["Stop / SubagentStop"]
     Reflex["Reflex injector\nuniversal proof + receipt contract"]
     Router["Rigor router\ninvestigation · grounding · decompose · release"]
-    Ledger["Append-safe session ledger\nrunnable edits · successful executions/renders"]
-    Gate["Grounding/evidence gate\nlatest edit successfully checked? receipt present?"]
+    Ledger["Append-safe turn ledger\nprompt boundary · edit · execution · receipt checkpoint"]
+    Gate["Grounding/evidence gate\ncurrent-turn edit checked? receipt present?"]
     Continue["Codex continuation prompt\nrun the missing check / add receipt"]
     Coordinator["Coordinator + 19 standalone entrypoints"]
 
@@ -88,11 +88,13 @@ flowchart TB
     Gate -->|missing evidence| Continue --> Coordinator
 ```
 
-`Stop` and `SubagentStop` are the authoritative mechanical boundary. The hook compares
-append order so a test run before a later code edit cannot clear the later edit. Explicitly
-failed executions also cannot clear the edit. Codex's `stop_hook_active` field is honored
-as the platform anti-loop guard. Session and prompt
-hooks inject the complete operating contract; PostToolUse supplies observable grounding.
+`Stop` and `SubagentStop` are the authoritative mechanical boundary. `UserPromptSubmit`
+records a turn boundary; an accepted coding receipt records a checkpoint. The gate inspects
+only activity after the latest boundary or checkpoint, so an old edit cannot poison later
+conversation. Within that scope, append order still matters: a test run before a later code
+edit cannot clear the later edit, and an explicitly failed execution cannot clear it.
+Codex's `stop_hook_active` field is honored as the platform anti-loop guard. Session and
+prompt hooks inject the complete operating contract; PostToolUse supplies observable grounding.
 Codex requires users to review and trust non-managed hook definitions. Each command binds
 its definition to the runtime script SHA-256, verifies a single read buffer, and compiles
 that same buffer; it never hashes one read and executes a second. On Windows, the
@@ -197,7 +199,7 @@ flowchart LR
     Docs["docs/\nstatic landing + manual + architecture"]
     Pages["GitHub Pages\npublic landing URL"]
     Archive["GitHub source archive\npublished installer scripts"]
-    Installer["agent or script installation\ndev-rigor-stack 1.6.1"]
+    Installer["agent or script installation\ndev-rigor-stack 1.6.2"]
     Backup["target/.backup/.../<timestamp>"]
     Home["CODEX_HOME/skills\n19 entrypoints"]
     Runtime["CODEX_HOME/dev-rigor-stack\nactive Node hook runtime + state"]
@@ -250,9 +252,10 @@ unexpected hook configuration is refused and left byte-identical.
 
 ## Version model
 
-Version `1.6.1` continues the product lineage from `1.5.1`. The interim `1.0.0` Codex
+Version `1.6.2` continues the product lineage from `1.5.1`. The interim `1.0.0` Codex
 package number remains historical changelog data, not a new lineage root. Subsequent
-versions advance monotonically from 1.6.0; 1.6.1 repairs the Desktop activation surface.
+versions advance monotonically from 1.6.0. Version 1.6.1 repaired Desktop activation;
+1.6.2 repairs Stop-hook turn scoping and checkpoint state.
 
 ## Provenance note
 

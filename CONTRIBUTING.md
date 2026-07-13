@@ -1,6 +1,6 @@
 # Contributing
 
-**Current release:** 1.6.1
+**Current release:** 1.6.2
 
 Thanks for considering it. This repo practices what it ships — contributions walk the
 same gates the stack enforces.

@@ -14,6 +14,16 @@ const WORK_VERB = /\b(fix(es|ing)?|debug|investigate|diagnose|resolve|patch|repr
 const ACTION_VERB = /\b(implement|build|create|add|develop|write|make|update|change|fix(es|ing)?|restyle|redesign|refactor|wire|adjust|tweak|improve|polish|animate|render|style|convert|migrate|debug)\b/i;
 const CODE_HINT = /`|\.(m?[jt]sx?|py|rs|go|java|rb|php|cs?|cpp|html?|css|sh|ps1|sql|ya?ml|json)\b|stack.?trace|\bCI\b|test suite/i;
 
+function safeSession(value) { return String(value || '').replace(/[^a-zA-Z0-9_-]/g, ''); }
+
+function markPromptBoundary(session) {
+  if (!session) return;
+  try {
+    fs.mkdirSync(stateDir, { recursive: true });
+    fs.appendFileSync(path.join(stateDir, `ground-v2-${session}.log`), `P ${Date.now()}\n`, 'utf8');
+  } catch (_) { /* routing state must never interfere with the user's prompt */ }
+}
+
 const ROUTES = [
   {
     name: 'release', file: 'release.md',
@@ -40,12 +50,13 @@ const ROUTES = [
 function main() {
   let payload;
   try { payload = JSON.parse(fs.readFileSync(0, 'utf8')); } catch (_) { return; }
+  const session = safeSession(payload.session_id);
+  markPromptBoundary(session);
   const prompt = typeof payload.prompt === 'string' ? payload.prompt : '';
   if (prompt.length < 8) return;
   const route = ROUTES.find((candidate) => candidate.match(prompt));
   if (!route) return;
 
-  const session = payload.session_id ? String(payload.session_id).replace(/[^a-zA-Z0-9_-]/g, '') : '';
   const stateFile = session ? path.join(stateDir, `router-${session}.log`) : null;
   if (stateFile) {
     let seen = '';
@@ -80,4 +91,3 @@ function main() {
 }
 
 main();
-

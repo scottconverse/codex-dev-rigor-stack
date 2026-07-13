@@ -54,6 +54,14 @@ function stop(home, session, message = '', active = false, mode = 'stop') {
   }, home, ['check']);
 }
 
+function prompt(home, session, message) {
+  return runHook(ROUTER, {
+    session_id: session,
+    hook_event_name: 'UserPromptSubmit',
+    prompt: message,
+  }, home);
+}
+
 const receipt = 'proved: pytest -q - 12 passed · blast: medium · skipped: none';
 const tests = [];
 function test(name, fn) { tests.push([name, fn]); }
@@ -108,6 +116,60 @@ test('ground: execution after edit plus receipt passes', () => {
   record(home, 'ground-2', 'apply_patch', { command: '*** Update File: src/app.ts' });
   record(home, 'ground-2', 'Bash', { command: 'npm test' }, { exit_code: 0 });
   assert.strictEqual(stop(home, 'ground-2', receipt).trim(), '');
+});
+
+test('ground: accepted receipt checkpoints the edit so later conversation passes', () => {
+  const home = freshHome();
+  record(home, 'ground-checkpoint', 'apply_patch', { command: '*** Update File: src/app.ts' });
+  record(home, 'ground-checkpoint', 'Bash', { command: 'npm test' }, { exit_code: 0 });
+  assert.strictEqual(stop(home, 'ground-checkpoint', receipt).trim(), '');
+  assert.strictEqual(stop(home, 'ground-checkpoint', 'Here is the status you requested.').trim(), '');
+});
+
+test('ground: a later edit after an accepted receipt re-arms proof enforcement', () => {
+  const home = freshHome();
+  record(home, 'ground-rearm', 'apply_patch', { command: '*** Update File: src/app.ts' });
+  record(home, 'ground-rearm', 'Bash', { command: 'npm test' }, { exit_code: 0 });
+  assert.strictEqual(stop(home, 'ground-rearm', receipt).trim(), '');
+  record(home, 'ground-rearm', 'apply_patch', { command: '*** Update File: src/later.ts' });
+  const parsed = JSON.parse(stop(home, 'ground-rearm', receipt));
+  assert.strictEqual(parsed.decision, 'block');
+  assert.match(parsed.reason, /latest runnable edit/i);
+});
+
+test('ground: a new user prompt scopes out unresolved edits from an older turn', () => {
+  const home = freshHome();
+  record(home, 'ground-turn', 'apply_patch', { command: '*** Update File: src/app.ts' });
+  prompt(home, 'ground-turn', 'What is the current project status?');
+  assert.strictEqual(stop(home, 'ground-turn', 'Here is the read-only status report.').trim(), '');
+});
+
+test('ground: an edit after the current prompt boundary still requires proof', () => {
+  const home = freshHome();
+  prompt(home, 'ground-current-turn', 'Please update src/app.ts for me.');
+  record(home, 'ground-current-turn', 'apply_patch', { command: '*** Update File: src/app.ts' });
+  const parsed = JSON.parse(stop(home, 'ground-current-turn', receipt));
+  assert.strictEqual(parsed.decision, 'block');
+  assert.match(parsed.reason, /latest runnable edit/i);
+});
+
+test('ground: a blocked response cannot loop and the next real prompt starts clean', () => {
+  const home = freshHome();
+  record(home, 'ground-retry', 'apply_patch', { command: '*** Update File: src/app.ts' });
+  record(home, 'ground-retry', 'Bash', { command: 'npm test' }, { exit_code: 0 });
+  const blocked = JSON.parse(stop(home, 'ground-retry', 'All done.'));
+  assert.strictEqual(blocked.decision, 'block');
+  assert.strictEqual(stop(home, 'ground-retry', 'The hook requested a receipt.', true).trim(), '');
+  prompt(home, 'ground-retry', 'Explain what happened without changing anything.');
+  assert.strictEqual(stop(home, 'ground-retry', 'The prior coding response omitted its receipt.').trim(), '');
+});
+
+test('ground: legacy 1.6.1 ledgers remain audit history and cannot poison 1.6.2 turns', () => {
+  const home = freshHome();
+  const state = path.join(home, 'dev-rigor-stack', 'state');
+  fs.mkdirSync(state, { recursive: true });
+  fs.writeFileSync(path.join(state, 'ground-ground-legacy.log'), 'E src/old.ts\nX Bash\n');
+  assert.strictEqual(stop(home, 'ground-legacy', 'Ordinary conversation.').trim(), '');
 });
 
 test('ground: an explicitly failed execution does not satisfy the gate', () => {

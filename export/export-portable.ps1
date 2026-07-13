@@ -41,7 +41,7 @@ function Get-BodyLines([string]$Path) {
 }
 
 $sb = [System.Text.StringBuilder]::new()
-[void]$sb.AppendLine("# codex-dev-rigor-stack 1.6.1 $EmDash portable bundle")
+[void]$sb.AppendLine("# codex-dev-rigor-stack 1.6.2 $EmDash portable bundle")
 [void]$sb.AppendLine('')
 [void]$sb.AppendLine('Derived from the complete Codex bundle. Paste into any agent''s system prompt / AGENTS.md.')
 [void]$sb.AppendLine('Host-specific mechanics read as plain guidance; canonical capabilities are not removed')

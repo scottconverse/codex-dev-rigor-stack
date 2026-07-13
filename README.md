@@ -1,6 +1,6 @@
 # codex-dev-rigor-stack
 
-**Current version: 1.6.1**
+**Current version: 1.6.2**
 
 MIT licensed.
 
@@ -45,9 +45,11 @@ every product screen/control/path/state, interface-to-function wiring, accessibi
 update, repair, uninstall, and a numerical coverage ledger.
 
 An active Codex lifecycle layer injects the universal proof reflex at session and subagent
-start, routes prompts to the matching discipline, records edits and successful real executions, and
-uses Stop/SubagentStop to continue work when the latest runnable edit has not been checked successfully
-or the final evidence receipt is missing.
+start, routes prompts to the matching discipline, records prompt boundaries, edits, and
+successful real executions, and uses Stop/SubagentStop to continue work when the current
+turn's latest runnable edit has not been checked successfully or its coding deliverable is
+missing the evidence receipt. Accepted receipts checkpoint the turn; later conversation is
+not burdened by an old edit, and a later edit re-arms the gate.
 
 See the [technical architecture](docs/ARCHITECTURE.md) for system context, delivery state,
 evidence/handoff, and deployment drawings.
@@ -89,9 +91,9 @@ rewrites.
 
 ### Codex Desktop — no terminal
 
-1. In a normal Codex Desktop task, ask: `Install release 1.6.1 from scottconverse/codex-dev-rigor-stack using the repository's own installer, not a single-skill copy. Verify all 19 skills, the managed hook runtime, hooks.json, and the six owned definitions.`
+1. In a normal Codex Desktop task, ask: `Install release 1.6.2 from scottconverse/codex-dev-rigor-stack using the repository's own installer, not a single-skill copy. Verify all 19 skills, the managed hook runtime, hooks.json, and the six owned definitions.`
 2. Download and double-click
-   [DevRigorHookActivator-1.6.1.exe](https://scottconverse.github.io/codex-dev-rigor-stack/downloads/DevRigorHookActivator-1.6.1.exe).
+   [DevRigorHookActivator-1.6.2.exe](https://scottconverse.github.io/codex-dev-rigor-stack/downloads/DevRigorHookActivator-1.6.2.exe).
 3. Inspect the six rows and their exact command/hash details. Choose
    **Review and trust these 6 hooks**, then approve the confirmation.
 4. Confirm the app reports all six as trusted. Restart Codex Desktop.
@@ -151,10 +153,11 @@ troubleshooting, portability, and the exact Codex hook status.
 
 ## Versioning
 
-Version `1.6.1` continues the product lineage from `1.5.1`. The earlier `1.0.0` Codex
+Version `1.6.2` continues the product lineage from `1.5.1`. The earlier `1.0.0` Codex
 packaging number was an interim version reset; it is preserved in the changelog as history
-but is not the basis for future numbering. Releases advance monotonically from 1.6.0;
-1.6.1 is the Desktop activation hotfix.
+but is not the basis for future numbering. Releases advance monotonically from 1.6.0.
+Version 1.6.1 repaired Desktop activation; 1.6.2 repairs Stop-hook turn scoping and
+checkpoint state.
 
 ## Strength-Preservation Contract
 
