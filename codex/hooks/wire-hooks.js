@@ -2,6 +2,7 @@
 // Merge/remove the active dev-rigor entries in CODEX_HOME/hooks.json.
 
 const fs = require('fs');
+const crypto = require('crypto');
 const os = require('os');
 const path = require('path');
 
@@ -11,9 +12,9 @@ const checkOnly = args[0] === '--check';
 if (remove || checkOnly) args = args.slice(1);
 const codexHome = path.resolve(args[0] || process.env.CODEX_HOME || path.join(os.homedir(), '.codex'));
 const runtimeRoot = path.resolve(args[1] || path.join(codexHome, 'dev-rigor-stack'));
+const contentRoot = path.resolve(args[2] || runtimeRoot);
 const hooksPath = path.join(codexHome, 'hooks.json');
 const events = ['SessionStart', 'SubagentStart', 'UserPromptSubmit', 'PostToolUse', 'Stop', 'SubagentStop'];
-const owned = /dev-rigor-(activate|router|ground)\.js/;
 
 let config = {};
 let original = '';
@@ -47,10 +48,23 @@ if (checkOnly) {
 function command(script, suffix = '') {
   const native = path.join(runtimeRoot, 'hooks', script);
   const portable = native.replace(/\\/g, '/');
+  const content = path.join(contentRoot, 'hooks', script);
+  const expectedHash = crypto.createHash('sha256').update(fs.readFileSync(content)).digest('hex');
   return {
-    command: `node "${portable}"${suffix}`,
-    commandWindows: `node "${native}"${suffix}`,
+    command: integrityCommand(portable, suffix, expectedHash),
+    commandWindows: integrityCommand(native, suffix, expectedHash),
   };
+}
+
+function integrityCommand(scriptPath, suffix = '', expectedHash) {
+  const hash = expectedHash || crypto.createHash('sha256').update(fs.readFileSync(scriptPath)).digest('hex');
+  const encodedPath = Buffer.from(scriptPath, 'utf8').toString('base64');
+  const loader = `const f=Buffer.from('${encodedPath}','base64').toString(),b=require('fs').readFileSync(f);` +
+    `if(require('crypto').createHash('sha256').update(b).digest('hex')!=='${hash}')` +
+    `{console.error('Dev Rigor hook integrity check failed: '+f);process.exit(2)}` +
+    `const M=require('module'),m=new M(f,module);m.filename=f;m.paths=M._nodeModulePaths(require('path').dirname(f));` +
+    `process.argv.splice(1,0,f);m._compile(b.toString(),f)`;
+  return `node -e "${loader}"${suffix}`;
 }
 
 const definitions = {
@@ -76,8 +90,46 @@ const definitions = {
   },
 };
 
+function isOwned(event, entry) {
+  const expected = definitions[event];
+  if (!entry || !Array.isArray(entry.hooks) || entry.hooks.length !== 1 || !expected) return false;
+  const actualHook = entry.hooks[0];
+  const expectedHook = expected.hooks[0];
+  if (!actualHook || actualHook.type !== 'command') return false;
+  if (actualHook.command === expectedHook.command ||
+    actualHook.command === expectedHook.commandWindows ||
+    actualHook.commandWindows === expectedHook.command ||
+    actualHook.commandWindows === expectedHook.commandWindows) return true;
+
+  const specs = {
+    SessionStart: ['dev-rigor-activate.js', ''],
+    SubagentStart: ['dev-rigor-activate.js', ' subagent'],
+    UserPromptSubmit: ['dev-rigor-router.js', ''],
+    PostToolUse: ['dev-rigor-ground.js', ' record'],
+    Stop: ['dev-rigor-ground.js', ' check'],
+    SubagentStop: ['dev-rigor-ground.js', ' check'],
+  };
+  const [script, suffix] = specs[event];
+  const native = path.join(runtimeRoot, 'hooks', script);
+  const portable = native.replace(/\\/g, '/');
+  const candidates = [actualHook.command, actualHook.commandWindows].filter(Boolean);
+  return candidates.some((actual) =>
+    actual === `node "${native}"${suffix}` ||
+    actual === `node "${portable}"${suffix}` ||
+    matchesIntegrityCommand(actual, native, suffix) ||
+    matchesIntegrityCommand(actual, portable, suffix)
+  );
+}
+
+function matchesIntegrityCommand(actual, scriptPath, suffix) {
+  const marker = 'HASH_PLACEHOLDER';
+  const template = integrityCommand(scriptPath, suffix, marker);
+  const escaped = template.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`^${escaped.replace(marker, '[a-f0-9]{64}')}$`).test(actual);
+}
+
 for (const event of events) {
-  config.hooks[event] = config.hooks[event].filter((entry) => !owned.test(JSON.stringify(entry)));
+  config.hooks[event] = config.hooks[event].filter((entry) => !isOwned(event, entry));
   if (!remove) config.hooks[event].push(definitions[event]);
   if (remove && config.hooks[event].length === 0) delete config.hooks[event];
 }

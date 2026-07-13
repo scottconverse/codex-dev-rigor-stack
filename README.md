@@ -1,6 +1,6 @@
 # codex-dev-rigor-stack
 
-**Current version: 1.6.0**
+**Current version: 1.6.1**
 
 MIT licensed.
 
@@ -54,7 +54,7 @@ evidence/handoff, and deployment drawings.
 
 ## What Is Included
 
-The installer deploys **all 19 entrypoints** together: 13 canonical namespaced skills and
+The transactional installer stages and validates **all 19 entrypoints** together: 13 canonical namespaced skills and
 6 backward-compatible names.
 
 | Canonical entrypoint | Responsibility |
@@ -80,17 +80,30 @@ rewrites.
 ## Requirements
 
 - Codex Desktop or another Codex client that loads skills from `CODEX_HOME/skills`
-- Windows PowerShell 5.1+ for `install.ps1`, or Bash/Git Bash for `install.sh`
-- Git only when cloning instead of downloading the source archive
 - Node.js for the active Codex hook runtime (the hooks use built-ins only)
+- Windows 10/11 for the graphical Desktop hook activator
+- PowerShell/Bash and Git are maintainer or scripted-install options, not requirements for
+  an ordinary Codex Desktop user
 
 ## Quick Start
 
-1. Download or clone this repository.
-2. Open a terminal in the repository root.
-3. Run the PowerShell or Bash installer below.
-4. Open `/hooks`, review and trust the six dev-rigor lifecycle definitions.
-5. Restart Codex Desktop, then invoke `$dev-rigor-stack` or any standalone entrypoint.
+### Codex Desktop — no terminal
+
+1. In a normal Codex Desktop task, ask: `Install release 1.6.1 from scottconverse/codex-dev-rigor-stack using the repository's own installer, not a single-skill copy. Verify all 19 skills, the managed hook runtime, hooks.json, and the six owned definitions.`
+2. Download and double-click
+   [DevRigorHookActivator-1.6.1.exe](https://scottconverse.github.io/codex-dev-rigor-stack/downloads/DevRigorHookActivator-1.6.1.exe).
+3. Inspect the six rows and their exact command/hash details. Choose
+   **Review and trust these 6 hooks**, then approve the confirmation.
+4. Confirm the app reports all six as trusted. Restart Codex Desktop.
+5. Invoke `$dev-rigor-stack` or any standalone entrypoint.
+
+The activator uses Codex's supported app-server APIs to read, trust, and re-read the exact
+hook hashes. Every command also embeds the expected SHA-256 of its JavaScript, reads the
+file once, and compiles those already-verified bytes. Changed runtime files are refused;
+reinstalling updated scripts creates changed definitions that require review. The app never
+edits trust blindly, never trusts foreign hooks, and requires an explicit graphical approval.
+
+### Scripted/maintainer installation
 
 PowerShell:
 
@@ -104,8 +117,12 @@ Bash/Git Bash:
 ./install.sh
 ```
 
-The default destination is `~/.codex/skills`. Existing copies are backed up under
-`.backup/codex-dev-rigor-stack/<timestamp>/` before replacement.
+The default destination is `~/.codex/skills`. Skills, runtime, and the merged `hooks.json`
+are staged and committed as one rollback-protected transaction. Existing copies are backed
+up under the skills target and `CODEX_HOME` `.backup/codex-dev-rigor-stack/<timestamp>/`
+trees; CI injects both mid-commit and backup-finalization failures and requires the entire
+prior set to be restored byte-for-byte. A clean first-install failure must leave no partial
+skills, runtime, hook configuration, staging, or rollback scaffolding.
 
 ## Usage Examples
 
@@ -134,9 +151,10 @@ troubleshooting, portability, and the exact Codex hook status.
 
 ## Versioning
 
-Version `1.6.0` continues the product lineage from `1.5.1`. The earlier `1.0.0` Codex
+Version `1.6.1` continues the product lineage from `1.5.1`. The earlier `1.0.0` Codex
 packaging number was an interim version reset; it is preserved in the changelog as history
-but is not the basis for future numbering. Releases advance monotonically from 1.6.0.
+but is not the basis for future numbering. Releases advance monotonically from 1.6.0;
+1.6.1 is the Desktop activation hotfix.
 
 ## Strength-Preservation Contract
 
@@ -148,11 +166,15 @@ invalid; they do not silently trigger a weaker approximation.
 
 ## Active Codex Hooks
 
-The installer copies a Codex-native hook runtime to `CODEX_HOME/dev-rigor-stack` and
+The installer transactionally copies a Codex-native hook runtime to `CODEX_HOME/dev-rigor-stack` and
 merges owned entries into `CODEX_HOME/hooks.json` without removing foreign hooks. Active
 events are `SessionStart`, `SubagentStart`, `UserPromptSubmit`, `PostToolUse`, `Stop`, and
 `SubagentStop`. Codex deliberately requires review/trust for non-managed command hooks;
-until the user trusts these definitions in `/hooks`, they are installed but not enforced.
+until the user approves the exact definitions in the graphical activator (or another
+client's supported hook-review UI), they are installed but not enforced. The activator
+then performs a second `hooks/list` read and reports success only when Codex returns all
+six as trusted. Codex trust covers the definitions; the inline content guards bind those
+definitions to the exact runtime bytes they execute.
 
 The original Claude implementation remains under `plugin/` only as provenance. It is not
 part of the active Codex architecture.

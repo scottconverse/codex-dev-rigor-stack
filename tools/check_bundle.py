@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
 from pathlib import Path
 
 
@@ -42,7 +43,7 @@ def main() -> int:
 
     expected = CANONICAL | COMPATIBILITY
     assert set(names) == expected, f"manifest skills differ: {names}"
-    assert manifest["version"] == "1.6.0", "manifest version must be 1.6.0"
+    assert manifest["version"] == "1.6.1", "manifest version must be 1.6.1"
 
     for name in names:
         skill_file = ROOT / "skills" / name / "SKILL.md"
@@ -68,6 +69,7 @@ def main() -> int:
         ROOT / "codex" / "hooks" / "dev-rigor-router.js",
         ROOT / "codex" / "hooks" / "dev-rigor-ground.js",
         ROOT / "codex" / "hooks" / "wire-hooks.js",
+        ROOT / "codex" / "hooks" / "revoke-trust.js",
     ):
         assert path.is_file(), f"missing active Codex hook file: {path}"
     assert "wire-hooks.js" in ps and "wire-hooks.js" in sh, "installers do not wire Codex hooks"
@@ -99,10 +101,14 @@ def main() -> int:
     checker = ROOT / "skills" / "visitor-audit" / "scripts" / "check_links.py"
     assert checker.is_file(), "visitor-audit checker missing"
 
-    forbidden = [path for path in ROOT.rglob("*") if path.is_file() and (
-        path.suffix in {".pyc", ".pyo"} or "__pycache__" in path.parts
-    )]
-    assert not forbidden, f"generated Python artifacts tracked/present: {forbidden}"
+    tracked = subprocess.run(
+        ["git", "ls-files", "-z"], cwd=ROOT, check=True, capture_output=True
+    ).stdout.decode("utf-8").split("\0")
+    forbidden = [
+        path for path in tracked
+        if path and (path.endswith((".pyc", ".pyo")) or "__pycache__" in Path(path).parts)
+    ]
+    assert not forbidden, f"generated Python artifacts are tracked: {forbidden}"
 
     print(f"ok   bundle declares and installs {len(names)} aligned skill(s)")
     return 0

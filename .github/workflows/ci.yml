@@ -25,6 +25,7 @@ jobs:
         run: |
           python3 tools/check_bundle.py
           python3 tools/test_stack_contracts.py
+          python3 tools/test_desktop_activator.py
           python3 tools/test_visitor_audit.py
       # SKILL.md <-> SKILL-LITE.md sync blocks must be byte-identical.
       - name: Sync-block check
@@ -35,6 +36,16 @@ jobs:
           bash install.sh --target "$RUNNER_TEMP/codex-home/skills" --no-backup
           test -f "$RUNNER_TEMP/codex-home/hooks.json"
           test -f "$RUNNER_TEMP/codex-home/dev-rigor-stack/hooks/dev-rigor-ground.js"
+          python3 tools/fingerprint_install_tree.py "$RUNNER_TEMP/codex-home" --seed
+          before=$(python3 tools/fingerprint_install_tree.py "$RUNNER_TEMP/codex-home")
+          for point in mid-commit backup-finalization; do
+            if DEV_RIGOR_INSTALL_TEST_FAIL_AT="$point" bash install.sh --target "$RUNNER_TEMP/codex-home/skills"; then
+              echo "injected $point failure unexpectedly succeeded" >&2; exit 1
+            fi
+            test "$(python3 tools/fingerprint_install_tree.py "$RUNNER_TEMP/codex-home")" = "$before"
+            test "$(find "$RUNNER_TEMP/codex-home/skills" -mindepth 1 -maxdepth 1 -type d ! -name .backup | wc -l)" -eq 19
+          done
+          sh tools/test_clean_rollback.sh
       - name: Installer smoke (Windows)
         if: runner.os == 'Windows'
         shell: powershell
@@ -42,6 +53,51 @@ jobs:
           .\install.ps1 -Target "$env:RUNNER_TEMP\codex-home\skills" -NoBackup
           if (-not (Test-Path "$env:RUNNER_TEMP\codex-home\hooks.json")) { throw 'hooks.json missing' }
           if (-not (Test-Path "$env:RUNNER_TEMP\codex-home\dev-rigor-stack\hooks\dev-rigor-ground.js")) { throw 'hook runtime missing' }
+          python tools/fingerprint_install_tree.py "$env:RUNNER_TEMP\codex-home" --seed
+          $before = python tools/fingerprint_install_tree.py "$env:RUNNER_TEMP\codex-home"
+          foreach ($point in @('mid-commit', 'backup-finalization')) {
+            $env:DEV_RIGOR_INSTALL_TEST_FAIL_AT = $point
+            powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 -Target "$env:RUNNER_TEMP\codex-home\skills"
+            if ($LASTEXITCODE -eq 0) { throw "injected $point failure unexpectedly succeeded" }
+            $after = python tools/fingerprint_install_tree.py "$env:RUNNER_TEMP\codex-home"
+            if ($after -ne $before) { throw "$point failed to restore the complete live installation" }
+            $installed = Get-ChildItem "$env:RUNNER_TEMP\codex-home\skills" -Directory | Where-Object Name -ne '.backup'
+            if ($installed.Count -ne 19) { throw "$point changed installed skill set" }
+          }
+          foreach ($point in @('mid-commit', 'backup-finalization')) {
+            $fresh = "$env:RUNNER_TEMP\fresh-$point"
+            $env:DEV_RIGOR_INSTALL_TEST_FAIL_AT = $point
+            powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 -Target "$fresh\skills"
+            if ($LASTEXITCODE -eq 0) { throw "fresh $point failure unexpectedly succeeded" }
+            $remaining = if (Test-Path $fresh) { @(Get-ChildItem $fresh -Recurse -Force) } else { @() }
+            if ($remaining.Count -ne 0) { throw "fresh $point left partial installation artifacts: $($remaining.FullName -join ', ')" }
+          }
+          Remove-Item Env:DEV_RIGOR_INSTALL_TEST_FAIL_AT -ErrorAction SilentlyContinue
+      - name: Build and run the production Desktop hook trust path (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          npm install --global @openai/codex@0.143.0
+          $env:CODEX_HOME = "$env:RUNNER_TEMP\codex-home"
+          .\desktop\build.ps1 -OutputDirectory "$env:RUNNER_TEMP\activator-build" -RunIntegrationTest -IntegrationCwd "$env:GITHUB_WORKSPACE"
+          .\desktop\verify-binary-equivalence.ps1 `
+            -PublishedExecutable ".\docs\downloads\DevRigorHookActivator-1.6.1.exe" `
+            -RebuiltExecutable "$env:RUNNER_TEMP\activator-build\DevRigorHookActivator.exe"
+          # Prove the uninstall/reinstall trust lifecycle: revoke exact owned hashes,
+          # preserve foreign state in the revoker contract, remove definitions, reinstall,
+          # and require the oracle to begin untrusted both times.
+          Add-Content "$env:CODEX_HOME\config.toml" "`n[hooks.state.'foreign-ci-proof']`ntrusted_hash = 'sha256:foreign-ci-proof'"
+          node codex/hooks/revoke-trust.js "$env:CODEX_HOME" "$env:GITHUB_WORKSPACE"
+          if (-not (Select-String -Path "$env:CODEX_HOME\config.toml" -Pattern 'foreign-ci-proof' -Quiet)) { throw 'foreign trust state was lost' }
+          node desktop/test-app-server.js "$env:GITHUB_WORKSPACE"
+          node codex/hooks/revoke-trust.js "$env:CODEX_HOME" "$env:GITHUB_WORKSPACE"
+          node codex/hooks/wire-hooks.js --remove "$env:CODEX_HOME" "$env:CODEX_HOME\dev-rigor-stack"
+          .\install.ps1 -Target "$env:CODEX_HOME\skills" -NoBackup
+          node desktop/test-app-server.js "$env:GITHUB_WORKSPACE"
+          # Keep a separately implemented protocol oracle as defense in depth.
+          $env:CODEX_HOME = "$env:RUNNER_TEMP\oracle-home"
+          .\install.ps1 -Target "$env:CODEX_HOME\skills" -NoBackup
+          node desktop/test-app-server.js "$env:GITHUB_WORKSPACE"
       # The two exporters must produce byte-identical bundles — this is the
       # regression gate for the PS 5.1 mojibake bug (windows job runs real
       # Windows PowerShell 5.1, the shell that had the bug).

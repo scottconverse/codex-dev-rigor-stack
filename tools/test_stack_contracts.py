@@ -107,7 +107,7 @@ class StackContractTests(unittest.TestCase):
 
     def test_current_release_is_identified_on_every_document_surface(self) -> None:
         manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
-        self.assertEqual(manifest["version"], "1.6.0")
+        self.assertEqual(manifest["version"], "1.6.1")
         surfaces = {
             "README": ROOT / "README.md",
             "manual": ROOT / "docs" / "MANUAL.md",
@@ -123,7 +123,7 @@ class StackContractTests(unittest.TestCase):
         }
         for name, path in surfaces.items():
             with self.subTest(surface=name):
-                self.assertIn("1.6.0", path.read_text(encoding="utf-8"))
+                self.assertIn("1.6.1", path.read_text(encoding="utf-8"))
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
         self.assertNotIn("Dates are release (tag) dates.", changelog)
         self.assertIn("does not imply a Git tag", changelog)
@@ -167,7 +167,7 @@ class StackContractTests(unittest.TestCase):
             "plain english",
             "technical architecture",
             "all 19 entrypoints",
-            "version 1.6.0",
+            "version 1.6.1",
             "read the full user manual",
         )
         manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
@@ -200,6 +200,8 @@ class StackContractTests(unittest.TestCase):
         for installer in (ROOT / "install.ps1", ROOT / "install.sh"):
             text = installer.read_text(encoding="utf-8")
             self.assertIn("wire-hooks.js", text)
+            self.assertIn("staging", text.lower())
+            self.assertIn("rollback", text.lower())
             self.assertIn("hooks.json", text)
         self.assertIn(
             'target="$codex_home/skills"',

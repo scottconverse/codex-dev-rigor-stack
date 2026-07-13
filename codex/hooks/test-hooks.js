@@ -2,7 +2,7 @@
 // Hermetic contract suite for the active Codex hook runtime.
 
 const assert = require('assert');
-const { execFileSync } = require('child_process');
+const { execFileSync, execSync, spawnSync } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -173,28 +173,74 @@ test('wire: creates every active Codex lifecycle event and is idempotent', () =>
   for (const event of ['SessionStart', 'SubagentStart', 'UserPromptSubmit', 'PostToolUse', 'Stop', 'SubagentStop']) {
     assert.ok(first.hooks[event]?.length, `missing hooks.${event}`);
   }
-  assert.match(JSON.stringify(first.hooks), /codex[\\/]hooks[\\/]dev-rigor-ground/);
+  assert.match(JSON.stringify(first.hooks), /Dev Rigor hook integrity check failed/);
+  assert.match(JSON.stringify(first.hooks), /createHash/);
   assert.doesNotMatch(JSON.stringify(first.hooks), /CLAUDE_CONFIG_DIR|\.claude/);
   execFileSync('node', [WIRE, home, CODEX], { encoding: 'utf8' });
   const second = JSON.parse(fs.readFileSync(path.join(home, 'hooks.json'), 'utf8'));
   assert.deepStrictEqual(second, first);
 });
 
-test('wire: preserves foreign hooks while replacing stale owned entries', () => {
+test('wire: trusted definition executes exact bytes and refuses a changed runtime file', () => {
   const home = freshHome();
+  const runtime = path.join(tmpRoot, `integrity-runtime-${serial}`);
+  fs.cpSync(CODEX, runtime, { recursive: true });
+  execFileSync('node', [WIRE, home, runtime], { encoding: 'utf8' });
+  const configured = JSON.parse(fs.readFileSync(path.join(home, 'hooks.json'), 'utf8'));
+  const command = configured.hooks.SessionStart[0].hooks[0].command;
+  assert.match(command, /_compile\(b\.toString\(\),f\)/);
+  assert.doesNotMatch(command, /require\(f\)/);
+  const input = JSON.stringify({ hook_event_name: 'SessionStart' });
+  const output = execSync(command, {
+    input,
+    encoding: 'utf8',
+    shell: true,
+    env: { ...process.env, CODEX_HOME: home },
+  });
+  assert.match(output, /DEV-RIGOR REFLEX ACTIVE/);
+  fs.appendFileSync(path.join(runtime, 'hooks', 'dev-rigor-activate.js'), '\n// tampered after trust\n');
+  assert.throws(() => execSync(command, {
+    input,
+    encoding: 'utf8',
+    shell: true,
+    env: { ...process.env, CODEX_HOME: home },
+    stdio: 'pipe',
+  }), /integrity check failed/i);
+});
+
+test('wire: preserves foreign hooks while replacing an existing owned entry', () => {
+  const home = freshHome();
+  const ownedCommand = `node "${path.join(CODEX, 'hooks', 'dev-rigor-ground.js')}" check`;
   fs.writeFileSync(path.join(home, 'hooks.json'), JSON.stringify({
     hooks: {
       Stop: [
         { hooks: [{ type: 'command', command: 'node foreign-stop.js' }] },
-        { hooks: [{ type: 'command', command: 'node stale/dev-rigor-ground.js check' }] },
+        { hooks: [{ type: 'command', command: ownedCommand }], matcher: 'stale-matcher' },
       ],
     },
   }));
   execFileSync('node', [WIRE, home, CODEX], { encoding: 'utf8' });
   const parsed = JSON.parse(fs.readFileSync(path.join(home, 'hooks.json'), 'utf8'));
   assert.match(JSON.stringify(parsed.hooks.Stop), /foreign-stop/);
-  assert.strictEqual(parsed.hooks.Stop.filter((entry) => JSON.stringify(entry).includes('dev-rigor-ground')).length, 1);
-  assert.doesNotMatch(JSON.stringify(parsed.hooks.Stop), /stale[\\/]dev-rigor-ground/);
+  assert.strictEqual(parsed.hooks.Stop.length, 2);
+  assert.strictEqual(parsed.hooks.Stop.filter((entry) => JSON.stringify(entry).includes('integrity check failed')).length, 1);
+  assert.doesNotMatch(JSON.stringify(parsed.hooks.Stop), /stale-matcher/);
+});
+
+test('wire: preserves a foreign hook that uses a managed-looking filename', () => {
+  const home = freshHome();
+  const foreignRoot = path.join(tmpRoot, 'foreign-runtime');
+  const target = path.join(home, 'hooks.json');
+  const foreignCommand = `node "${path.join(foreignRoot, 'hooks', 'dev-rigor-ground.js')}" check`;
+  fs.writeFileSync(target, JSON.stringify({
+    hooks: { Stop: [{ hooks: [{ type: 'command', command: foreignCommand }] }] },
+  }));
+  execFileSync('node', [WIRE, home, CODEX], { encoding: 'utf8' });
+  const wired = JSON.parse(fs.readFileSync(target, 'utf8'));
+  assert.ok(wired.hooks.Stop.some((entry) => entry.hooks?.[0]?.command === foreignCommand));
+  execFileSync('node', [WIRE, '--remove', home, CODEX], { encoding: 'utf8' });
+  const removed = JSON.parse(fs.readFileSync(target, 'utf8'));
+  assert.ok(removed.hooks.Stop.some((entry) => entry.hooks?.[0]?.command === foreignCommand));
 });
 
 test('wire: refuses corrupt hooks.json and leaves it byte-identical', () => {
@@ -230,6 +276,12 @@ test('wire: remove deletes only owned entries and preserves foreign hooks', () =
   const removed = JSON.parse(fs.readFileSync(target, 'utf8'));
   assert.match(JSON.stringify(removed), /foreign\.js/);
   assert.doesNotMatch(JSON.stringify(removed), /dev-rigor-(activate|router|ground)/);
+});
+
+test('revoke-trust: removes owned hashes and preserves foreign trust state', () => {
+  const result = spawnSync(process.execPath, [path.join(__dirname, 'revoke-trust.js'), '--self-test'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /owned state removed and foreign state preserved/);
 });
 
 (async () => {
