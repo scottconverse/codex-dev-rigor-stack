@@ -132,17 +132,16 @@ def main() -> int:
         )
         manifest.write_text(original_manifest, encoding="utf-8")
 
-        executable = copy / "candidate-artifacts" / "1.7.0" / "DevRigorHookActivator-1.7.0.exe"
-        data = bytearray(executable.read_bytes())
-        data[-1] ^= 0x01
-        executable.write_bytes(data)
+        executable = copy / "docs" / "downloads" / "unapproved-installer.exe"
+        executable.parent.mkdir(parents=True, exist_ok=True)
+        executable.write_bytes(b"MZ\x00unapproved-publication-mutation")
         require_red(
             run(copy, [sys.executable, "tools/test_desktop_activator.py"]),
-            "test_candidate_binary_and_checksum_match_off_pages",
-            "published executable checksum",
+            "test_unapproved_candidate_is_not_published_or_described_as_current",
+            "unapproved installable artifact publication",
         )
 
-    print("verifier mutations: 12 hook invariants, version surface, and candidate binary all went red")
+    print("verifier mutations: 12 hook invariants, version surface, and publication hold all went red")
     return 0
 
 

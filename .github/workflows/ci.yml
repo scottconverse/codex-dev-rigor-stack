@@ -86,10 +86,11 @@ jobs:
         run: |
           npm install --global @openai/codex@0.143.0
           $env:CODEX_HOME = "$env:RUNNER_TEMP\codex-home"
-          .\desktop\build.ps1 -OutputDirectory "$env:RUNNER_TEMP\activator-build" -RunIntegrationTest -IntegrationCwd "$env:GITHUB_WORKSPACE"
+          .\desktop\build.ps1 -OutputDirectory "$env:RUNNER_TEMP\activator-build-a" -RunIntegrationTest -IntegrationCwd "$env:GITHUB_WORKSPACE"
+          .\desktop\build.ps1 -OutputDirectory "$env:RUNNER_TEMP\activator-build-b"
           .\desktop\verify-binary-equivalence.ps1 `
-            -PublishedExecutable ".\candidate-artifacts\1.7.0\DevRigorHookActivator-1.7.0.exe" `
-            -RebuiltExecutable "$env:RUNNER_TEMP\activator-build\DevRigorHookActivator.exe"
+            -PublishedExecutable "$env:RUNNER_TEMP\activator-build-a\DevRigorHookActivator.exe" `
+            -RebuiltExecutable "$env:RUNNER_TEMP\activator-build-b\DevRigorHookActivator.exe"
           # Prove the uninstall/reinstall trust lifecycle: revoke exact owned hashes,
           # preserve foreign state in the revoker contract, remove definitions, reinstall,
           # and require the oracle to begin untrusted both times.

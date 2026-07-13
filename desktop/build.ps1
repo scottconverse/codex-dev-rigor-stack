@@ -9,6 +9,24 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $Root = $PSScriptRoot
+$RepoRoot = Split-Path -Parent $Root
+
+if ($PublishDirectory) {
+  $ReleaseStatePath = Join-Path $RepoRoot 'release-state.json'
+  if (-not (Test-Path -LiteralPath $ReleaseStatePath -PathType Leaf)) {
+    throw 'Publication is not authorized: release-state.json is missing.'
+  }
+  try {
+    $ReleaseState = Get-Content -LiteralPath $ReleaseStatePath -Raw | ConvertFrom-Json
+  } catch {
+    throw "Publication is not authorized: release-state.json is invalid: $($_.Exception.Message)"
+  }
+  $PublicationAuthorized = $ReleaseState.publication_authorized
+  if (($PublicationAuthorized -isnot [bool]) -or (-not $PublicationAuthorized)) {
+    throw 'Publication is not authorized by release-state.json.'
+  }
+}
+
 if (-not $OutputDirectory) { $OutputDirectory = Join-Path $Root 'dist' }
 New-Item -ItemType Directory -Force -Path $OutputDirectory | Out-Null
 
@@ -27,6 +45,23 @@ $Output = Join-Path $OutputDirectory 'DevRigorHookActivator.exe'
   /reference:System.Windows.Forms.dll `
   (Join-Path $Root 'DevRigorHookActivator.cs')
 if ($LASTEXITCODE -ne 0) { throw "Activator build failed with exit code $LASTEXITCODE" }
+
+$Image = [System.IO.File]::ReadAllBytes($Output)
+if ($Image.Length -lt 0x40 -or $Image[0] -ne 0x4d -or $Image[1] -ne 0x5a) {
+  throw 'Generated executable is not a valid Windows PE image.'
+}
+$PeOffset = [BitConverter]::ToInt32($Image, 0x3c)
+if ($PeOffset -lt 0 -or $PeOffset + 94 -gt $Image.Length) {
+  throw 'Generated executable has an invalid Windows PE header offset.'
+}
+if ([BitConverter]::ToUInt32($Image, $PeOffset) -ne 0x00004550) {
+  throw 'Generated executable is missing the Windows PE signature.'
+}
+$OptionalHeader = $PeOffset + 24
+$Subsystem = [BitConverter]::ToUInt16($Image, $OptionalHeader + 68)
+if ($Subsystem -ne 2) {
+  throw "Generated executable must use the Windows GUI subsystem; found subsystem $Subsystem."
+}
 
 $VersionInfo = (Get-Item -LiteralPath $Output).VersionInfo
 if ($VersionInfo.FileVersion -ne '1.7.0.0') { throw "Unexpected FileVersion: $($VersionInfo.FileVersion)" }

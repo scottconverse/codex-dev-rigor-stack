@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import json
-import hashlib
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -17,8 +17,41 @@ INTEGRATION_TEST = ROOT / "desktop" / "ActivatorIntegrationSelfTest.cs"
 UI_TEST = ROOT / "desktop" / "ActivatorUiSelfTest.cs"
 LIVE_TEST = ROOT / "desktop" / "test-live-hook-lifecycle.js"
 BINARY_EQUIVALENCE = ROOT / "desktop" / "verify-binary-equivalence.ps1"
-CANDIDATE = ROOT / "candidate-artifacts" / "1.7.0" / "DevRigorHookActivator-1.7.0.exe"
 RELEASE_STATE = ROOT / "release-state.json"
+INSTALLABLE_SUFFIXES = {
+    ".apk", ".appx", ".appxbundle", ".bat", ".bin", ".bz2", ".cmd", ".com",
+    ".deb", ".dmg", ".exe", ".gz", ".ipa", ".iso", ".msi", ".msix",
+    ".msixbundle", ".pkg", ".ps1", ".rar", ".rpm", ".scr", ".sh", ".tar",
+    ".tgz", ".xz", ".zip", ".7z",
+}
+
+
+def tracked_installable_artifacts() -> list[str]:
+    roots = ("candidate-artifacts", "docs/downloads")
+    result = subprocess.run(
+        ["git", "ls-files", "-z", "--", *roots],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if result.returncode == 0:
+        candidates = [Path(item) for item in result.stdout.split("\0") if item]
+    else:
+        # Mutation copies intentionally omit .git. Fall back to the copied filesystem so
+        # the publication verifier still proves that an injected executable is rejected.
+        candidates = [
+            path.relative_to(ROOT)
+            for root in roots
+            if (ROOT / root).exists()
+            for path in (ROOT / root).rglob("*")
+            if path.is_file()
+        ]
+    return sorted(
+        path.as_posix()
+        for path in candidates
+        if path.suffix.lower() in INSTALLABLE_SUFFIXES
+    )
 
 
 class DesktopActivatorContractTests(unittest.TestCase):
@@ -45,11 +78,16 @@ class DesktopActivatorContractTests(unittest.TestCase):
         self.assertIn("explicit owner go/no-go", architecture)
         self.assertIn("GO only", architecture)
 
-        published = ROOT / "docs" / "downloads"
-        self.assertFalse(
-            any(p.name.startswith("DevRigorHookActivator-1.7.0") for p in published.iterdir()),
-            "an unapproved 1.7.0 artifact is still in the GitHub Pages source tree",
+        self.assertEqual(
+            tracked_installable_artifacts(),
+            [],
+            "publication_authorized=false forbids every tracked installable artifact in "
+            "candidate-artifacts/ and docs/downloads/",
         )
+        ignored = (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
+        self.assertIn("candidate-artifacts/", ignored)
+        manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
+        self.assertNotIn("desktop_hook_activator_candidate", manifest["codex"])
 
     def test_version_is_monotonic_task_state_redesign(self) -> None:
         manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
@@ -136,6 +174,11 @@ class DesktopActivatorContractTests(unittest.TestCase):
         self.assertIn("/target:winexe", text)
         self.assertIn("DevRigorHookActivator.exe", text)
         self.assertIn("System.Windows.Forms.dll", text)
+        self.assertIn("release-state.json", text)
+        self.assertIn("publication_authorized", text)
+        self.assertIn("Publication is not authorized", text)
+        self.assertIn("Windows GUI subsystem", text)
+        self.assertIn("[System.IO.File]::ReadAllBytes", text)
 
     def test_every_executable_version_surface_is_1_7_0(self) -> None:
         source = SOURCE.read_text(encoding="utf-8")
@@ -264,16 +307,7 @@ class DesktopActivatorContractTests(unittest.TestCase):
         ):
             self.assertIn(target, mutations)
 
-    def test_candidate_binary_has_a_source_bound_build_record(self) -> None:
-        record = CANDIDATE.with_name("DevRigorHookActivator-1.7.0.build.json")
-        self.assertTrue(record.is_file())
-        data = json.loads(record.read_text(encoding="utf-8"))
-        self.assertEqual(data["version"], "1.7.0")
-        self.assertEqual(data["binary_sha256"], hashlib.sha256(CANDIDATE.read_bytes()).hexdigest())
-        self.assertEqual(data["source_sha256"], hashlib.sha256(SOURCE.read_bytes()).hexdigest())
-        self.assertIn("compiler_version", data)
-
-    def test_ci_rebuilds_and_normalizes_only_compiler_identity_bytes(self) -> None:
+    def test_ci_compares_two_fresh_local_builds_and_normalizes_only_compiler_identity_bytes(self) -> None:
         self.assertTrue(BINARY_EQUIVALENCE.is_file())
         verifier = BINARY_EQUIVALENCE.read_text(encoding="utf-8")
         for term in ("ModuleVersionId", "PE timestamp", "byte-identical after normalizing"):
@@ -281,6 +315,9 @@ class DesktopActivatorContractTests(unittest.TestCase):
         ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
         self.assertIn("-RunIntegrationTest", ci)
         self.assertIn("verify-binary-equivalence.ps1", ci)
+        self.assertIn("activator-build-a", ci)
+        self.assertIn("activator-build-b", ci)
+        self.assertNotIn("candidate-artifacts", ci)
 
     def test_gui_has_keyboard_and_accessible_security_review_path(self) -> None:
         text = SOURCE.read_text(encoding="utf-8")
@@ -300,26 +337,6 @@ class DesktopActivatorContractTests(unittest.TestCase):
             "_close.Enabled = !busy",
         ):
             self.assertIn(term, text)
-
-    def test_candidate_binary_and_checksum_match_off_pages(self) -> None:
-        self.assertTrue(CANDIDATE.is_file(), "candidate activator executable is missing")
-        digest = hashlib.sha256(CANDIDATE.read_bytes()).hexdigest()
-        checksum = CANDIDATE.with_suffix(CANDIDATE.suffix + ".sha256").read_text(encoding="ascii")
-        self.assertEqual(checksum.strip(), f"{digest}  {CANDIDATE.name}")
-
-    def test_candidate_executable_has_windows_gui_subsystem(self) -> None:
-        data = CANDIDATE.read_bytes()
-        self.assertEqual(data[:2], b"MZ")
-        pe_offset = int.from_bytes(data[0x3C:0x40], "little")
-        self.assertEqual(data[pe_offset:pe_offset + 4], b"PE\0\0")
-        optional_header = pe_offset + 24
-        subsystem = int.from_bytes(data[optional_header + 68:optional_header + 70], "little")
-        self.assertEqual(subsystem, 2, "executable must use the Windows GUI subsystem")
-
-    def test_candidate_source_is_the_exact_build_source(self) -> None:
-        published = CANDIDATE.with_name("DevRigorHookActivator-1.7.0.cs")
-        self.assertEqual(published.read_bytes(), SOURCE.read_bytes())
-
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
