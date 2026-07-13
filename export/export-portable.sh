@@ -24,11 +24,11 @@ strip_frontmatter() {
 }
 
 {
-  echo "# dev-rigor-stack — portable bundle"
+  echo "# codex-dev-rigor-stack 1.0.0 — portable bundle"
   echo
-  echo "Derived from the Claude-native skills. Paste into any agent's system prompt / AGENTS.md."
-  echo "Claude-specific mechanics (the Workflow tool, /slash skills, haiku/sonnet routing) read as"
-  echo "plain guidance here — they are not removed from the source to serve other agents."
+  echo "Derived from the complete Codex bundle. Paste into any agent's system prompt / AGENTS.md."
+  echo "Host-specific mechanics read as plain guidance; canonical capabilities are not removed"
+  echo "or shortened to serve the export — the bundle is derived from the strong source."
   echo "Support files each skill references (references/, lanes/, templates/, SKILL-LITE) are"
   echo "included after that skill's main text, so no internal pointer dangles."
   echo

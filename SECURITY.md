@@ -1,30 +1,32 @@
 # Security Policy
 
-## What this project is, security-wise
+**Current supported Codex bundle:** 1.0.0
 
-dev-rigor-stack installs Markdown skills and three small Node hook scripts that run
-locally on every Claude Code session (`SessionStart`, `UserPromptSubmit`,
-`PostToolUse`, `Stop`). The hooks:
+## Security model
 
-- read only files inside the repo/plugin directory and a per-session state directory
-  under `~/.claude/dev-rigor-plugin/state/` (session IDs are sanitized before touching
-  the filesystem);
-- never make network calls, never eval/execute injected text, and have zero runtime
-  dependencies (Node built-ins only);
-- fail open — any internal error degrades to silence rather than blocking or breaking
-  a session;
-- modify exactly one file outside their own directory: `settings.json`, idempotently,
-  refusing (exit 1, file untouched) if it is corrupt or unexpectedly shaped.
+The Codex installer copies 19 Markdown skill folders into `CODEX_HOME/skills` (or an
+explicit target) and creates timestamped backups of replaced managed folders. It does not
+configure Codex settings, open network services, install runtime dependencies, or activate
+the retained upstream Claude hook sources.
+
+The repository contains three small Node hook implementations inherited from the upstream
+Claude package. They are retained for provenance and future verified porting, and are
+covered by the repository test suite. They are **not wired or executed by the Codex
+installer**.
+
+The installers write only to the selected skills target and its
+`.backup/codex-dev-rigor-stack/<timestamp>/` tree. Use a custom `-Target`/`--target` for
+clean-profile inspection before installing into an active Codex home.
 
 ## Supported versions
 
-The latest tagged release. Older tags get no backports — upgrading is a re-run of the
-installer.
+Codex bundle 1.0.0 is supported. The immediately previous bundle was 0.2.0 and receives no
+backports. Updating is a fresh repository download or pull followed by rerunning the
+installer; backups are enabled by default.
 
 ## Reporting a vulnerability
 
-Use GitHub's private vulnerability reporting on this repository ("Report a
-vulnerability" under the Security tab), or open a plain issue if the report isn't
-sensitive. Include the narrowest reproduction you have. You'll get an acknowledgment
-and a fix-or-explanation — this project's own rules forbid shipping past a known
-security finding.
+Use GitHub private vulnerability reporting under the repository Security tab. If the
+report is not sensitive, open a normal issue. Include the narrowest reproduction, affected
+version, platform, exact command/action, and observed result. Do not include live secrets
+or credentials.

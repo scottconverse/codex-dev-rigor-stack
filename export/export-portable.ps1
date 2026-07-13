@@ -42,11 +42,11 @@ function Get-BodyLines([string]$Path) {
 }
 
 $sb = [System.Text.StringBuilder]::new()
-[void]$sb.AppendLine("# dev-rigor-stack $EmDash portable bundle")
+[void]$sb.AppendLine("# codex-dev-rigor-stack 1.0.0 $EmDash portable bundle")
 [void]$sb.AppendLine('')
-[void]$sb.AppendLine('Derived from the Claude-native skills. Paste into any agent''s system prompt / AGENTS.md.')
-[void]$sb.AppendLine('Claude-specific mechanics (the Workflow tool, /slash skills, haiku/sonnet routing) read as')
-[void]$sb.AppendLine("plain guidance here $EmDash they are not removed from the source to serve other agents.")
+[void]$sb.AppendLine('Derived from the complete Codex bundle. Paste into any agent''s system prompt / AGENTS.md.')
+[void]$sb.AppendLine('Host-specific mechanics read as plain guidance; canonical capabilities are not removed')
+[void]$sb.AppendLine("or shortened to serve the export $EmDash the bundle is derived from the strong source.")
 [void]$sb.AppendLine('Support files each skill references (references/, lanes/, templates/, SKILL-LITE) are')
 [void]$sb.AppendLine('included after that skill''s main text, so no internal pointer dangles.')
 [void]$sb.AppendLine('')

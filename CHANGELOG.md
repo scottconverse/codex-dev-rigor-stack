@@ -4,6 +4,9 @@ All notable changes to dev-rigor-stack. Dates are release (tag) dates.
 
 ## 1.0.0 — 2026-07-13
 
+Codex package release 1.0.0 supersedes Codex bundle 0.2.0 and packages upstream
+discipline 1.5.1; package and methodology versions are intentionally tracked separately.
+
 - **Strengthened without subtraction:** restored the standalone Visitor Audit link checker
   as a strict superset of both prior implementations: live URLs, local files, redirects,
   HEAD-to-GET fallback, rate-limit retry, parallel checks, JSON/human output, publish-root
@@ -24,6 +27,9 @@ All notable changes to dev-rigor-stack. Dates are release (tag) dates.
 - **Added:** behavioral and contract tests plus Linux/Windows installer smoke tests in CI.
 - **Fixed from live Visitor evidence:** remote Markdown sources are identified from their
   content type, final URL, and content rather than being misparsed as HTML with zero links.
+- **Published documentation:** expanded the real two-voice user manual, professional
+  architecture reference, and public landing page; synchronized 1.0.0 across every
+  document, installer, exporter, and public release surface.
 
 ## Unreleased (pre-1.0 history)
 

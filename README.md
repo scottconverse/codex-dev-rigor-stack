@@ -1,54 +1,94 @@
-# codex-dev-rigor-stack 1.0
+# codex-dev-rigor-stack
 
-Codex-native packaging of Scott Converse's `dev-rigor-stack`: a strict, evidence-first
-development and release system whose complete capabilities remain independently invokable.
+**Current Codex bundle: 1.0.0**
 
-This repo keeps the newer upstream skill content and makes the install path native to
-Codex: copy the skill folders into `~/.codex/skills`, replacing older local copies when
-requested. The Claude Code always-on hook layer from upstream is not wired by default
-because Claude hook events and Codex hook payloads are different.
+**Bundled upstream discipline: 1.5.1**
 
-## Canonical Skills
+MIT licensed.
 
-- `dev-rigor-stack` - delivery loop and release gate coordinator
-- `dev-rigor-stack-continuity` - durable cross-session/machine state
-- `dev-rigor-stack-plan` - acceptance, tests, blast radius, and gate routing
-- `dev-rigor-stack-build` - full test-first BUILD contract
-- `dev-rigor-stack-proof-gate` - adversarial proof and anti-theater verification
-- `dev-rigor-stack-audit-lite` - fast scoped review
-- `dev-rigor-stack-audit-team` - deeper five-role review
-- `dev-rigor-stack-walkthrough` - blind-first public acquisition, clean-machine installer
-  lifecycle, every-screen/every-control UI/UX, accessibility, and wiring audit
-- `dev-rigor-stack-visitor-audit` - every rendered public page, link, safe control,
-  visual state, release asset, checksum, claim, and installer acquisition path
-- `dev-rigor-stack-gauntletgate` - stage/release advancement gate
-- `dev-rigor-stack-merge-gate` - green-path merge evidence decision
-- `dev-rigor-stack-docs-gate` - deliverable documentation truth and completeness
-- `dev-rigor-stack-release` - candidate-to-live strict-zero release protocol
+An evidence-first development and release system for Codex. It turns “done” from a
+confidence statement into a claim backed by tests, runtime evidence, adversarial review,
+real-user walkthroughs, public-surface audits, and a human-controlled release decision.
 
-Backward-compatible entrypoints remain installed: `coder-tdd-qa`, `proof-gate`,
-`audit-lite`, `audit-team`, `gauntletgate`, and `visitor-audit`. Namespaced entrypoints
-load those complete canonical contracts where applicable; they are not abbreviated
+[Landing page](https://scottconverse.github.io/codex-dev-rigor-stack/) ·
+[Full user manual](docs/MANUAL.md) · [Technical architecture](docs/ARCHITECTURE.md) ·
+[Changelog](CHANGELOG.md)
+
+## Plain English
+
+AI coding agents can sound certain before they have proved anything. This stack gives the
+agent a disciplined route through the work:
+
+1. agree on what “finished” means;
+2. write a check that can actually fail;
+3. build the change and run it;
+4. try to disprove the result and review it at the right depth;
+5. merge only through a green pull request.
+
+For a release, it adds stronger gates: a full adversarial gauntlet, claim checking against
+the real documentation, a newcomer journey through the published installer, a visual and
+UI/UX audit, every public page and link, rollback readiness, and the owner’s final go/no-go.
+
+The important part is not ceremony. It is matching the proof to the claim. A unit test may
+prove a function; it cannot prove the installer, a button, a rendered page, or a public
+download works.
+
+## Technical Summary
+
+The coordinator routes each unit through `PLAN → BUILD → VERIFY → REVIEW → MERGE`, with
+blast radius controlling review depth. Standalone skills share durable evidence contracts
+for run identity, claims, findings, coverage, handoffs, and gate results. Release closure
+is strict-zero by default across Blocker, Critical, Major, Minor, and Nit.
+
+Visitor Audit owns the public boundary: rendered pages, links, safe controls, responsive
+visual inspection, claims, release assets, checksums, and the acquisition path. Walkthrough
+consumes the exact published artifact and owns blind-first clean-environment installation,
+every product screen/control/path/state, interface-to-function wiring, accessibility,
+update, repair, uninstall, and a numerical coverage ledger.
+
+See the [technical architecture](docs/ARCHITECTURE.md) for system context, delivery state,
+evidence/handoff, and deployment drawings.
+
+## What Is Included
+
+The installer deploys **all 19 entrypoints** together: 13 canonical namespaced skills and
+6 backward-compatible names.
+
+| Canonical entrypoint | Responsibility |
+| --- | --- |
+| `dev-rigor-stack` | Coordinates the complete unit and release flow |
+| `dev-rigor-stack-continuity` | Restores and persists cross-session/machine decisions |
+| `dev-rigor-stack-plan` | Defines acceptance, test list, blast radius, and routing |
+| `dev-rigor-stack-build` | Applies the complete test-first engineering and QA contract |
+| `dev-rigor-stack-proof-gate` | Refutes claims and rejects verification theater |
+| `dev-rigor-stack-audit-lite` | Runs a fast, scoped review |
+| `dev-rigor-stack-audit-team` | Runs a deep five-role review |
+| `dev-rigor-stack-walkthrough` | Audits acquisition, installer lifecycle, every UI path/state, visuals, accessibility, and wiring |
+| `dev-rigor-stack-visitor-audit` | Audits every public surface, link, safe control, visual state, asset, checksum, and claim |
+| `dev-rigor-stack-gauntletgate` | Runs the adversarial advancement gate |
+| `dev-rigor-stack-merge-gate` | Makes the exact-SHA green-path merge decision |
+| `dev-rigor-stack-docs-gate` | Verifies README, manual, architecture, landing page, links, and claims |
+| `dev-rigor-stack-release` | Coordinates candidate evidence through live strict-zero closure |
+
+Compatibility entrypoints remain complete and installed: `coder-tdd-qa`, `proof-gate`,
+`audit-lite`, `audit-team`, `gauntletgate`, and `visitor-audit`. They are not abbreviated
 rewrites.
-
-Invoke skills in Codex with `$dev-rigor-stack`, `$dev-rigor-stack-walkthrough`,
-`$dev-rigor-stack-proof-gate`, and so on. Natural-language requests are also supported.
 
 ## Requirements
 
 - Codex Desktop or another Codex client that loads skills from `CODEX_HOME/skills`
 - Windows PowerShell 5.1+ for `install.ps1`, or Bash/Git Bash for `install.sh`
-- Git only when cloning the repository rather than downloading its source archive
+- Git only when cloning instead of downloading the source archive
+- Node.js only for testing the retained upstream Claude hook sources; the Codex skills do
+  not require Node at runtime
 
 ## Quick Start
 
 1. Download or clone this repository.
 2. Open a terminal in the repository root.
-3. Run the PowerShell or Bash installer shown below.
+3. Run the PowerShell or Bash installer below.
 4. Restart Codex Desktop.
-5. Invoke `$dev-rigor-stack` for the complete flow or a namespaced standalone skill for one gate.
-
-## Install For Codex Desktop
+5. Invoke `$dev-rigor-stack` or any standalone entrypoint.
 
 PowerShell:
 
@@ -62,86 +102,61 @@ Bash/Git Bash:
 ./install.sh
 ```
 
-Default destination is:
-
-```text
-%USERPROFILE%\.codex\skills
-```
-
-Set `CODEX_HOME` to install into a different Codex home, or pass `-Target` /
-`--target`.
-
-The installer replaces these nineteen skill folders in the target. Existing copies are backed
-up under `.backup\codex-dev-rigor-stack\<timestamp>\` unless `-NoBackup` /
-`--no-backup` is used.
-
-Restart Codex Desktop after installing so the new skill metadata is loaded.
+The default destination is `~/.codex/skills`. Existing copies are backed up under
+`.backup/codex-dev-rigor-stack/<timestamp>/` before replacement.
 
 ## Usage Examples
 
 ```text
 $dev-rigor-stack implement and prove this feature through the full stack
+$dev-rigor-stack-build fix this bug test-first
+$dev-rigor-stack-proof-gate try to disprove that this fix is production-ready
 $dev-rigor-stack-walkthrough audit the published Windows installer as a newcomer
 $dev-rigor-stack-visitor-audit inspect every public release surface and link
-$dev-rigor-stack-proof-gate refute the claim that this fix is production-ready
+$dev-rigor-stack-docs-gate verify every public claim and documentation deliverable
 ```
 
-Each standalone entrypoint emits or consumes the shared evidence artifacts documented in
-`skills/dev-rigor-stack/references/artifact-contracts.md`. The coordinator can route the
-same work across PLAN, BUILD, VERIFY, REVIEW, MERGE, documentation, and release closure.
+The [full user manual](docs/MANUAL.md) covers installation, choosing a skill, operating
+the unit/release flows, evidence artifacts, updates, backups, restore, uninstall,
+troubleshooting, portability, and the exact Codex hook status.
 
 ## Configuration
 
 - Set `CODEX_HOME` to change the Codex home used by the installers.
-- Pass `-Target <path>` to `install.ps1` or `--target <path>` to `install.sh` to select an
-  exact skills directory.
-- Existing installed skills are backed up by default. Use `-NoBackup` or `--no-backup`
-  only when that recovery copy is intentionally unnecessary.
-- The stack's release default is strict-zero across Blocker, Critical, Major, Minor, and
-  Nit. A project may declare a different threshold before a run, but cannot silently
-  weaken it after findings exist.
+- Pass `-Target <path>` to `install.ps1` or `--target <path>` to `install.sh` for an exact
+  skills directory.
+- Use `-NoBackup` or `--no-backup` only when you intentionally do not want recovery copies.
+- A project may declare a non-default severity threshold before a run, but it cannot lower
+  the threshold after findings exist. The stack default is strict-zero.
+
+## Versioning
+
+`1.0.0` is the version of this **Codex bundle**. Immediately before it, this repository was
+`0.2.0`. The imported development discipline has its own history and was `1.5.1` when the
+Codex bundle became 1.0.0. Keeping both numbers visible prevents a packaging release from
+being confused with a methodology downgrade.
 
 ## Strength-Preservation Contract
 
-This repository treats capability preservation as a release invariant. CI exercises the
-strong Visitor Audit checker, checks Walkthrough's blind-first/installer/UI/lifecycle
-requirements, verifies every canonical entrypoint is installed and routed, rejects missing
-handoffs or strict-zero wiring, and keeps compatibility skills present. Refactoring for
-brevity is never a reason to remove a behavior.
-
-At a public release, candidate evidence is not final evidence. Closure requires a live
-Visitor Audit followed by a full published Walkthrough that begins at the public front
-door, downloads the finished installer, installs it in a verified clean machine, and
-accounts for every in-scope screen, control, distinct path, visual state, update, repair,
-and uninstall operation.
+Refactoring for brevity is never a reason to remove behavior. CI checks the complete
+19-entrypoint manifest and routing, Walkthrough’s blind-first/installer/UI/lifecycle
+requirements, Visitor Audit’s strong mechanics, shared handoffs, strict-zero wiring,
+installer parity, and portable-export parity. Missing required siblings make a gate
+invalid; they do not silently trigger a weaker approximation.
 
 ## Codex Hook Status
 
-The upstream Claude plugin includes three always-on hooks:
-
-- session reflex
-- prompt router
-- grounding check
-
-Those are intentionally not installed here yet. Codex Desktop has different hook names,
-configuration format, and event payloads. The portable behavior lives in the skills
-themselves; hook enforcement should be ported as a separate Codex-native layer after its
-payloads are verified against the active Codex build.
-
-## Upstream
-
-This derivative tracks:
-
-```text
-https://github.com/scottconverse/dev-rigor-stack
-```
-
-Keep `upstream` as the fetch-only source for new skill content, then re-run the Codex
-installer and validation before replacing local skills.
+This repository retains the three upstream Claude hook implementations—session reflex,
+prompt router, and grounding check—for provenance and future verified porting. The Codex
+installer **does not wire or activate them** because Codex and Claude hook events and
+payloads differ. The full pull-based discipline lives in the installed skills.
 
 ## Project Links
 
+- [Full user manual](docs/MANUAL.md)
+- [Technical architecture](docs/ARCHITECTURE.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security policy](SECURITY.md)
 - [Changelog](CHANGELOG.md)
 - [MIT License](LICENSE)
+- [Upstream methodology repository](https://github.com/scottconverse/dev-rigor-stack)

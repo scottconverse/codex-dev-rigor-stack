@@ -105,6 +105,75 @@ class StackContractTests(unittest.TestCase):
             self.assertIn(f"${skill}", text, f"coordinator does not route {skill}")
         self.assertIn("0/0/0/0/0", text)
 
+    def test_current_release_is_identified_on_every_document_surface(self) -> None:
+        manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["version"], "1.0.0")
+        surfaces = {
+            "README": ROOT / "README.md",
+            "manual": ROOT / "docs" / "MANUAL.md",
+            "architecture": ROOT / "docs" / "ARCHITECTURE.md",
+            "landing": ROOT / "docs" / "index.html",
+            "security": ROOT / "SECURITY.md",
+            "contributing": ROOT / "CONTRIBUTING.md",
+            "changelog": ROOT / "CHANGELOG.md",
+            "PowerShell installer": ROOT / "install.ps1",
+            "shell installer": ROOT / "install.sh",
+            "PowerShell exporter": ROOT / "export" / "export-portable.ps1",
+            "shell exporter": ROOT / "export" / "export-portable.sh",
+        }
+        for name, path in surfaces.items():
+            with self.subTest(surface=name):
+                self.assertIn("1.0.0", path.read_text(encoding="utf-8"))
+
+    def test_deliverable_docs_are_complete_and_two_voice(self) -> None:
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        manual = (ROOT / "docs" / "MANUAL.md").read_text(encoding="utf-8")
+        architecture = (ROOT / "docs" / "ARCHITECTURE.md").read_text(encoding="utf-8")
+        landing = (ROOT / "docs" / "index.html").read_text(encoding="utf-8")
+
+        self.assert_terms(readme, "plain english", "technical", "user manual", "architecture")
+        self.assert_terms(
+            manual,
+            "part 1 — plain english",
+            "part 2 — technical manual",
+            "install",
+            "update",
+            "backup",
+            "restore",
+            "uninstall",
+            "troubleshooting",
+            "all 19",
+            "session and machine continuity",
+            "evaluator-owned exits",
+            "owner vs coordinator",
+            "fan-out and cost",
+            "audit-lite / audit-team vs gauntletgate",
+            "retained upstream hook sources",
+            "degrade and invalid states",
+        )
+        self.assertGreaterEqual(architecture.count("```mermaid"), 3)
+        self.assert_terms(
+            architecture,
+            "system context",
+            "delivery state machine",
+            "evidence and handoff architecture",
+            "deployment architecture",
+        )
+        self.assert_terms(
+            landing,
+            "plain english",
+            "technical architecture",
+            "all 19 entrypoints",
+            "version 1.0.0",
+            "read the full user manual",
+        )
+        manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
+        for entry in manifest["skills"]:
+            self.assertIn(entry["name"], landing, f"landing omits {entry['name']}")
+        for target in ("plain-english", "technical-architecture", "entrypoints", "install"):
+            self.assertIn(f'id="{target}"', landing)
+            self.assertIn(f'href="#{target}"', landing)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
