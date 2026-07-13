@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 
-// Revoke only the six installed Dev Rigor hook hashes through Codex app-server.
+// Revoke only the seven installed Dev Rigor hook hashes through Codex app-server.
 // Run this before removing hooks.json definitions or the managed runtime.
 
 const { spawn } = require('child_process');
@@ -13,6 +13,7 @@ const specifications = {
   sessionStart: ['dev-rigor-activate.js', '', 'startup|resume|clear|compact', 'Loading active dev-rigor reflex'],
   subagentStart: ['dev-rigor-activate.js', ' subagent', '', 'Loading active dev-rigor reflex'],
   userPromptSubmit: ['dev-rigor-router.js', '', '', 'Routing dev-rigor protocol'],
+  preToolUse: ['dev-rigor-ground.js', ' snapshot', '^(Bash|PowerShell|apply_patch|Edit|Write|MultiEdit|NotebookEdit|mcp__.*(preview|browser|chrome|computer|screenshot|navigate|snapshot|exec|run|test|shell|terminal|jupyter|notebook|ide|eval).*)$', 'Snapshotting dev-rigor worktree state'],
   postToolUse: ['dev-rigor-ground.js', ' record', '^(Bash|PowerShell|apply_patch|Edit|Write|MultiEdit|NotebookEdit|mcp__.*(preview|browser|chrome|computer|screenshot|navigate|snapshot|exec|run|test|shell|terminal|jupyter|notebook|ide|eval).*)$', ''],
   stop: ['dev-rigor-ground.js', ' check', '', 'Checking dev-rigor evidence'],
   subagentStop: ['dev-rigor-ground.js', ' check', '', 'Checking subagent evidence'],
@@ -69,7 +70,7 @@ function selfTest() {
   }));
   hooks.push({ ...hooks[0], key: 'foreign-lookalike', eventName: 'unknownEvent', command: "node -e \"Dev Rigor hook integrity check failed m._compile(b.toString(),f)\"" });
   const selected = selectOwned(hooks, path.resolve('C:\\profile\\hooks.json').toLowerCase(), expected);
-  if (selected.length !== 6 || selected.some(hook => hook.key === 'foreign-lookalike')) throw new Error('exact ownership selection accepted a foreign lookalike');
+  if (selected.length !== Object.keys(specifications).length || selected.some(hook => hook.key === 'foreign-lookalike')) throw new Error('exact ownership selection accepted a foreign lookalike');
   process.stdout.write('revoke-trust self-test: owned state removed and foreign state preserved\n');
 }
 
@@ -93,21 +94,26 @@ function locateDesktopCodex() {
   return found.length ? found[0].candidate : null;
 }
 
-function launchCodex() {
+function codexEnvironment(codexHome, base = process.env) {
+  return { ...base, CODEX_HOME: path.resolve(codexHome) };
+}
+
+function launchCodex(codexHome) {
   const forced = process.env.DEV_RIGOR_CODEX_EXE;
   const executable = forced || locateDesktopCodex();
+  const env = codexEnvironment(codexHome);
   if (executable && path.extname(executable).toLowerCase() === '.exe') {
-    return spawn(executable, ['app-server', '--listen', 'stdio://'], { stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
+    return spawn(executable, ['app-server', '--listen', 'stdio://'], { stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true, env });
   }
   if (process.platform === 'win32') {
     const commandLine = executable
       ? `""${executable.replace(/"/g, '""')}" app-server --listen stdio://"`
       : 'codex app-server --listen stdio://';
     return spawn(process.env.ComSpec || 'cmd.exe', ['/d', '/s', '/c', commandLine], {
-      stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true,
+      stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true, env,
     });
   }
-  return spawn(executable || 'codex', ['app-server', '--listen', 'stdio://'], { stdio: ['pipe', 'pipe', 'pipe'] });
+  return spawn(executable || 'codex', ['app-server', '--listen', 'stdio://'], { stdio: ['pipe', 'pipe', 'pipe'], env });
 }
 
 async function main() {
@@ -116,7 +122,7 @@ async function main() {
   const cwd = path.resolve(process.argv[3] || process.cwd());
   const expectedSource = path.resolve(codexHome, 'hooks.json').toLowerCase();
   const expected = expectedHooks(codexHome);
-  const child = launchCodex();
+  const child = launchCodex(codexHome);
   let buffer = '';
   let stderr = '';
   let nextId = 1;
@@ -162,7 +168,7 @@ async function main() {
     const entry = listed && listed.data && listed.data[0];
     if (!entry || (entry.errors || []).length) throw new Error(`Codex could not list hooks: ${JSON.stringify(entry && entry.errors)}`);
     const owned = selectOwned(entry.hooks, expectedSource, expected);
-    if (owned.length !== 6 || Object.keys(specifications).some(eventName => owned.filter(hook => hook.eventName === eventName).length !== 1)) {
+    if (owned.length !== Object.keys(specifications).length || Object.keys(specifications).some(eventName => owned.filter(hook => hook.eventName === eventName).length !== 1)) {
       throw new Error(`Expected one exact installed Dev Rigor hook for each lifecycle event before revocation; found ${owned.length}.`);
     }
 
@@ -184,7 +190,7 @@ async function main() {
     for (const [key, value] of Object.entries(remaining)) {
       if (JSON.stringify(verifiedState[key]) !== JSON.stringify(value)) throw new Error(`Foreign trust state changed: ${key}`);
     }
-    process.stdout.write(`Revoked ${owned.length}/6 Dev Rigor trusted hashes; preserved ${Object.keys(remaining).length} unrelated trust entries.\n`);
+    process.stdout.write(`Revoked ${owned.length}/${Object.keys(specifications).length} Dev Rigor trusted hashes; preserved ${Object.keys(remaining).length} unrelated trust entries.\n`);
   } finally {
     child.kill();
   }
@@ -194,4 +200,4 @@ if (require.main === module) {
   main().catch(error => { process.stderr.write(`Trust revocation failed: ${error.message}\n`); process.exitCode = 1; });
 }
 
-module.exports = { pruneState, selectOwned, locateDesktopCodex, launchCodex };
+module.exports = { pruneState, selectOwned, locateDesktopCodex, codexEnvironment, launchCodex };

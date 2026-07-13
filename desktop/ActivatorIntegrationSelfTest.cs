@@ -26,7 +26,7 @@ namespace DevRigorStack.Desktop
                     HookListResult listed = first.ListHooks(cwd, 2);
                     reviewed = OwnershipRules.FilterOwned(listed.Hooks, home);
                     Check(listed.Errors.Count == 0, "Codex returned hook errors before trust.");
-                    Check(OwnershipRules.IsExactOwnedSet(reviewed), "The exact six-hook production set was not listed.");
+                    Check(OwnershipRules.IsExactOwnedSet(reviewed), "The exact seven-hook production set was not listed.");
                     first.TrustHooks(reviewed);
                 }
 
@@ -37,12 +37,12 @@ namespace DevRigorStack.Desktop
                     HookListResult relisted = second.ListHooks(cwd, 2);
                     List<HookRecord> verified = OwnershipRules.FilterOwned(relisted.Hooks, home);
                     Check(relisted.Errors.Count == 0, "Codex returned hook errors after trust.");
-                    Check(OwnershipRules.IsExactOwnedSet(verified), "The exact six-hook set changed after trust.");
+                    Check(OwnershipRules.IsExactOwnedSet(verified), "The exact seven-hook set changed after trust.");
                     Check(verified.All(h => String.Equals(h.TrustStatus, "trusted", StringComparison.OrdinalIgnoreCase)),
                         "At least one hook was not trusted in the fresh app-server process.");
                 }
 
-                Console.WriteLine("Activator integration self-test: 6/6 trusted in a fresh app-server process");
+                Console.WriteLine("Activator integration self-test: 7/7 trusted in a fresh app-server process");
                 return 0;
             }
             catch (Exception error)

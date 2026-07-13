@@ -70,20 +70,22 @@ flowchart TB
     Events["Codex lifecycle events"]
     Start["SessionStart / SubagentStart"]
     Prompt["UserPromptSubmit"]
-    Tools["PostToolUse"]
+    Tools["PreToolUse / PostToolUse"]
     Stops["Stop / SubagentStop"]
     Core["Compact core injector\nsubstantive proof + owner controls"]
     Router["Rigor router\ncomplete discipline + task mode"]
     Identity["Authoritative Codex identity\ntask + turn + parent association"]
-    Ledger["Privacy-bounded evidence state\nE/G/I/R/T/B/F/K/U/C"]
+    Snapshot["Invocation-bound worktree fingerprints\nno raw paths or commands"]
+    Ledger["Privacy-bounded evidence state\nE/G/I/R/T/B/F/K/U/W/C"]
     Gate["Substantive evidence gate\ncurrent edit set proved?"]
     Debt["Task proof debt\nunresolved affected edit sets"]
+    Status["DevRigorSTATUS\ncheckpoint · blocks · debt · child aggregate · observed delivery"]
     Continue["One continuation prompt\nrun the narrowest qualifying check"]
     Coordinator["Coordinator + 19 standalone entrypoints"]
 
     Events --> Start --> Core --> Coordinator
     Events --> Prompt --> Router --> Coordinator
-    Events --> Tools --> Identity --> Ledger
+    Events --> Tools --> Identity --> Snapshot --> Ledger
     Events --> Stops --> Identity
     Identity --> Gate
     Ledger --> Gate
@@ -91,10 +93,16 @@ flowchart TB
     Gate -->|first unproved stop in ON| Continue --> Coordinator
     Gate -->|circuit release| Debt
     Debt -->|same or proved superseding edit set| Gate
+    Debt --> Status --> Coordinator
 ```
 
-`Stop` and `SubagentStop` are the authoritative mechanical boundary. PostToolUse and Stop
-share turn evidence only when Codex supplies the exact task and turn identity. The task
+`Stop` and `SubagentStop` are the authoritative completion boundary. `PreToolUse` snapshots
+privacy-bounded Git worktree fingerprints, and `PostToolUse` compares the same
+`tool_use_id` after execution. This catches opaque shell-authored changes—including tools
+that do not report changed files—without persisting paths, command text, arguments, or
+secrets. If the pre-observation is missing or incomplete, an unknown command cannot become
+proof and conservatively re-arms proof debt. Known read-only commands remain inspection.
+Tool and Stop evidence is shared only when Codex supplies exact task and turn identity. The task
 record separately carries `ON`, `WARN`, or `OFF`, dirty edit identities, typed proofs, and
 unresolved debt. Exact owner commands affect only that task; authoritatively associated
 subagents read the parent mode live, while an unbound subagent visibly fails open in
@@ -105,20 +113,23 @@ inspection (`I`), run/render (`R`), test (`T`), build (`B`), and explicit/struct
 failure (`F`). Result precedence is explicit policy/tool failure, structured test/build
 result, process exit status, then bounded text inference only when structured evidence is
 absent. Raw sensitive command arguments are not persisted. Correlation tokens bind task,
-turn, edit set, evidence class, and result; they detect stale/mismatched evidence but are
+turn, edit set, evidence class, the exact execution fingerprint, target checkpoint, and
+result; they detect stale/mismatched evidence but are
 not represented as a security boundary against a process that can read task state.
 
 In `ON`, an unproved important edit can cause one substantive block. A retry with no new
 tool event is released to prevent response-discard loops, records `U: released-unproved`,
 and leaves release-visible proof debt rather than a checkpoint. Missing/invalid receipt
-formatting after real proof is a warning, never a destructive block. Debt clears only
+formatting after real proof is a visible `systemMessage` warning, never a destructive block. Debt clears only
 when evidence is bound to the same affected edit set or a proved superseding set containing
 every indebted edit. Missing identity or unwritable state fails open with a once-per-state
-visible warning.
+visible warning. `DevRigorSTATUS` reports local and associated-subagent debt IDs, checkpoint
+generation, substantive block count, and observed event counts. It deliberately says that
+the ledger does not establish hook trust; configuration trust belongs to Codex's hook review.
 Codex requires users to review and trust non-managed hook definitions. Each command binds
 its definition to the runtime script SHA-256, verifies a single read buffer, and compiles
 that same buffer; it never hashes one read and executes a second. On Windows, the
-graphical Desktop activator supplies that missing client surface: it lists the exact six
+graphical Desktop activator supplies that missing client surface: it lists the exact seven
 owned definitions, requires human confirmation, writes only their current hashes through
 Codex's app server, and re-lists them before it can report success. Installed but
 untrusted hooks are not active enforcement.
@@ -223,7 +234,7 @@ flowchart LR
     Backup["target/.backup/.../<timestamp>"]
     Home["CODEX_HOME/skills\n19 entrypoints"]
     Runtime["CODEX_HOME/dev-rigor-stack\nactive Node hook runtime + state"]
-    HookConfig["CODEX_HOME/hooks.json\n6 merged lifecycle events"]
+    HookConfig["CODEX_HOME/hooks.json\n7 merged lifecycle events"]
     Activator["Windows graphical activator\nreview 6 commands + current hashes"]
     AppServer["Codex app server\nhooks/list + config/batchWrite + hooks/list"]
     Trust["Codex hash-bound trust\nrequired before execution"]

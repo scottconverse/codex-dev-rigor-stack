@@ -45,8 +45,9 @@ every product screen/control/path/state, interface-to-function wiring, accessibi
 update, repair, uninstall, and a numerical coverage ledger.
 
 An active Codex lifecycle layer injects a compact universal core at session and subagent
-start and routes coding/release prompts to the complete matching discipline. PostToolUse
-records important edits, generated source changes, and typed execution evidence in
+start and routes coding/release prompts to the complete matching discipline. PreToolUse
+and PostToolUse compare invocation-bound worktree fingerprints and record important edits,
+generated source changes, and typed execution evidence in
 task-scoped state keyed by Codex's authoritative identities. Stop/SubagentStop may block
 once only when the current coding turn lacks substantive proof. It never destroys a
 proved report merely because receipt formatting is absent or invalid. A circuit release
@@ -161,7 +162,7 @@ still inferred turns from prompt events. Version 1.6.3 replaced that model with 
 Codex turn identity and a hard retry circuit breaker. Version 1.7.0 keeps that isolation
 and redesigns enforcement around task-scoped modes, typed substantive evidence,
 non-destructive receipt warnings, persistent proof debt, safe compaction/subagent
-inheritance, and transactional migration/uninstall. Versions 1.6.0–1.6.2 are unsupported.
+inheritance, and transactional migration/uninstall. Versions 1.6.0–1.6.3 are unsupported.
 
 ## Strength-Preservation Contract
 
@@ -175,17 +176,18 @@ invalid; they do not silently trigger a weaker approximation.
 
 The installer transactionally copies a Codex-native hook runtime to `CODEX_HOME/dev-rigor-stack` and
 merges owned entries into `CODEX_HOME/hooks.json` without removing foreign hooks. Active
-events are `SessionStart`, `SubagentStart`, `UserPromptSubmit`, `PostToolUse`, `Stop`, and
+events are `SessionStart`, `SubagentStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `Stop`, and
 `SubagentStop`. Codex deliberately requires review/trust for non-managed command hooks;
 until the user approves the exact definitions in the graphical activator (or another
 client's supported hook-review UI), they are installed but not enforced. The activator
 then performs a second `hooks/list` read and reports success only when Codex returns all
-six as trusted. Codex trust covers the definitions; the inline content guards bind those
+seven as trusted. Codex trust covers the definitions; the inline content guards bind those
 definitions to the exact runtime bytes they execute.
 
 Discovery and trust prove configuration, not event delivery. After a Codex client update,
-run a live hook smoke test and confirm a coding turn creates edit, execution, and checkpoint
-events in one turn-scoped ledger. A client that does not emit PostToolUse for its write and
+run a live hook smoke test and confirm a coding turn creates pre-tool fingerprint, edit,
+execution, and checkpoint events in one turn-scoped ledger. A client that does not emit
+PreToolUse and PostToolUse as an invocation-bound pair for its write and
 execution tools is not fully enforced and must not be represented as such.
 
 The original Claude implementation remains under `plugin/` only as provenance. It is not

@@ -3,6 +3,7 @@
 
 const assert = require('assert');
 const { execFileSync, execSync, spawn, spawnSync } = require('child_process');
+const crypto = require('crypto');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -13,6 +14,7 @@ const ACTIVATE = path.join(HOOKS, 'dev-rigor-activate.js');
 const ROUTER = path.join(HOOKS, 'dev-rigor-router.js');
 const GROUND = path.join(HOOKS, 'dev-rigor-ground.js');
 const WIRE = path.join(HOOKS, 'wire-hooks.js');
+const REVOKER = require(path.join(HOOKS, 'revoke-trust.js'));
 
 for (const required of [ACTIVATE, ROUTER, GROUND, WIRE, path.join(CODEX, 'dev-rigor-reflex.md')]) {
   assert.ok(fs.existsSync(required), `missing active Codex hook artifact: ${required}`);
@@ -20,6 +22,10 @@ for (const required of [ACTIVATE, ROUTER, GROUND, WIRE, path.join(CODEX, 'dev-ri
 
 const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'codex-dev-rigor-hooks-'));
 let serial = 0;
+let toolSerial = 0;
+const unitRepo = path.join(tmpRoot, 'unit-repo');
+fs.mkdirSync(unitRepo, { recursive: true });
+execFileSync('git', ['init', '--quiet'], { cwd: unitRepo });
 
 function freshHome() {
   const dir = path.join(tmpRoot, `home-${++serial}`);
@@ -54,10 +60,50 @@ function runHookAsync(script, input, home, args = []) {
 }
 
 function record(home, session, toolName, toolInput, toolResponse = {}, turn = 'turn-1') {
+  const toolUseId = `unit-tool-${++toolSerial}`;
+  const cwd = toolInput && typeof toolInput.cwd === 'string' ? toolInput.cwd : unitRepo;
+  if (!/^(?:apply_patch|Edit|Write|MultiEdit|NotebookEdit)$/i.test(toolName)) {
+    runHook(GROUND, {
+      session_id: session,
+      turn_id: turn,
+      hook_event_name: 'PreToolUse',
+      tool_use_id: toolUseId,
+      cwd,
+      tool_name: toolName,
+      tool_input: toolInput,
+    }, home, ['snapshot']);
+  }
   return runHook(GROUND, {
     session_id: session,
     turn_id: turn,
     hook_event_name: 'PostToolUse',
+    tool_use_id: toolUseId,
+    cwd,
+    tool_name: toolName,
+    tool_input: toolInput,
+    tool_response: toolResponse,
+  }, home, ['record']);
+}
+
+function preTool(home, session, toolName, toolInput, cwd, toolUseId = 'tool-1', turn = 'turn-1') {
+  return runHook(GROUND, {
+    session_id: session,
+    turn_id: turn,
+    hook_event_name: 'PreToolUse',
+    tool_use_id: toolUseId,
+    cwd,
+    tool_name: toolName,
+    tool_input: toolInput,
+  }, home, ['snapshot']);
+}
+
+function postTool(home, session, toolName, toolInput, toolResponse, cwd, toolUseId = 'tool-1', turn = 'turn-1') {
+  return runHook(GROUND, {
+    session_id: session,
+    turn_id: turn,
+    hook_event_name: 'PostToolUse',
+    tool_use_id: toolUseId,
+    cwd,
     tool_name: toolName,
     tool_input: toolInput,
     tool_response: toolResponse,
@@ -72,6 +118,12 @@ function stop(home, session, message = '', active = false, mode = 'stop', turn =
     stop_hook_active: active,
     last_assistant_message: message,
   }, home, ['check']);
+}
+
+function expectSystemMessage(output, pattern) {
+  const parsed = JSON.parse(output);
+  assert.match(parsed.systemMessage, pattern);
+  return parsed;
 }
 
 function prompt(home, session, message, turn = 'turn-1') {
@@ -100,6 +152,11 @@ function taskState(home) {
   const files = stateFiles(home, 'task-v4-');
   assert.strictEqual(files.length, 1, 'expected exactly one task state');
   return JSON.parse(fs.readFileSync(path.join(state, files[0]), 'utf8'));
+}
+
+function taskStateForSession(home, session) {
+  const key = crypto.createHash('sha256').update(session).update('\0').digest('hex');
+  return JSON.parse(fs.readFileSync(path.join(home, 'dev-rigor-stack', 'state', `task-v4-${key}.json`), 'utf8'));
 }
 
 const receipt = 'proved: pytest -q - 12 passed · blast: medium · skipped: none';
@@ -240,7 +297,7 @@ test('ground: a substantive block cannot loop and leaves visible unresolved proo
   record(home, 'ground-retry', 'apply_patch', { command: '*** Update File: src/app.ts' });
   const blocked = JSON.parse(stop(home, 'ground-retry', 'All done.'));
   assert.strictEqual(blocked.decision, 'block');
-  assert.strictEqual(stop(home, 'ground-retry', 'The hook requested a receipt.', true).trim(), '');
+  expectSystemMessage(stop(home, 'ground-retry', 'The hook requested a receipt.', true), /proof debt remains unresolved/i);
   assert.ok(stateLines(home).some((line) => line.startsWith('U ')), 'circuit release must record unresolved proof');
   const status = JSON.parse(prompt(home, 'ground-retry', 'DevRigorSTATUS'));
   assert.match(status.hookSpecificOutput.additionalContext, /unresolved proof:\s*yes/i);
@@ -250,7 +307,7 @@ test('ground: proof resolves debt only for the same or a verified superseding ed
   const home = freshHome();
   record(home, 'ground-debt-superset', 'apply_patch', { command: '*** Update File: src/app.ts' }, {}, 'turn-debt');
   assert.strictEqual(JSON.parse(stop(home, 'ground-debt-superset', 'Done.', false, 'stop', 'turn-debt')).decision, 'block');
-  assert.strictEqual(stop(home, 'ground-debt-superset', 'Released after the one-block circuit.', true, 'stop', 'turn-debt').trim(), '');
+  expectSystemMessage(stop(home, 'ground-debt-superset', 'Released after the one-block circuit.', true, 'stop', 'turn-debt'), /proof debt remains unresolved/i);
   assert.strictEqual(taskState(home).unresolved.length, 1);
 
   record(home, 'ground-debt-superset', 'apply_patch', { command: '*** Update File: src/helper.ts' }, {}, 'turn-proof');
@@ -264,7 +321,7 @@ test('ground: the same turn is blocked at most once when Codex omits stop_hook_a
   record(home, 'ground-circuit', 'apply_patch', { command: '*** Update File: src/app.ts' });
   const first = JSON.parse(stop(home, 'ground-circuit', 'All done.'));
   assert.strictEqual(first.decision, 'block');
-  assert.strictEqual(stop(home, 'ground-circuit', 'Explanation after hook feedback.').trim(), '');
+  expectSystemMessage(stop(home, 'ground-circuit', 'Explanation after hook feedback.'), /proof debt remains unresolved/i);
   assert.strictEqual(stop(home, 'ground-circuit', 'Later conversation in the same turn.').trim(), '');
 });
 
@@ -273,7 +330,7 @@ test('ground: stop_hook_active clears a prior block instead of leaving poison st
   record(home, 'ground-active-clear', 'apply_patch', { command: '*** Update File: src/app.ts' });
   const first = JSON.parse(stop(home, 'ground-active-clear', receipt));
   assert.strictEqual(first.decision, 'block');
-  assert.strictEqual(stop(home, 'ground-active-clear', 'Hook continuation.', true).trim(), '');
+  expectSystemMessage(stop(home, 'ground-active-clear', 'Hook continuation.', true), /proof debt remains unresolved/i);
   assert.strictEqual(stop(home, 'ground-active-clear', 'Ordinary follow-up in the same turn.').trim(), '');
 });
 
@@ -292,8 +349,10 @@ test('ground: proof after a block can resolve the current turn without a second 
   const first = JSON.parse(stop(home, 'ground-rearm-after-block', receipt));
   assert.strictEqual(first.decision, 'block');
   record(home, 'ground-rearm-after-block', 'Bash', { command: 'npm test' }, { exit_code: 0 });
-  assert.strictEqual(stop(home, 'ground-rearm-after-block', 'Done without a receipt.').trim(), '');
+  expectSystemMessage(stop(home, 'ground-rearm-after-block', 'Done without a receipt.', true), /optional evidence receipt was missing/i);
   assert.ok(stateLines(home).some((line) => line.startsWith('W ') && /missing-receipt/.test(line)));
+  assert.ok(stateLines(home).some((line) => line.startsWith('C ')), 'post-block proof did not checkpoint under stop_hook_active');
+  assert.strictEqual(taskState(home).unresolved.length, 0, 'post-block proof did not clear matching debt');
 });
 
 test('ground: inspection or another unproved edit after a block cannot cause a second block', () => {
@@ -302,7 +361,7 @@ test('ground: inspection or another unproved edit after a block cannot cause a s
   assert.strictEqual(JSON.parse(stop(home, 'ground-one-block-tools', 'Done.')).decision, 'block');
   record(home, 'ground-one-block-tools', 'Bash', { command: 'git status --short' }, { exit_code: 0 });
   record(home, 'ground-one-block-tools', 'apply_patch', { command: '*** Update File: src/helper.ts' });
-  assert.strictEqual(stop(home, 'ground-one-block-tools', 'Still unproved.').trim(), '');
+  expectSystemMessage(stop(home, 'ground-one-block-tools', 'Still unproved.'), /proof debt remains unresolved/i);
   const lines = stateLines(home);
   assert.strictEqual(lines.filter((line) => line.startsWith('K ')).length, 1);
   assert.ok(lines.some((line) => line.startsWith('U ')), 'the non-destructive release must remain visible');
@@ -498,7 +557,7 @@ test('ground: successful qualifying proof without the evidence receipt is non-de
   const home = freshHome();
   record(home, 'ground-4', 'apply_patch', { command: '*** Update File: src/main.rs' });
   record(home, 'ground-4', 'Bash', { command: 'cargo test' }, { exit_code: 0 });
-  assert.strictEqual(stop(home, 'ground-4', 'All done.').trim(), '');
+  expectSystemMessage(stop(home, 'ground-4', 'All done.'), /optional evidence receipt was missing/i);
   const lines = stateLines(home);
   assert.ok(lines.some((line) => line.startsWith('T ')));
   assert.ok(lines.some((line) => line.startsWith('W ') && /missing-receipt/.test(line)));
@@ -519,6 +578,58 @@ test('ground: inspection commands cannot satisfy proof', () => {
   const parsed = JSON.parse(stop(home, 'ground-inspection', receipt));
   assert.strictEqual(parsed.decision, 'block');
   assert.ok(stateLines(home).some((line) => line.startsWith('I ')));
+});
+
+test('ground: harmless and unknown shell commands cannot satisfy substantive proof', () => {
+  const commands = ['echo hello', 'pwd', 'Get-Date', 'git fetch', 'sleep 0', 'custom-status-probe --quiet'];
+  for (const [index, command] of commands.entries()) {
+    const home = freshHome();
+    const session = `ground-harmless-${index}`;
+    record(home, session, 'apply_patch', { command: '*** Update File: src/app.ts' });
+    record(home, session, index === 2 ? 'PowerShell' : 'Bash', { command }, { exit_code: 0 });
+    const parsed = JSON.parse(stop(home, session, receipt));
+    assert.strictEqual(parsed.decision, 'block', `${command} incorrectly satisfied proof`);
+    assert.ok(stateLines(home).some((line) => line.startsWith('I ')), `${command} was not classified as non-proof`);
+    assert.ok(!stateLines(home).some((line) => /^[RTB] /.test(line)), `${command} emitted qualifying evidence`);
+  }
+});
+
+test('ground: PreToolUse/PostToolUse detects an opaque shell write to a tracked source file', () => {
+  const home = freshHome();
+  const repo = path.join(tmpRoot, `shell-write-repo-${serial}`);
+  fs.mkdirSync(path.join(repo, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(repo, 'src', 'app.ts'), 'export const value = 1;\n');
+  execFileSync('git', ['init', '--quiet'], { cwd: repo });
+  execFileSync('git', ['config', 'user.email', 'dev-rigor@example.invalid'], { cwd: repo });
+  execFileSync('git', ['config', 'user.name', 'Dev Rigor Test'], { cwd: repo });
+  execFileSync('git', ['add', '.'], { cwd: repo });
+  execFileSync('git', ['commit', '--quiet', '-m', 'fixture'], { cwd: repo });
+
+  const command = `python -c "open('src/app.ts','w').write('export const value = 2;\\n')"`;
+  preTool(home, 'ground-opaque-write', 'Bash', { command }, repo, 'opaque-write');
+  execFileSync(process.execPath, ['-e', "require('fs').writeFileSync('src/app.ts','export const value = 2;\\n')"], { cwd: repo });
+  postTool(home, 'ground-opaque-write', 'Bash', { command }, { exit_code: 0 }, repo, 'opaque-write');
+
+  const parsed = JSON.parse(stop(home, 'ground-opaque-write', receipt));
+  assert.strictEqual(parsed.decision, 'block');
+  assert.ok(stateLines(home).some((line) => line.startsWith('G ')), 'tracked shell change was not recorded');
+});
+
+test('ground: missing PreToolUse observation fails safe for an unknown shell execution', () => {
+  const home = freshHome();
+  runHook(GROUND, {
+    session_id: 'ground-missing-pre',
+    turn_id: 'turn-missing-pre',
+    hook_event_name: 'PostToolUse',
+    tool_use_id: 'missing-pre-tool',
+    cwd: unitRepo,
+    tool_name: 'Bash',
+    tool_input: { command: 'custom-generator --opaque' },
+    tool_response: { exit_code: 0 },
+  }, home, ['record']);
+  const parsed = JSON.parse(stop(home, 'ground-missing-pre', receipt, false, 'stop', 'turn-missing-pre'));
+  assert.strictEqual(parsed.decision, 'block');
+  assert.ok(stateLines(home).some((line) => line.startsWith('G ')), 'missing pre-observation did not re-arm proof');
 });
 
 test('ground: structured failing test result outranks process exit zero', () => {
@@ -595,8 +706,73 @@ test('ground: qualifying evidence token is bound to task, turn, edit set, and re
   const proof = stateLines(home).find((line) => line.startsWith('T '));
   assert.match(proof || '', /proof-id:[a-f0-9]{16}/);
   assert.match(proof || '', /edit-set:[a-f0-9]{16}/);
-  assert.strictEqual(stop(home, 'ground-token', 'proved: proof-id:deadbeefdeadbeef · blast: low · skipped: none', false, 'stop', 'turn-a').trim(), '');
+  expectSystemMessage(stop(home, 'ground-token', 'proved: proof-id:deadbeefdeadbeef · blast: low · skipped: none', false, 'stop', 'turn-a'), /proof-id did not match/i);
   assert.ok(stateLines(home).some((line) => line.startsWith('W ') && /invalid-proof-id/.test(line)));
+});
+
+test('ground: evidence tokens bind the exact execution fingerprint and target checkpoint', () => {
+  const home = freshHome();
+  record(home, 'ground-token-execution', 'apply_patch', { command: '*** Update File: src/app.ts' }, {}, 'turn-token');
+  record(home, 'ground-token-execution', 'Bash', { command: 'npm test -- --runInBand' }, { exit_code: 0 }, 'turn-token');
+  record(home, 'ground-token-execution', 'Bash', { command: 'npm test -- --coverage' }, { exit_code: 0 }, 'turn-token');
+  const proofs = stateLines(home).filter((line) => line.startsWith('T '));
+  assert.strictEqual(proofs.length, 2);
+  const tokens = proofs.map((line) => line.match(/proof-id:([a-f0-9]{16})/)[1]);
+  assert.notStrictEqual(tokens[0], tokens[1], 'different executions produced a reusable token');
+  for (const proof of proofs) {
+    assert.match(proof, /exec:[a-f0-9]{16}/);
+    assert.match(proof, /checkpoint:1\b/);
+  }
+});
+
+test('ground/router: warnings are visible and unresolved debt is injected into the next coding turn', () => {
+  const home = freshHome();
+  prompt(home, 'visible-warn', 'DevRigorWARN');
+  record(home, 'visible-warn', 'apply_patch', { command: '*** Update File: src/warn.ts' }, {}, 'turn-warn');
+  const warning = JSON.parse(stop(home, 'visible-warn', 'Done.', false, 'stop', 'turn-warn'));
+  assert.match(warning.systemMessage, /unproved edit/i);
+
+  prompt(home, 'visible-debt', 'DevRigorON');
+  record(home, 'visible-debt', 'apply_patch', { command: '*** Update File: src/debt.ts' }, {}, 'turn-debt');
+  assert.strictEqual(JSON.parse(stop(home, 'visible-debt', 'Done.', false, 'stop', 'turn-debt')).decision, 'block');
+  const released = JSON.parse(stop(home, 'visible-debt', 'Continuing after the block.', true, 'stop', 'turn-debt'));
+  assert.match(released.systemMessage, /released-unproved|proof debt/i);
+  const debtId = taskStateForSession(home, 'visible-debt').unresolved[0].id;
+  const next = JSON.parse(prompt(home, 'visible-debt', 'fix it', 'turn-next'));
+  assert.match(next.hookSpecificOutput.additionalContext, /DEV-RIGOR PROOF DEBT/i);
+  assert.match(next.hookSpecificOutput.additionalContext, new RegExp(debtId));
+});
+
+test('router: STATUS reports checkpoints, block count, debt identifiers, and observed delivery without overclaiming trust', () => {
+  const home = freshHome();
+  record(home, 'status-evidence', 'apply_patch', { command: '*** Update File: src/app.ts' }, {}, 'turn-status');
+  assert.strictEqual(JSON.parse(stop(home, 'status-evidence', 'Done.', false, 'stop', 'turn-status')).decision, 'block');
+  stop(home, 'status-evidence', 'Retry.', true, 'stop', 'turn-status');
+  const debtId = taskState(home).unresolved[0].id;
+  const status = JSON.parse(prompt(home, 'status-evidence', 'DevRigorSTATUS'));
+  const text = status.hookSpecificOutput.additionalContext;
+  assert.match(text, /checkpoint:\s*0/i);
+  assert.match(text, /substantive blocks:\s*1/i);
+  assert.match(text, new RegExp(debtId));
+  assert.match(text, /delivery observed:/i);
+  assert.match(text, /trust:\s*not established by task ledger/i);
+  assert.doesNotMatch(text, /hook delivery:\s*verified/i);
+});
+
+test('router: parent STATUS aggregates authoritatively associated subagent proof debt', () => {
+  const home = freshHome();
+  runHook(ACTIVATE, {
+    session_id: 'status-child', parent_session_id: 'status-parent', hook_event_name: 'SubagentStart', turn_id: 'turn-child',
+  }, home, ['subagent']);
+  record(home, 'status-child', 'apply_patch', { command: '*** Update File: src/child.ts' }, {}, 'turn-child');
+  assert.strictEqual(JSON.parse(stop(home, 'status-child', 'Done.', false, 'subagent', 'turn-child')).decision, 'block');
+  stop(home, 'status-child', 'Retry.', true, 'subagent', 'turn-child');
+  const childDebt = taskStateForSession(home, 'status-child').unresolved[0].id;
+  const status = JSON.parse(prompt(home, 'status-parent', 'DevRigorSTATUS'));
+  const text = status.hookSpecificOutput.additionalContext;
+  assert.match(text, /associated subagents:\s*1/i);
+  assert.match(text, /subagent unresolved proof:\s*1/i);
+  assert.match(text, new RegExp(childDebt));
 });
 
 test('router: exact task controls change only that task and quoted controls do not', () => {
@@ -620,7 +796,7 @@ test('ground: OFF and WARN are task-scoped while ON retains substantive enforcem
 
   prompt(home, 'mode-warn', 'DevRigorWARN');
   record(home, 'mode-warn', 'apply_patch', { command: '*** Update File: src/warn.ts' });
-  assert.strictEqual(stop(home, 'mode-warn', '').trim(), '');
+  expectSystemMessage(stop(home, 'mode-warn', ''), /unproved edit was released/i);
   assert.ok(stateLines(home).some((line) => line.startsWith('W ')));
 
   record(home, 'mode-on', 'apply_patch', { command: '*** Update File: src/on.ts' });
@@ -653,7 +829,7 @@ test('wire: creates every active Codex lifecycle event and is idempotent', () =>
   const home = freshHome();
   execFileSync('node', [WIRE, home, CODEX], { encoding: 'utf8' });
   const first = JSON.parse(fs.readFileSync(path.join(home, 'hooks.json'), 'utf8'));
-  for (const event of ['SessionStart', 'SubagentStart', 'UserPromptSubmit', 'PostToolUse', 'Stop', 'SubagentStop']) {
+  for (const event of ['SessionStart', 'SubagentStart', 'UserPromptSubmit', 'PreToolUse', 'PostToolUse', 'Stop', 'SubagentStop']) {
     assert.ok(first.hooks[event]?.length, `missing hooks.${event}`);
   }
   assert.match(JSON.stringify(first.hooks), /Dev Rigor hook integrity check failed/);
@@ -767,9 +943,20 @@ test('revoke-trust: removes owned hashes and preserves foreign trust state', () 
   assert.match(result.stdout, /owned state removed and foreign state preserved/);
 });
 
+test('revoke-trust: explicit alternate CODEX_HOME overrides the ambient profile for the child app-server', () => {
+  const ambient = path.join(tmpRoot, 'ambient-profile');
+  const target = path.join(tmpRoot, 'explicit-target-profile');
+  const childEnvironment = REVOKER.codexEnvironment(target, { ...process.env, CODEX_HOME: ambient });
+  assert.strictEqual(childEnvironment.CODEX_HOME, path.resolve(target));
+  assert.notStrictEqual(childEnvironment.CODEX_HOME, path.resolve(ambient));
+});
+
 (async () => {
   let failed = 0;
-  for (const [name, fn] of tests) {
+  const filter = process.env.DEV_RIGOR_TEST_FILTER || '';
+  const selected = filter ? tests.filter(([name]) => name.includes(filter)) : tests;
+  if (filter && selected.length === 0) throw new Error(`No hook test matched DEV_RIGOR_TEST_FILTER=${filter}`);
+  for (const [name, fn] of selected) {
     try {
       await fn();
       console.log(`  ok    ${name}`);
@@ -784,5 +971,5 @@ test('revoke-trust: removes owned hashes and preserves foreign trust state', () 
     console.error(`\n${failed}/${tests.length} FAILED`);
     process.exit(1);
   }
-  console.log(`\nALL PASS (${tests.length} tests)`);
+  console.log(`\nALL PASS (${selected.length} tests${filter ? `, filter: ${filter}` : ''})`);
 })();

@@ -16,19 +16,31 @@ function readPayload() {
 function hash(value) { return crypto.createHash('sha256').update(String(value)).update('\0').digest('hex'); }
 function taskPath(session) { return path.join(stateDir, `task-v4-${hash(session)}.json`); }
 function defaultTask() {
-  return { version: 4, mode: 'ON', salt: crypto.randomBytes(32).toString('hex'), dirtyEdits: [], proofs: [], unresolved: [], warnings: {} };
+  return normalizeTask({ version: 4, mode: 'ON', salt: crypto.randomBytes(32).toString('hex') });
+}
+function normalizeTask(task) {
+  task.dirtyEdits = Array.isArray(task.dirtyEdits) ? task.dirtyEdits : [];
+  task.proofs = Array.isArray(task.proofs) ? task.proofs : [];
+  task.unresolved = Array.isArray(task.unresolved) ? task.unresolved : [];
+  task.warnings = task.warnings && typeof task.warnings === 'object' ? task.warnings : {};
+  task.notices = Array.isArray(task.notices) ? task.notices : [];
+  task.children = Array.isArray(task.children) ? task.children : [];
+  task.checkpoint = Number.isInteger(task.checkpoint) && task.checkpoint >= 0 ? task.checkpoint : 0;
+  task.blockCount = Number.isInteger(task.blockCount) && task.blockCount >= 0 ? task.blockCount : 0;
+  task.delivery = task.delivery && typeof task.delivery === 'object' ? task.delivery : { preToolUse: 0, postToolUse: 0, stop: 0 };
+  return task;
 }
 function loadTask(session) {
   try {
     const parsed = JSON.parse(fs.readFileSync(taskPath(session), 'utf8'));
-    if (parsed && parsed.version === 4) return parsed;
+    if (parsed && parsed.version === 4) return normalizeTask(parsed);
   } catch (_) { /* first activation */ }
   return defaultTask();
 }
 function loadTaskByKey(key) {
   try {
     const parsed = JSON.parse(fs.readFileSync(path.join(stateDir, `task-v4-${key}.json`), 'utf8'));
-    return parsed && parsed.version === 4 ? parsed : null;
+    return parsed && parsed.version === 4 ? normalizeTask(parsed) : null;
   } catch (_) { return null; }
 }
 function saveTask(session, task) {
@@ -71,6 +83,8 @@ if (subagent && session) {
   if (parent) {
     task.parentKey = hash(parent);
     const parentTask = loadTask(parent);
+    const childKey = hash(session);
+    if (!parentTask.children.includes(childKey)) parentTask.children.push(childKey);
     saveTask(parent, parentTask);
     task.mode = parentTask.mode;
   } else if (!task.parentKey) {

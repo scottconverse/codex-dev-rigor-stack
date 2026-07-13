@@ -19,9 +19,10 @@ namespace DevRigorStack.Desktop
         private static HookRecord Hook(string home, string eventName, string script, string suffix)
         {
             string matcher = eventName == "sessionStart" ? "startup|resume|clear|compact" :
-                eventName == "postToolUse" ? "^(Bash|PowerShell|apply_patch|Edit|Write|MultiEdit|NotebookEdit|mcp__.*(preview|browser|chrome|computer|screenshot|navigate|snapshot|exec|run|test|shell|terminal|jupyter|notebook|ide|eval).*)$" : "";
+                eventName == "preToolUse" || eventName == "postToolUse" ? "^(Bash|PowerShell|apply_patch|Edit|Write|MultiEdit|NotebookEdit|mcp__.*(preview|browser|chrome|computer|screenshot|navigate|snapshot|exec|run|test|shell|terminal|jupyter|notebook|ide|eval).*)$" : "";
             string status = eventName == "sessionStart" || eventName == "subagentStart" ? "Loading active dev-rigor reflex" :
                 eventName == "userPromptSubmit" ? "Routing dev-rigor protocol" :
+                eventName == "preToolUse" ? "Snapshotting dev-rigor worktree state" :
                 eventName == "stop" ? "Checking dev-rigor evidence" :
                 eventName == "subagentStop" ? "Checking subagent evidence" : "";
             return new HookRecord
@@ -68,50 +69,51 @@ namespace DevRigorStack.Desktop
                 Hook(home, "sessionStart", "dev-rigor-activate.js", ""),
                 Hook(home, "subagentStart", "dev-rigor-activate.js", " subagent"),
                 Hook(home, "userPromptSubmit", "dev-rigor-router.js", ""),
+                Hook(home, "preToolUse", "dev-rigor-ground.js", " snapshot"),
                 Hook(home, "postToolUse", "dev-rigor-ground.js", " record"),
                 Hook(home, "stop", "dev-rigor-ground.js", " check"),
                 Hook(home, "subagentStop", "dev-rigor-ground.js", " check")
             };
 
             List<HookRecord> filtered = OwnershipRules.FilterOwned(exact, home);
-            Check(OwnershipRules.IsExactOwnedSet(filtered), "exact six-hook set must be accepted");
+            Check(OwnershipRules.IsExactOwnedSet(filtered), "exact seven-hook set must be accepted");
 
             var lookalike = new List<HookRecord>(exact);
             lookalike[0] = Hook(home, "sessionStart", "dev-rigor-activate.js", "");
             lookalike[0].Command = "node \"C:\\Temp\\dev-rigor-stack\\hooks\\dev-rigor-activate.js\"";
-            Check(OwnershipRules.FilterOwned(lookalike, home).Count == 5, "lookalike command must be rejected");
+            Check(OwnershipRules.FilterOwned(lookalike, home).Count == 6, "lookalike command must be rejected");
 
             var foreign = new List<HookRecord>(exact);
             foreign[0] = Hook(home, "sessionStart", "dev-rigor-activate.js", "");
             foreign[0].SourcePath = Path.Combine(home, "project-hooks.json");
-            Check(OwnershipRules.FilterOwned(foreign, home).Count == 5, "foreign source must be rejected");
+            Check(OwnershipRules.FilterOwned(foreign, home).Count == 6, "foreign source must be rejected");
 
             var injectedSuffix = new List<HookRecord>(exact);
             injectedSuffix[0] = Hook(home, "sessionStart", "dev-rigor-activate.js", " & malicious.exe");
-            Check(OwnershipRules.FilterOwned(injectedSuffix, home).Count == 5, "injected command suffix must be rejected");
+            Check(OwnershipRules.FilterOwned(injectedSuffix, home).Count == 6, "injected command suffix must be rejected");
 
             var disabledMatcher = new List<HookRecord>(exact);
             disabledMatcher[0] = Hook(home, "sessionStart", "dev-rigor-activate.js", "");
             disabledMatcher[0].Matcher = "^never$";
-            Check(OwnershipRules.FilterOwned(disabledMatcher, home).Count == 5, "disabled matcher must be rejected");
+            Check(OwnershipRules.FilterOwned(disabledMatcher, home).Count == 6, "disabled matcher must be rejected");
 
             var disabled = new List<HookRecord>(exact);
             disabled[0] = Hook(home, "sessionStart", "dev-rigor-activate.js", "");
             disabled[0].Enabled = false;
-            Check(OwnershipRules.FilterOwned(disabled, home).Count == 5, "disabled hook must be rejected");
+            Check(OwnershipRules.FilterOwned(disabled, home).Count == 6, "disabled hook must be rejected");
 
             var wrongHandler = new List<HookRecord>(exact);
             wrongHandler[0] = Hook(home, "sessionStart", "dev-rigor-activate.js", "");
             wrongHandler[0].HandlerType = "prompt";
-            Check(OwnershipRules.FilterOwned(wrongHandler, home).Count == 5, "wrong handler type must be rejected");
+            Check(OwnershipRules.FilterOwned(wrongHandler, home).Count == 6, "wrong handler type must be rejected");
 
             var wrongTimeout = new List<HookRecord>(exact);
             wrongTimeout[0] = Hook(home, "sessionStart", "dev-rigor-activate.js", "");
             wrongTimeout[0].TimeoutSec = 0;
-            Check(OwnershipRules.FilterOwned(wrongTimeout, home).Count == 5, "wrong timeout must be rejected");
+            Check(OwnershipRules.FilterOwned(wrongTimeout, home).Count == 6, "wrong timeout must be rejected");
 
             var duplicate = new List<HookRecord>(exact);
-            duplicate[5] = Hook(home, "stop", "dev-rigor-ground.js", " check");
+            duplicate[6] = Hook(home, "stop", "dev-rigor-ground.js", " check");
             Check(!OwnershipRules.IsExactOwnedSet(duplicate), "duplicate event set must be rejected");
 
             var missingHash = new List<HookRecord>(exact);
@@ -124,7 +126,7 @@ namespace DevRigorStack.Desktop
             Check(runtimeFailure.Contains("not installed"), "missing runtime files must prevent verified activation");
 
             File.AppendAllText(Path.Combine(hookDirectory, "dev-rigor-activate.js"), "// changed after definition review\n");
-            Check(OwnershipRules.FilterOwned(exact, home).Count == 4, "changed runtime bytes must invalidate every affected owned definition");
+            Check(OwnershipRules.FilterOwned(exact, home).Count == 5, "changed runtime bytes must invalidate every affected owned definition");
 
             if (_failures == 0) Console.WriteLine("Ownership self-test: all adversarial cases passed");
             return _failures == 0 ? 0 : 1;

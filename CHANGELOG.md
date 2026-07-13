@@ -9,6 +9,15 @@ Task-scoped substantive enforcement redesign. This candidate preserves 1.6.3's e
 isolation and one-block circuit breaker while correcting the state and policy model that
 made earlier receipt enforcement destructive.
 
+Independent review returned `TAG NO-GO`; this candidate remains unreleased and its Pages
+downloads are disabled. Remediation adds an invocation-bound `PreToolUse` worktree snapshot
+before `PostToolUse`, prevents harmless or unknown shell commands from becoming proof,
+detects opaque tracked-source writes, binds proof IDs to execution fingerprints and target
+checkpoints, surfaces non-destructive warnings in the UI, reports accurate block/checkpoint/
+delivery state, aggregates associated-subagent debt, binds trust revocation to an explicit
+`CODEX_HOME`, installs exact archived 1.6.1–1.6.3 trees in the upgrade matrix, and expands
+mutation coverage across the redesigned safety invariants. No tag or release is authorized.
+
 - **Separated substance from formatting:** an important direct or generated edit still
   requires a later qualifying run, render, test, or build. Missing or invalid receipt text
   after real proof is now a visible warning and cannot discard a report.

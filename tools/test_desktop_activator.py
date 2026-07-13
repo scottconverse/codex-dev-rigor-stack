@@ -33,6 +33,12 @@ class DesktopActivatorContractTests(unittest.TestCase):
         self.assertIn("Downloads are disabled", landing)
         self.assertNotIn("Current version: 1.7.0", landing)
         self.assertNotIn("downloads/DevRigorHookActivator-1.7.0", landing)
+        self.assertIn("Installation remains withheld", landing)
+        self.assertIn('<a href="#install">Release hold</a>', landing)
+        self.assertNotIn('<a href="#install">Install</a>', landing)
+        self.assertNotIn("powershell -ExecutionPolicy Bypass -File", landing)
+        self.assertNotIn("./install.sh", landing)
+        self.assertNotIn("./export/export-portable.sh", landing)
 
         architecture = (ROOT / "docs" / "ARCHITECTURE.md").read_text(encoding="utf-8")
         self.assertIn("candidate-artifacts/", architecture)
@@ -95,12 +101,13 @@ class DesktopActivatorContractTests(unittest.TestCase):
             "sessionStart",
             "subagentStart",
             "userPromptSubmit",
+            "preToolUse",
             "postToolUse",
             "stop",
             "subagentStop",
         ):
             self.assertIn(event, text)
-        self.assertIn("ExpectedHookCount = 6", text)
+        self.assertIn("ExpectedHookCount = 7", text)
         self.assertIn("sourcePath", text)
         self.assertIn("currentHash", text)
         ownership = OWNERSHIP_TEST.read_text(encoding="utf-8")
@@ -115,10 +122,10 @@ class DesktopActivatorContractTests(unittest.TestCase):
 
     def test_gui_requires_explicit_review_action_and_verifies_after_write(self) -> None:
         text = SOURCE.read_text(encoding="utf-8")
-        self.assertIn("Review and trust these 6 hooks", text)
+        self.assertIn("Review and trust these 7 hooks", text)
         self.assertIn("Alt+T", text)
         self.assertIn("HookReviewDialog", text)
-        self.assertIn("Exact six-hook review details", text)
+        self.assertIn("Exact seven-hook review details", text)
         self.assertIn("AcceptButton = cancel", text)
         self.assertIn("No terminal is required", text)
         self.assertIn("RefreshAndVerify", text)
@@ -160,6 +167,7 @@ class DesktopActivatorContractTests(unittest.TestCase):
             "thread/start",
             "turn/start",
             "ground-v4-",
+            "delivery.preToolUse",
             "outputSchema",
             "REPORT_STAYS_VISIBLE",
             "UNPROVED_EDIT_RESPONSE",
@@ -220,12 +228,41 @@ class DesktopActivatorContractTests(unittest.TestCase):
             "locateDesktopCodex",
             "'OpenAI', 'Codex', 'bin'",
             "'codex app-server --listen stdio://'",
+            "codexEnvironment",
+            "CODEX_HOME: path.resolve(codexHome)",
         ):
             self.assertIn(term, text)
         self.assertNotIn('`"${executable}" app-server --listen stdio://`', text)
         ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
         self.assertIn("revoke-trust.js", ci)
         self.assertIn("uninstall/reinstall trust lifecycle", ci)
+        self.assertIn("alternate-uninstall-home", ci)
+        self.assertIn(".\\uninstall.ps1 -CodexHome $alternate", ci)
+
+    def test_upgrade_matrix_uses_exact_historical_trees_and_expanded_mutations(self) -> None:
+        matrix = (ROOT / "tools" / "test_upgrade_matrix.py").read_text(encoding="utf-8")
+        for version, commit in {"1.6.1": "e1e22a2", "1.6.2": "89c5d0d", "1.6.3": "91c8d7f"}.items():
+            self.assertIn(f'"{version}": "{commit}"', matrix)
+        self.assertIn('git", "archive"', matrix)
+        self.assertIn('installed_skill.read_bytes() == source_skill.read_bytes()', matrix)
+        ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+        self.assertIn("fetch-depth: 0", ci)
+
+        mutations = (ROOT / "tools" / "test_verifier_mutations.py").read_text(encoding="utf-8")
+        for target in (
+            "exact-turn isolation",
+            "one-block circuit release",
+            "post-block proof under stop_hook_active",
+            "proof-debt clearing",
+            "OFF propagation",
+            "execution-token binding",
+            "structured-result precedence",
+            "opaque shell-write detection",
+            "parent-child debt registration",
+            "visible WARN delivery",
+            "unknown-command classification",
+        ):
+            self.assertIn(target, mutations)
 
     def test_candidate_binary_has_a_source_bound_build_record(self) -> None:
         record = CANDIDATE.with_name("DevRigorHookActivator-1.7.0.build.json")

@@ -105,19 +105,19 @@ and Stop/SubagentStop evidence gate. The original Claude source remains only as 
 
 1. Open a normal Codex Desktop task and ask:
    Do not request installation while 1.7.0 is on independent-review hold.
-2. Codex stages all 19 skill folders, the hook runtime, and the merged six owned
+2. Codex stages all 19 skill folders, the hook runtime, and the merged seven owned
    definitions, then commits them as one rollback-protected transaction while preserving
    unrelated hooks and creating backups.
 3. Wait for a tagged release, an explicit owner go/no-go, and restored publication links.
    Candidate executables are deliberately unavailable from GitHub Pages during review.
 4. Once publication is authorized, verify the tagged release's checksum before opening it.
    Stop if Codex reports a mismatch.
-5. Read all six rows. Selecting a row exposes its exact command, source, matcher, and
+5. Read all seven rows. Selecting a row exposes its exact command, source, matcher, and
    current hash.
-6. Choose **Review and trust these 6 hooks**. The confirmation lists the exact six hashes;
-   choose **Trust these 6 hooks** only after reviewing them.
-7. The app writes trust through Codex, re-reads all six definitions, and must display
-   **Verified — all 6 hooks trusted**. Restart Codex Desktop.
+6. Choose **Review and trust these 7 hooks**. The confirmation lists the exact seven hashes;
+   choose **Trust these 7 hooks** only after reviewing them.
+7. The app writes trust through Codex, re-reads all seven definitions, and must display
+   **Verified — all 7 hooks trusted**. Restart Codex Desktop.
 
 This is the ordinary Windows Desktop path. It does not require opening a terminal, typing
 a command, editing configuration, or knowing where Codex stores its files.
@@ -144,7 +144,7 @@ The default targets are `~/.codex/skills` for the 19 entrypoints and
 `~/.codex/dev-rigor-stack` for the hook runtime. The installer merges owned entries into
 `~/.codex/hooks.json`, preserving foreign hooks and backing up changed configuration.
 The staged skills, runtime, and hook configuration commit together or restore the prior set.
-On Windows, open `DevRigorHookActivator-1.7.0.exe`, review and approve the exact six
+On Windows, open `DevRigorHookActivator-1.7.0.exe`, review and approve the exact seven
 hashes, and require its verified result before restarting Codex Desktop. Other Codex
 clients may use their own supported hook-review UI.
 
@@ -166,7 +166,7 @@ Use a custom target for clean-profile verification, CI, or another compatible ho
 
 The installer must report `Installed 19 skill(s).` Verify every manifest entry has a
 `SKILL.md`, `CODEX_HOME/dev-rigor-stack/hooks/dev-rigor-ground.js` exists, and the
-graphical activator shows all six trusted lifecycle events. Restart Codex and invoke a
+graphical activator shows all seven trusted lifecycle events. Restart Codex and invoke a
 known entrypoint.
 
 ## Choose an entrypoint
@@ -302,9 +302,12 @@ the product may advance.
   decomposition, and release work. The exact owner commands `DevRigorON`,
   `DevRigorWARN`, `DevRigorOFF`, and `DevRigorSTATUS` affect only the current task.
   Quoted or embedded command text is inert.
-- **PostToolUse evidence recorder:** records important direct edits (`E`), tool-generated
+- **PreToolUse/PostToolUse evidence recorder:** fingerprints the dirty Git worktree before
+  and after the exact `tool_use_id`, then records important direct edits (`E`), tool-generated
   source changes (`G`), inspections (`I`), runs/renders (`R`), tests (`T`), builds (`B`),
-  and failures (`F`). It stores hashes and bounded metadata, not raw sensitive commands.
+  and failures (`F`). Opaque shell writes therefore re-arm proof even when the tool does
+  not report changed files. Missing pre-observation makes unknown commands conservative
+  non-proof. It stores hashes and bounded metadata, not paths or raw sensitive commands.
 - **Stop/SubagentStop substantive gate:** evaluates the authoritative current turn. In
   `ON`, an important edit without a later qualifying run/render/test/build may block once.
   The retry is released to keep conversation usable, but records `U: released-unproved`
@@ -319,13 +322,19 @@ when Codex supplies authoritative parent identity; otherwise it visibly fails op
 `WARN` and never guesses. A parent `OFF` or later mode change propagates to associated
 running and future subagents. Controls never leak into another task.
 
-Evidence IDs correlate the task, turn, edit set, evidence class, result, and checkpoint
+`DevRigorSTATUS` reports the current checkpoint, substantive block count, local debt IDs,
+recursively associated-subagent debt, and observed PreToolUse/PostToolUse/Stop counts. It
+does not call hook delivery or trust “verified”; only Codex's hook review establishes
+configuration trust, and only a live lifecycle run establishes client delivery.
+
+Evidence IDs correlate the task, turn, edit set, evidence class, exact execution
+fingerprint, result, and target checkpoint
 with the canonical local ledger. They prevent accidental stale reuse; they are not a
 security boundary against a model that can read its own task state. Tokens and ledgers
 exclude secrets and raw sensitive command arguments.
 
 Codex requires explicit trust for non-managed hooks. On Windows, use the graphical
-activator to inspect and approve the exact six current hashes. It discovers them with
+activator to inspect and approve the exact seven current hashes. It discovers them with
 `hooks/list`, refuses any incomplete or unexpected owned set, writes trust with
 `config/batchWrite`, then calls `hooks/list` again. If any event is untrusted, modified,
 disabled, absent, duplicated, or failing, the skills remain usable but mechanical
@@ -353,7 +362,7 @@ Pull or download the new repository version and rerun the installer. It stages t
 managed skill folders, active Codex hook runtime, and current owned hook definitions,
 then transactionally commits them and retains timestamped backups. Reopen the graphical
 activator after every update. If any script or definition changed, review and trust the new
-six hashes, require **Verified — all 6 hooks trusted**, and restart Codex Desktop.
+seven hashes, require **Verified — all 7 hooks trusted**, and restart Codex Desktop.
 
 ### Backup
 
@@ -372,7 +381,7 @@ For a no-terminal restore, open a Codex Desktop task before closing the app and 
 `Restore dev-rigor-stack from backup timestamp <timestamp>. Restore the 19 managed skills and managed runtime from that timestamp. Rebuild only the owned definitions into the current hooks.json with the restored wire-hooks.js; never replace hooks.json wholesale. Preserve every unrelated skill, hook, and trust entry.`
 Require Codex to report the restored skills/runtime, the matching timestamp, and an
 owned-only hook merge that retained current foreign hooks.
-Then reopen the graphical activator, review the restored definitions, require all six
+Then reopen the graphical activator, review the restored definitions, require all seven
 trusted, and restart Codex Desktop.
 
 For a manual maintainer restore:
@@ -383,7 +392,7 @@ For a manual maintainer restore:
 3. Replace `<CODEX_HOME>/dev-rigor-stack` with the saved `runtime` directory.
 4. Do **not** replace the current `hooks.json` wholesale; that could erase unrelated hooks
    added after the backup. Run the restored runtime's `hooks/wire-hooks.js` against the
-   current `hooks.json`. It reconstructs and replaces only the six owned definitions while
+   current `hooks.json`. It reconstructs and replaces only the seven owned definitions while
    preserving foreign hooks. Treat the saved `hooks.json` as recovery evidence, not a
    whole-file restore payload.
 
@@ -391,13 +400,13 @@ For a manual maintainer restore:
    node <CODEX_HOME>/dev-rigor-stack/hooks/wire-hooks.js <CODEX_HOME> <CODEX_HOME>/dev-rigor-stack
    ```
 
-5. Open the graphical activator, review the restored definitions, require all six trusted,
+5. Open the graphical activator, review the restored definitions, require all seven trusted,
    then restart Codex Desktop and invoke a known entrypoint.
 
 ### Uninstall
 
 For a no-terminal uninstall, open a Codex Desktop task and ask:
-`Uninstall dev-rigor-stack. First run the managed revoke-trust.js through Codex app-server and verify exactly 6/6 owned trusted hashes were removed while foreign trust state was preserved. Then remove only the 19 managed skills, six owned hook definitions, and managed runtime; preserve every unrelated skill, hook, trust entry, and backup.`
+`Uninstall dev-rigor-stack. First run the managed revoke-trust.js through Codex app-server and verify exactly 7/7 owned trusted hashes were removed while foreign trust state was preserved. Then remove only the 19 managed skills, seven owned hook definitions, and managed runtime; preserve every unrelated skill, hook, trust entry, and backup.`
 Codex must revoke trust before removing the definitions/runtime, preserve foreign hooks,
 and report every path changed. The repository uninstaller treats trust, owned hook
 definitions, runtime, and all 19 skills as one transaction: an interrupted uninstall
@@ -480,7 +489,7 @@ to make it shorter.
   1.6.3 introduced exact Codex turn identity and a hard retry circuit breaker. Version
   1.7.0 preserves exact-turn isolation and adds task modes, typed evidence, non-destructive
   receipt handling, persistent proof debt, safe compaction/subagent behavior, and
-  transactional upgrade/uninstall. Versions 1.6.0–1.6.2 are unsupported.
+  transactional upgrade/uninstall. Versions 1.6.0–1.6.3 are unsupported.
 
 ## Security and honest limits
 

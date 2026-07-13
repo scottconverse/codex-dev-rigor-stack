@@ -161,5 +161,5 @@ echo
 echo "Installed $installed skill(s) transactionally."
 if [ "$backup" -eq 1 ] && { [ -d "$backup_root" ] || [ -e "$runtime_backup" ] || [ -e "$hooks_backup" ]; }; then echo "Backups retained under the .backup directories for $stamp"; fi
 
-echo "Active Codex hooks installed with content-bound SHA-256 guards: SessionStart, SubagentStart, UserPromptSubmit, PostToolUse, Stop, SubagentStop."
-echo "On Windows, open DevRigorHookActivator-1.7.0.exe and approve the six exact hook hashes. On other Codex clients, use the client's supported hook review UI. Then restart Codex."
+echo "Active Codex hooks installed with content-bound SHA-256 guards: SessionStart, SubagentStart, UserPromptSubmit, PreToolUse, PostToolUse, Stop, SubagentStop."
+echo "On Windows, open DevRigorHookActivator-1.7.0.exe and approve the seven exact hook hashes. On other Codex clients, use the client's supported hook review UI. Then restart Codex."
