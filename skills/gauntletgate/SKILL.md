@@ -54,9 +54,11 @@ explicitly). Never silently fire a 5-role fan-out.
 1. **Lite** (if selected) — a fast pass. On its own it is a quick check; inside
    `all` it is the warm-up/feeder, not the gate.
 2. **Walkthrough** (if selected) — constructs and **verifies the first-run state**,
-   walks the product with dependencies **absent**, and produces the environment
-   attestation + the "can a new user reach the core feature?" verdict. Its report
-   is an input to Full.
+   loads and runs `$dev-rigor-stack-walkthrough`, walks the public acquisition and
+   published installer path in a verified clean machine when release scope applies,
+   exercises every inventoried screen/control/path/state, and produces the environment
+   attestation + coverage ledger + "can a new user reach the core feature?" verdict.
+   Its report is an input to Full.
 3. **Full** (if selected) — the 5-role adversarial audit. **It consumes the
    Walkthrough report** (when Walkthrough ran) instead of re-walking the UI, and
    spends its effort on engineering, security, performance, tests, docs, and the

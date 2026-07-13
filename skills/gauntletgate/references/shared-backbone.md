@@ -42,6 +42,12 @@ empty-data surface:
    action, a "go install X yourself" with no in-product help, a blank screen, or a
    silent failure — not a footnote.
 
+For a published desktop installer or other machine-integrated product, a clean profile is
+not a clean machine. The release Walkthrough requires a fresh VM, fresh OS user with proven
+absence of the product, or equivalent machine boundary with prior product files, services,
+registry/configuration, runtimes, caches, and credentials absent. If only profile isolation
+was achieved, label it accurately and mark clean-machine coverage INVALID.
+
 **How to construct & verify the clean state per stack** (web/SaaS, Node, Python,
 Electron, Docker, headless API): see `references/isolation-recipes.md`. The universal
 pattern: redirect where the app stores state → launch → assert it wrote *there*, not
@@ -84,6 +90,10 @@ observable behind it does not count — the whole point of the gate is that the
 verification is *checkable by someone other than the agent that wrote it.* (Roadmap:
 a future release makes this mechanical — no CLEAR TO ADVANCE emitted unless the
 artifact files exist on disk.)
+
+Walkthrough additionally supplies the complete coverage ledger required by
+`$dev-rigor-stack-walkthrough`. Missing inventory denominators, contaminated blind-first
+observations, or unaccounted controls/screens/paths make coverage INVALID.
 
 ---
 

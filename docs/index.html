@@ -4,15 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>dev-rigor-stack — make "done" mean proven</title>
-<meta name="description" content="A six-gate delivery discipline for AI coding agents — the skills it runs, plus three always-on hooks: a rigor reflex, a per-task rigor router, and an enforced grounding check. Model-agnostic, tool-agnostic, MIT.">
+<meta name="description" content="Codex dev-rigor-stack 1.0: thirteen independently invokable capabilities, six compatibility entrypoints, exhaustive newcomer/UI audits, and strict-zero release closure. MIT.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9C%85%3C/text%3E%3C/svg%3E">
 <meta property="og:type" content="website">
 <meta property="og:title" content="dev-rigor-stack — make &quot;done&quot; mean proven">
-<meta property="og:description" content="A six-gate delivery discipline for AI coding agents: six skills plus three always-on hooks — reflex, rigor router, and an enforced run-before-done grounding check. MIT.">
-<meta property="og:url" content="https://scottconverse.github.io/dev-rigor-stack/">
+<meta property="og:description" content="A Codex-native evidence-first development and release stack with exhaustive public-surface and newcomer/UI audits. MIT.">
+<meta property="og:url" content="https://scottconverse.github.io/codex-dev-rigor-stack/">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="dev-rigor-stack — make &quot;done&quot; mean proven">
-<meta name="twitter:description" content="A six-gate delivery discipline for AI coding agents: six skills plus three always-on hooks. MIT.">
+<meta name="twitter:description" content="Codex-native evidence-first delivery with strict-zero release closure. MIT.">
 <style>
   :root{
     --bg:#ffffff; --fg:#1a1c20; --muted:#5b6470; --card:#f6f7f9; --border:#e4e7ec;
@@ -78,10 +78,10 @@
 
 <header>
   <h1>dev-rigor-stack</h1>
-  <p class="tag">A six-gate delivery discipline for AI coding agents — so "done" means <em>proven</em>, not "looks right."</p>
+  <p class="tag">A Codex-native delivery discipline — so "done" means <em>proven by the real artifact</em>, not "looks right."</p>
   <div class="cta">
-    <a class="btn primary" href="https://github.com/scottconverse/dev-rigor-stack">View on GitHub</a>
-    <a class="btn ghost" href="https://github.com/scottconverse/dev-rigor-stack/blob/main/docs/MANUAL.md">Read the manual</a>
+    <a class="btn primary" href="https://github.com/scottconverse/codex-dev-rigor-stack">View on GitHub</a>
+    <a class="btn ghost" href="https://github.com/scottconverse/codex-dev-rigor-stack/blob/main/docs/MANUAL.md">Read the manual</a>
   </div>
 </header>
 
@@ -90,8 +90,9 @@
 when it means "I wrote code that looks right" — a different claim from "I proved it runs,"
 different again from "I proved it's correct." This stack closes that gap: every change is
 exercised the way a real user hits it before anyone calls it finished, and the call to make
-a release <em>real</em> stays with a human. It ships as a set of Claude Code skills plus
-three always-on hooks — a <strong>reflex</strong> that primes every session, a
+a release <em>real</em> stays with a human. It ships as thirteen namespaced standalone
+Codex capabilities plus six backward-compatible entrypoints. The upstream Claude package
+also carries three always-on hooks — a <strong>reflex</strong> that primes every session, a
 <strong>rigor router</strong> that injects the matching task protocol per prompt, and a
 <strong>grounding check</strong> that blocks "done" on code nothing ever ran — and it
 exports to any other agent as plain text.</p>
@@ -143,9 +144,9 @@ days and machines.</p>
     <text class="t" x="635" y="122" text-anchor="middle">4 · REVIEW</text>
     <text class="t" x="810" y="122" text-anchor="middle">5 · MERGE</text>
     <text class="s" x="110" y="162" text-anchor="middle">blast radius + test list</text>
-    <text class="s" x="285" y="162" text-anchor="middle">/coder-tdd-qa</text>
-    <text class="s" x="460" y="162" text-anchor="middle">/proof-gate</text>
-    <text class="s" x="635" y="162" text-anchor="middle">/audit-lite · -team · gauntletgate</text>
+    <text class="s" x="285" y="162" text-anchor="middle">$dev-rigor-stack-build</text>
+    <text class="s" x="460" y="162" text-anchor="middle">$...-proof-gate</text>
+    <text class="s" x="635" y="162" text-anchor="middle">audit · walkthrough · visitor</text>
     <text class="s" x="810" y="162" text-anchor="middle">green PR → main</text>
     <path class="f" d="M184,117 L207,117" marker-end="url(#ar)"/>
     <path class="f" d="M359,117 L382,117" marker-end="url(#ar)"/>
@@ -162,7 +163,7 @@ days and machines.</p>
     <!-- release gate band -->
     <rect class="b" x="36" y="240" width="848" height="56" rx="10"/>
     <text class="t" x="460" y="264" text-anchor="middle">RELEASE GATE — once per version, before the tag</text>
-    <text class="s" x="460" y="283" text-anchor="middle">/gauntletgate all → 0/0/0/0/0 · claim-refutation on the docs · real deliverable docs · rollback named</text>
+    <text class="s" x="460" y="283" text-anchor="middle">gauntlet → 0/0/0/0/0 · proof · docs · candidate visitor + clean-machine walkthrough · rollback</text>
 
     <!-- release to owner -->
     <path class="f" d="M460,296 L460,320" marker-end="url(#ar)"/>
@@ -189,26 +190,27 @@ days and machines.</p>
 
 <div class="gates">
   <div><b>1 · PLAN</b>Trace the real code, write the test list and done-criteria, and classify <em>blast radius</em> — a one-line auth change is small in lines and large in blast, and gets the deep treatment.</div>
-  <div><b>2 · BUILD — <code>/coder-tdd-qa</code></b>Test-first. Write the failing test and <em>watch it fail</em> before making it pass; that, not a coverage number, is what proves the test is real.</div>
-  <div><b>3 · VERIFY — <code>/proof-gate</code></b>Adversarially try to <em>break</em> the claim. It survives only if it can't be refuted — killing checks that can't fail and "done" that outruns the evidence.</div>
-  <div><b>4 · REVIEW</b>A review sized to the change: <code>/audit-lite</code> for a small diff, <code>/audit-team</code> for high blast, <code>gauntletgate</code> walkthrough for anything a user clicks.</div>
+  <div><b>2 · BUILD — <code>$dev-rigor-stack-build</code></b>Test-first. Write the failing test and <em>watch it fail</em> before making it pass; that, not a coverage number, is what proves the test is real.</div>
+  <div><b>3 · VERIFY — <code>$dev-rigor-stack-proof-gate</code></b>Adversarially try to <em>break</em> the claim. It survives only if it can't be refuted — killing checks that can't fail and "done" that outruns the evidence.</div>
+  <div><b>4 · REVIEW</b>Audit sized to the change, plus exhaustive Walkthrough for user-facing work and Visitor Audit for every public surface and acquisition path.</div>
   <div><b>5 · MERGE</b>Green-path only — a reviewed PR to <code>main</code>. No <code>--admin</code>, no override, no bypassing branch protection. One bad red merge undoes every green one after it.</div>
   <div><b>Release gate</b>Over the whole version: the full gauntlet driven to <em>zero</em> findings, the docs checked for overclaiming, a rollback plan named — then the owner's go/no-go on the tag.</div>
 </div>
 
-<h2>The always-on layer</h2>
-<p>The six skills are <strong>pull-based</strong> — the agent invokes them when it judges a
-task needs them. Three hooks are <strong>push-based</strong>, each covering a different
-failure mode. The <strong>reflex</strong> is injected into every session and every subagent —
+<h2>The retained upstream hook layer</h2>
+<p>The Codex skills are <strong>pull-based</strong> — the agent invokes them when it judges a
+task needs them. The repository retains three upstream Claude hooks for provenance and
+future verified porting, but the Codex installer intentionally does not wire them. In the
+upstream Claude package, the <strong>reflex</strong> is injected into every session and every subagent —
 a single page: the proof ladder, the never-shrink rules, a one-line evidence receipt. The
 <strong>rigor router</strong> reads each prompt and injects only the matching task protocol —
 bug work gets a reproduce-trace-root-cause investigation, visual and artifact work gets
 run-and-observe grounding, multi-part work gets decomposition with per-story evidence,
 release wording gets the release discipline; anything else gets silence, so context stays
-lean. And the <strong>grounding check</strong> is enforced, not suggested: if a session edited
+lean. The upstream <strong>grounding check</strong> is enforced, not suggested: if a session edited
 runnable code but never once executed or rendered anything, the agent is stopped and told to
 run the narrowest real check first. All three are convenience layers, not dependencies: the
-full discipline lives in the <code>dev-rigor-stack</code> skill.</p>
+full discipline lives in the Codex skills regardless of hook availability.</p>
 
 <p>Its core idea is <strong>proportion</strong> — spend exactly the rigor a change earns.
 Climb the ladder only as far as the blast radius demands, and stop at the first rung that
@@ -277,16 +279,23 @@ spend, delete) stay the owner's.</p>
 <table>
   <tr><th>Component</th><th>Role</th></tr>
   <tr><td><code>dev-rigor-stack</code></td><td>the stack — orchestrates the loop + release gate</td></tr>
-  <tr><td><code>coder-tdd-qa</code></td><td>BUILD — test-first engineering + QA standards</td></tr>
-  <tr><td><code>proof-gate</code></td><td>VERIFY — adversarial build-and-verify, anti-theater</td></tr>
-  <tr><td><code>audit-lite</code></td><td>REVIEW — fast single-pass audit of a small change</td></tr>
-  <tr><td><code>audit-team</code></td><td>REVIEW — multi-role deep audit for high-blast units</td></tr>
-  <tr><td><code>gauntletgate</code></td><td>REVIEW + release — adversarial stage-gate</td></tr>
-  <tr><td><code>dev-rigor reflex</code></td><td><em>always-on hook</em> — primes every session with the proof ladder + never-shrink rules; delegates to the six skills</td></tr>
+  <tr><td><code>dev-rigor-stack-continuity</code></td><td>restore and persist durable project decisions and evidence</td></tr>
+  <tr><td><code>dev-rigor-stack-plan</code></td><td>PLAN — acceptance, tests, blast radius, routing</td></tr>
+  <tr><td><code>dev-rigor-stack-build</code></td><td>BUILD — complete test-first engineering + QA contract</td></tr>
+  <tr><td><code>dev-rigor-stack-proof-gate</code></td><td>VERIFY — adversarial proof and anti-theater</td></tr>
+  <tr><td><code>dev-rigor-stack-audit-lite</code></td><td>REVIEW — fast scoped audit</td></tr>
+  <tr><td><code>dev-rigor-stack-audit-team</code></td><td>REVIEW — five-role deep audit</td></tr>
+  <tr><td><code>dev-rigor-stack-walkthrough</code></td><td>PRODUCT — blind acquisition, clean-machine installer lifecycle, every screen/control/path/state, visual/accessibility and wiring audit</td></tr>
+  <tr><td><code>dev-rigor-stack-visitor-audit</code></td><td>PUBLIC — every rendered page, link, safe control, visual state, asset, checksum, claim, and acquisition handoff</td></tr>
+  <tr><td><code>dev-rigor-stack-release</code></td><td>RELEASE — candidate-to-live strict-zero closure</td></tr>
+  <tr><td><code>dev-rigor-stack-gauntletgate</code></td><td>ADVANCEMENT — lite/walkthrough/full stage gate</td></tr>
+  <tr><td><code>dev-rigor-stack-merge-gate</code></td><td>MERGE — exact-SHA green-path evidence decision</td></tr>
+  <tr><td><code>dev-rigor-stack-docs-gate</code></td><td>DOCS — rendered truth and deliverable completeness</td></tr>
+  <tr><td><code>dev-rigor reflex</code></td><td><em>upstream Claude hook</em> — not wired by the Codex installer</td></tr>
   <tr><td><code>rigor router</code></td><td><em>always-on hook</em> — classifies each prompt, injects only the matching task protocol (bug → investigation, UI → grounding, multi-part → decomposition, tag → release)</td></tr>
   <tr><td><code>grounding check</code></td><td><em>always-on hook</em> — blocks ending a session that edited runnable code without ever executing anything</td></tr>
 </table>
-<p class="muted">All six skills and the three hooks are MIT and authored by the repo owner — the
+<p class="muted">All thirteen canonical capabilities, six compatibility entrypoints, and retained upstream hook sources are MIT — the
 installer installs all of them. <code>audit-lite</code>/<code>audit-team</code> and
 <code>gauntletgate</code> overlap by design: the same review discipline in two packagings —
 the standalone audits are the per-unit <em>review reports</em>, while <code>gauntletgate</code>
@@ -294,24 +303,20 @@ is the release-altitude <em>advancement gate</em> (its lite/full lanes re-run th
 self-contained, plus a pass/fail verdict). A report vs. a gate.</p>
 
 <h2>Get started</h2>
-<p><strong>As Claude Code skills:</strong></p>
-<pre>git clone https://github.com/scottconverse/dev-rigor-stack
-cd dev-rigor-stack
+<p><strong>For Codex Desktop:</strong></p>
+<pre>git clone https://github.com/scottconverse/codex-dev-rigor-stack
+cd codex-dev-rigor-stack
 ./install.sh                                             # macOS / Linux / Git Bash
 powershell -ExecutionPolicy Bypass -File .\install.ps1   # Windows</pre>
-<p><strong>Requires Git and Node.js.</strong> The three hooks are small Node scripts — the six
-skills install without Node, only the hooks need it (and anyone running a coding agent almost
-certainly has it). On Windows the <code>-ExecutionPolicy Bypass</code> prefix avoids the default
+<p><strong>Requires Git.</strong> Node.js is needed only to test the retained upstream Claude
+hook sources; the Codex skills do not require it. On Windows the <code>-ExecutionPolicy Bypass</code> prefix avoids the default
 "scripts are disabled on this system" block.</p>
-<p>Installs the six skills <strong>and</strong> wires the three always-on hooks into your
-<code>settings.json</code>; if Node is missing the skills still install and the installer says
-so. Re-running updates in place — idempotent, no path assumptions; a v1.4 install upgrades
-cleanly. <code>./install.sh --target ~/.codex/skills</code> installs the skills elsewhere
-(e.g. Codex; no hooks).</p>
-<p><strong>Inside a Cowork or Codex session</strong> (no terminal): just ask the agent to
-install it from the repo — it copies the skills into place and, for a Claude install, wires
-the hooks.</p>
-<p><strong>For any other agent</strong> (ChatGPT, Gemini, Codex): run
+<p>Installs nineteen skill entrypoints into <code>~/.codex/skills</code>, backing up prior
+copies. Restart Codex after installation so metadata reloads. The Codex installer does not
+wire Claude-specific hooks.</p>
+<p><strong>Inside a Codex session</strong> (no terminal): ask the agent to install it from
+the repository; it copies the skills into the configured Codex home.</p>
+<p><strong>For other agents</strong> (ChatGPT, Gemini, or a plain system prompt): run
 <code>./export/export-portable.sh</code> and paste the generated <code>portable-bundle.md</code>
 into its system prompt. Claude-specific mechanics read as plain guidance — nothing is
 diluted from the Claude side to serve the export.</p>
@@ -339,10 +344,10 @@ diluted from the Claude side to serve the export.</p>
   per-task routing and verification grounding were proven transferable by
   <a href="https://github.com/fivetaku/fablize">fablize</a>'s Fable-vs-Opus comparison
   (fivetaku, MIT). Clean-room implementations — no code from either project used. &nbsp;·&nbsp;
-  <a href="https://github.com/scottconverse/dev-rigor-stack">Source</a> ·
-  <a href="https://github.com/scottconverse/dev-rigor-stack/blob/main/docs/ARCHITECTURE.md">Architecture</a> ·
-  <a href="https://github.com/scottconverse/dev-rigor-stack/blob/main/docs/MANUAL.md">Manual</a> ·
-  <a href="https://github.com/scottconverse/dev-rigor-stack/blob/main/LICENSE">License</a></p>
+  <a href="https://github.com/scottconverse/codex-dev-rigor-stack">Source</a> ·
+  <a href="https://github.com/scottconverse/codex-dev-rigor-stack/blob/main/docs/ARCHITECTURE.md">Architecture</a> ·
+  <a href="https://github.com/scottconverse/codex-dev-rigor-stack/blob/main/docs/MANUAL.md">Manual</a> ·
+  <a href="https://github.com/scottconverse/codex-dev-rigor-stack/blob/main/LICENSE">License</a></p>
 </footer>
 
 </div>

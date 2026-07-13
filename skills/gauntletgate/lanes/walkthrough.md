@@ -1,5 +1,13 @@
 # Lane: Walkthrough
 
+This lane consumes the canonical standalone `$dev-rigor-stack-walkthrough` protocol.
+Read `../../dev-rigor-stack-walkthrough/SKILL.md` completely and apply it in addition to
+every requirement below. The standalone protocol is authoritative for blind-first public
+acquisition, clean-machine proof, published-installer lifecycle, every-screen/every-control
+coverage, visual/accessibility inspection, coverage ledgers, and Visitor Audit handoff.
+If the sibling skill is missing, this lane is INVALID rather than silently falling back
+to the older, narrower runtime pass below.
+
 A Playwright-driven runtime audit of the product as a real (and adversarial) user —
 with the **first-run discipline** from `references/shared-backbone.md` as its spine.
 This lane is the authority on first-run truth and interface wiring. When the Full

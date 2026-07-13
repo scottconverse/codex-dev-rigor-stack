@@ -44,6 +44,21 @@ artifact.**
   installed/running — confirm via process/file probe.
 - **Verify + artifact:** screenshot of the first-run window + the captured userData path.
 
+## Published Windows/macOS/Linux installer
+- **Clean machine:** prefer a disposable VM or sandbox snapshot with the product absent.
+  A fresh application profile on the developer's daily machine is insufficient for
+  installer, prerequisite, registration, service, PATH, update, repair, and uninstall
+  claims.
+- **Acquire blind:** begin at the public product page and download the published artifact
+  identified by Visitor Audit. Capture final URL, bytes, signature/hash, version metadata,
+  and browser/security warnings.
+- **Verify absence:** probe installed-program databases, product directories, services,
+  processes, PATH, registry/config locations, shortcuts, caches, and prior user data.
+- **Lifecycle:** install, first launch, update/migrate, repair/reinstall, uninstall,
+  leftovers, reinstall, and interrupted-operation recovery.
+- **Artifacts:** machine snapshot ID, absence probes, installer hash/signature, every
+  installer screen, install/uninstall logs, before/after state diff, and coverage ledger.
+
 ## Docker / containerized
 - **Clean state:** run from the built image with **fresh, empty volumes** (no
   bind-mount of dev data); a brand-new container is your clean profile.

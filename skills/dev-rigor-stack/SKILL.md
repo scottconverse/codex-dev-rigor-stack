@@ -14,14 +14,41 @@ description: >
 license: MIT
 ---
 
-# Standing dev rigor stack (v1.5.1)
+# Standing dev rigor stack (Codex bundle v1.0.0; discipline v1.5.1+)
 
 Two altitudes. The **per-unit loop** (gates 1–5) applies to EVERY unit of work — a
 fix, a module, a feature. The **release gate** fires once per version, at the tag
 boundary, on the aggregate of all merged units. A red result at any gate returns to
 the phase that owns it — never route around a gate, never merge or tag past it.
 
+## Standalone entrypoints
+
+Every functional section is independently invokable and also routed by this coordinator:
+
+- `$dev-rigor-stack-continuity`
+- `$dev-rigor-stack-plan`
+- `$dev-rigor-stack-build` (backward-compatible `$coder-tdd-qa`)
+- `$dev-rigor-stack-proof-gate` (backward-compatible `$proof-gate`)
+- `$dev-rigor-stack-audit-lite` (backward-compatible `$audit-lite`)
+- `$dev-rigor-stack-audit-team` (backward-compatible `$audit-team`)
+- `$dev-rigor-stack-walkthrough`
+- `$dev-rigor-stack-visitor-audit` (backward-compatible `$visitor-audit`)
+- `$dev-rigor-stack-gauntletgate` (backward-compatible `$gauntletgate`)
+- `$dev-rigor-stack-merge-gate`
+- `$dev-rigor-stack-docs-gate`
+- `$dev-rigor-stack-release`
+
+Namespaced entrypoints load the complete canonical sibling contract; they are not compact
+rewrites. Missing or unreadable required skills make the affected gate INVALID rather than
+silently degrading to a weaker approximation.
+
+Read `references/artifact-contracts.md` before running the stack. Require each stage to
+emit or consume the applicable run manifest, claims, findings, coverage, handoff, and gate
+result without changing upstream evidence or losing artifact identity.
+
 ## Session & machine continuity
+
+Standalone: `$dev-rigor-stack-continuity`.
 
 Continuity, not a gate — a bookend on each side of the loop, sitting above it. Nothing
 passes or fails here; it ensures only that durable project state outlives a session or
@@ -53,6 +80,7 @@ tag (a decision killed in 0.1 is still worth not reopening in 0.4).
 ## Per-unit loop (every unit of work)
 
 1. PLAN (main-thread coordinator)
+   Standalone: `$dev-rigor-stack-plan`.
    Trace the real code end-to-end before touching it. Climb the reuse-before-build
    ladder (does this need to exist at all? is it already here? does stdlib or the
    platform do it? can it be one line?). Write the acceptance criteria / definition of done and the
@@ -60,7 +88,7 @@ tag (a decision killed in 0.1 is still worth not reopening in 0.4).
    review depth and fires the escalators (below). Blast radius, not diff size, is the
    sizing axis: a one-line change to auth is small in lines and large in blast.
 
-2. BUILD — `$coder-tdd-qa`, test-first
+2. BUILD — `$dev-rigor-stack-build` / `$coder-tdd-qa`, test-first
    Write the failing tests from the test list FIRST (or reproduce-red for a bug),
    watching each FAIL before you make it pass — that, not a percentage, is what makes
    a test real. Then minimum code to pass, then refactor green. Static gates:
@@ -71,7 +99,7 @@ tag (a decision killed in 0.1 is still worth not reopening in 0.4).
    serially from a fresh adversarial vantage. If workers produce parallel branches,
    merge them one at a time (linearize) and re-verify after each.
 
-3. VERIFY — `$proof-gate`
+3. VERIFY — `$dev-rigor-stack-proof-gate` / `$proof-gate`
    Adversarially try to BREAK the claim ("this holds", "the race can't occur", "the
    number isn't inflated"). Skeptics run as a workflow on cheap models; the claim only
    survives if they cannot refute it. For a low-blast unit, VERIFY and REVIEW may
@@ -80,11 +108,14 @@ tag (a decision killed in 0.1 is still worth not reopening in 0.4).
 4. REVIEW — the coordinator picks the proportionate review lane for what this
    slice touched, and dispatches a bounded subagent when available. Otherwise, run the
    same review serially from a fresh adversarial posture:
-   • `$audit-lite` — default; a scoped diff, a slice, an end-of-slice read.
-   • `$audit-team` — escalate for high-blast units.
-   • `$gauntletgate walkthrough` — user-facing wiring: a real end-to-end run hunting dead
-     links, dead buttons, broken flows, the way a user hits it.
-   • `$visitor-audit` — PUBLIC SURFACE lane, only when the unit changes an already-live
+   • `$dev-rigor-stack-audit-lite` / `$audit-lite` — default; a scoped diff, a slice,
+     an end-of-slice read.
+   • `$dev-rigor-stack-audit-team` / `$audit-team` — escalate for high-blast units.
+   • `$dev-rigor-stack-walkthrough` — user-facing wiring and black-box newcomer truth:
+     acquisition/installer lifecycle when release-scoped, every inventoried screen,
+     control, distinct path and visual state, then white-box function wiring.
+   • `$dev-rigor-stack-visitor-audit` / `$visitor-audit` — PUBLIC SURFACE lane, only
+     when the unit changes an already-live
      README, docs site, landing page, release page, announcement, or published asset.
      Audit the rendered surface after publication, follow every link, and verify quoted
      checksums/sizes against the published asset. Source inspection or CI is not a pass.
@@ -99,6 +130,7 @@ tag (a decision killed in 0.1 is still worth not reopening in 0.4).
    false positive.
 
 5. MERGE — green-path only, under standing authorization.
+   Standalone evidence decision: `$dev-rigor-stack-merge-gate`.
    Branching model: units land on the integration line via green PR (units → green PR
    → `main`); the **tag** is the release. A green-path unit merge is pre-authorized
    (it cleared gates 1–4): the coordinator merges the slice without asking. NO --admin
@@ -121,18 +153,26 @@ deterministically, it isn't a goal exit — route it through VERIFY/REVIEW inste
 Fires after the last slice of a version has merged. Everything here runs in a spawned
 sub-agent — the coordinator never reviews its own orchestration.
 
-- **Full gauntlet** — `$gauntletgate all` → drive all 5 severity levels to **0/0/0/0/0**
+- **Full gauntlet** — `$dev-rigor-stack-gauntletgate all` / `$gauntletgate all` →
+  drive all 5 severity levels to **0/0/0/0/0**
   (blocker → nit). Findings route back into the per-unit loop until zero. The only way
   to clear a finding is to **fix it** (not-real findings are classified out per gate
   4). No waiver, no freeze, no deferred backlog.
-- **Claim refutation** — `$proof-gate` against the release *claims*: the README, manual,
+- **Claim refutation** — `$dev-rigor-stack-proof-gate` against the release *claims*:
+  the README, manual,
   and landing page must not promise what the product doesn't do. Gauntletgate catches a
   dead link; only claim-refutation catches an honest-looking page that overclaims.
-- **Candidate public-surface pass** — `$visitor-audit` against rendered staging/candidate
+- **Candidate public-surface pass** — `$dev-rigor-stack-visitor-audit` against rendered
+  staging/candidate
   surfaces before the owner go/no-go. Every surface is read in full and every link is
   counted. Unpublished surfaces remain explicitly unproven; source-file review is not a
   substitute for the live pass below.
-- **Deliverable docs real & complete** — a true README; a two-voice user manual
+- **Candidate newcomer/product pass** — `$dev-rigor-stack-walkthrough` against the
+  packaged candidate in a verified clean environment. Exercise the installer lifecycle,
+  every inventoried screen/control/distinct path/state, visual/accessibility quality, and
+  actual interface-to-function wiring. Missing denominators or clean-state proof is INVALID.
+- **Deliverable docs real & complete** — `$dev-rigor-stack-docs-gate`: a true README;
+  a two-voice user manual
   (non-technical + technical); an architecture section with professional-grade
   drawings; an honest marketing landing page (what it is, how it fits, the value — no
   overclaiming, every link live).
@@ -141,11 +181,17 @@ sub-agent — the coordinator never reviews its own orchestration.
 - **STOP → owner go/no-go on the tag.** The coordinator drives everything to ready,
   then hands the decision to the owner. Merging slices is pre-authorized; declaring the
   release real (the tag) is not.
-- **Post-deploy closure** — after an authorized tag/publish/deploy, run `$visitor-audit`
+- **Post-deploy closure** — after an authorized tag/publish/deploy, run
+  `$dev-rigor-stack-visitor-audit`
   again against the live URLs and actual release assets, cache-busted. Until this is
   clean, do not announce the release as complete, close the release workflow, or retire
-  rollback readiness. A dead download, false current-version claim, or wrong checksum is
-  a release blocker and routes to correction or rollback.
+  rollback readiness. Consume its acquisition handoff and run full published
+  `$dev-rigor-stack-walkthrough` from the public front door through download, clean-machine
+  install, complete product journey, update/repair/uninstall, and visual/UI audit. A dead
+  download, false current-version claim, wrong checksum, invalid coverage ledger, or broken
+  newcomer journey is a release blocker and routes to correction or rollback.
+
+The complete standalone release coordinator is `$dev-rigor-stack-release`.
 
 Cost of pure-zero: with no freeze, a nit found after the gauntlet ran moves the tagged
 artifact one commit off the one you proved. Re-run the gate **at the blast radius of
@@ -186,6 +232,8 @@ decision, every time.
 
 ## Documentation discipline
 
+Standalone gate: `$dev-rigor-stack-docs-gate`.
+
 - **Deliverable docs — real and professional, always.** README, two-voice manual
   (non-technical + technical), architecture + professional drawings, honest landing
   page. Produced/updated at the release gate; per-unit, update only the deliverable doc
@@ -200,9 +248,10 @@ decision, every time.
 
 ## Dependencies & degrade-if-missing
 
-The Codex installer bundles and installs all the sibling skills together — **coder-tdd-qa,
-proof-gate, the gauntletgate / audit-lite / audit-team family, and visitor-audit** — so a normal install
-has every lane present. Upstream Claude Code also ships always-on hooks; this Codex
+The Codex installer bundles and installs every namespaced standalone stage plus the
+backward-compatible **coder-tdd-qa, proof-gate, gauntletgate, audit-lite, audit-team, and
+visitor-audit** entrypoints, so a normal install has every lane present. Upstream Claude
+Code also ships always-on hooks; this Codex
 packaging does not wire them by default because Codex Desktop hook events and payloads
 are different. The full discipline lives in the skills. The degrade path is a fallback for
 the unusual case (a partial install, stale install, or a skill

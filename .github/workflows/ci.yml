@@ -18,11 +18,23 @@ jobs:
           node-version: '20'
       # Hook suite: router/grounding/wiring/activation behavior + repo content
       # integrity (NUL bytes, mojibake, BOMs, payload line endings).
-      - name: Hook self-check (41 tests)
+      - name: Hook self-check (42 tests)
         run: node plugin/hooks/test-hooks.js
+      - name: Bundle and capability contracts
+        run: |
+          python3 tools/check_bundle.py
+          python3 tools/test_stack_contracts.py
+          python3 tools/test_visitor_audit.py
       # SKILL.md <-> SKILL-LITE.md sync blocks must be byte-identical.
       - name: Sync-block check
         run: python3 tools/check_sync.py
+      - name: Installer smoke (Linux)
+        if: runner.os == 'Linux'
+        run: bash install.sh --target "$RUNNER_TEMP/codex-home/skills" --no-backup
+      - name: Installer smoke (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: .\install.ps1 -Target "$env:RUNNER_TEMP\codex-home\skills" -NoBackup
       # The two exporters must produce byte-identical bundles — this is the
       # regression gate for the PS 5.1 mojibake bug (windows job runs real
       # Windows PowerShell 5.1, the shell that had the bug).

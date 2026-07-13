@@ -2,7 +2,28 @@
 
 All notable changes to dev-rigor-stack. Dates are release (tag) dates.
 
-## Unreleased
+## 1.0.0 — 2026-07-13
+
+- **Strengthened without subtraction:** restored the standalone Visitor Audit link checker
+  as a strict superset of both prior implementations: live URLs, local files, redirects,
+  HEAD-to-GET fallback, rate-limit retry, parallel checks, JSON/human output, publish-root
+  resolution, asset extraction, and offline self-tests.
+- **Added:** exhaustive standalone `dev-rigor-stack-walkthrough`: blind-first public
+  acquisition, verified clean-machine state, published installer lifecycle, every-screen,
+  every-control, distinct-path and meaningful-state inventories, visual/accessibility QA,
+  function wiring, update, repair, uninstall, and numerical coverage ledgers.
+- **Added:** thirteen namespaced standalone stage skills plus six backward-compatible
+  entrypoints, all installed together and routed by the coordinator.
+- **Integrated:** Visitor Audit now emits the exact acquisition handoff consumed by
+  Walkthrough; releases run candidate passes before go/no-go and repeat both against live
+  public artifacts before announcement or closure.
+- **Changed:** GauntletGate consumes the canonical Walkthrough and defaults to strict-zero
+  `0/0/0/0/0` under the overall stack.
+- **Added:** shared run-manifest, claims, findings, coverage-ledger, handoff, and gate-result
+  contracts with artifact identity and invalid-coverage rules.
+- **Added:** behavioral and contract tests plus Linux/Windows installer smoke tests in CI.
+
+## Unreleased (pre-1.0 history)
 
 - **Added:** `visitor-audit` as the PUBLIC SURFACE gate. Public-facing units receive a
   rendered-surface review after publication; releases receive a candidate/staging pass
