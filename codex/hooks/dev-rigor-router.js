@@ -49,6 +49,7 @@ function controlOutput(task, changed) {
     `dirty edit: ${task.dirtyEdits.length ? 'yes' : 'no'}`,
     `unresolved proof: ${task.unresolved.length ? 'yes' : 'no'}`,
     `latest proof: ${latest ? `${latest.eventClass} / ${latest.token}` : 'none'}`,
+    `hook delivery: ${task.warnings && task.warnings.mechanicalUnavailable ? 'unverified / missing turn_id' : 'verified'}`,
     changed ? 'Task control updated. This does not change global Codex configuration.' : 'Status is read-only.',
   ].join('\n');
   return JSON.stringify({ hookSpecificOutput: { hookEventName: 'UserPromptSubmit', additionalContext: text } });
@@ -83,9 +84,14 @@ function main() {
   const session = safeSession(payload.session_id);
   const exactSession = sessionIdentity(payload.session_id);
   const prompt = typeof payload.prompt === 'string' ? payload.prompt : '';
+  const currentTask = exactSession ? loadTask(exactSession) : null;
+  const missingTurnWarning = currentTask && currentTask.warnings && currentTask.warnings.mechanicalUnavailable &&
+    currentTask.warnings.mechanicalUnavailable.delivered !== true
+    ? 'Dev-rigor mechanical enforcement is unavailable: this client did not provide turn_id. Skill guidance remains active; Stop enforcement is not verified.'
+    : '';
   const control = /^(?:DevRigorON|DevRigorWARN|DevRigorOFF|DevRigorSTATUS)$/.test(prompt) ? prompt : '';
   if (control && exactSession) {
-    const task = loadTask(exactSession);
+    const task = currentTask;
     if (control !== 'DevRigorSTATUS') {
       task.mode = control.slice('DevRigor'.length);
       try { saveTask(exactSession, task); } catch (_) {
@@ -93,12 +99,21 @@ function main() {
         task.mode = 'WARN';
       }
     }
+    if (task.warnings && task.warnings.mechanicalUnavailable) task.warnings.mechanicalUnavailable.delivered = true;
+    try { saveTask(exactSession, task); } catch (_) { /* status remains fail-open */ }
     try { process.stdout.write(controlOutput(task, control !== 'DevRigorSTATUS')); } catch (_) { /* closed stdout */ }
     return;
   }
   if (prompt.length < 8) return;
   const route = ROUTES.find((candidate) => candidate.match(prompt));
-  if (!route) return;
+  if (!route && !missingTurnWarning) return;
+
+  if (!route && missingTurnWarning) {
+    currentTask.warnings.mechanicalUnavailable.delivered = true;
+    try { saveTask(exactSession, currentTask); } catch (_) { /* warning may repeat rather than disappear */ }
+    try { process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'UserPromptSubmit', additionalContext: missingTurnWarning } })); } catch (_) { /* closed stdout */ }
+    return;
+  }
 
   const stateFile = session ? path.join(stateDir, `router-${session}.log`) : null;
   if (stateFile) {
@@ -127,9 +142,13 @@ function main() {
     process.stdout.write(JSON.stringify({
       hookSpecificOutput: {
         hookEventName: 'UserPromptSubmit',
-        additionalContext: text,
+        additionalContext: [missingTurnWarning, text].filter(Boolean).join('\n\n'),
       },
     }));
+    if (missingTurnWarning) {
+      currentTask.warnings.mechanicalUnavailable.delivered = true;
+      try { saveTask(exactSession, currentTask); } catch (_) { /* warning may repeat rather than disappear */ }
+    }
   } catch (_) { /* closed stdout */ }
 }
 

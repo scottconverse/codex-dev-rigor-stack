@@ -92,6 +92,27 @@ function readLedger(session, turn) {
   catch (_) { return []; }
 }
 
+function pruneState(preserve = new Set()) {
+  let entries;
+  try { entries = fs.readdirSync(stateDir).map((name) => ({ name, file: path.join(stateDir, name), stat: fs.statSync(path.join(stateDir, name)) })); }
+  catch (_) { return; }
+  const now = Date.now();
+  const retentionMs = 7 * 24 * 3600 * 1000;
+  for (const entry of entries) {
+    if (!preserve.has(entry.name) && entry.stat.isFile() && now - entry.stat.mtimeMs > retentionMs) {
+      try { fs.unlinkSync(entry.file); } catch (_) { /* concurrent cleanup */ }
+    }
+  }
+  try { entries = fs.readdirSync(stateDir).map((name) => ({ name, file: path.join(stateDir, name), stat: fs.statSync(path.join(stateDir, name)) })); }
+  catch (_) { return; }
+  let total = entries.reduce((sum, entry) => sum + (entry.stat.isFile() ? entry.stat.size : 0), 0);
+  const maximum = 5 * 1024 * 1024;
+  for (const entry of entries.filter((item) => item.stat.isFile() && !preserve.has(item.name)).sort((a, b) => a.stat.mtimeMs - b.stat.mtimeMs)) {
+    if (total <= maximum) break;
+    try { fs.unlinkSync(entry.file); total -= entry.stat.size; } catch (_) { /* concurrent cleanup */ }
+  }
+}
+
 function editedPaths(input) {
   const paths = new Set();
   if (input && typeof input === 'object') {
@@ -226,7 +247,15 @@ function main() {
   try { payload = JSON.parse(fs.readFileSync(0, 'utf8')); } catch (_) { return; }
   const session = identity(payload.session_id);
   const turn = identity(payload.turn_id);
-  if (!session || !turn) return;
+  if (!session) return;
+  if (!turn) {
+    const task = loadTask(session, true);
+    task.warnings = task.warnings || {};
+    task.warnings.mechanicalUnavailable = { reason: 'missing-turn-id', delivered: false };
+    saveTask(session, task);
+    pruneState(new Set([path.basename(taskPath(session))]));
+    return;
+  }
 
   const task = loadTask(session, hookMode === 'record');
   if (task.mode === 'OFF') return;
@@ -265,6 +294,7 @@ function main() {
       }
     }
     saveTask(session, task);
+    pruneState(new Set([path.basename(taskPath(session)), path.basename(ledgerPath(session, turn))]));
     return;
   }
 

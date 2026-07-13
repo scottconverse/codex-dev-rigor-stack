@@ -276,7 +276,7 @@ test('ground: new tool activity after a block re-arms the current turn', () => {
   assert.ok(stateLines(home).some((line) => line.startsWith('W ') && /missing-receipt/.test(line)));
 });
 
-test('ground: missing turn_id fails open and creates no active ledger', () => {
+test('ground: missing turn_id fails open, creates no ledger, and warns once on the task', () => {
   const home = freshHome();
   runHook(GROUND, {
     session_id: 'ground-no-turn', hook_event_name: 'PostToolUse', tool_name: 'apply_patch',
@@ -289,6 +289,40 @@ test('ground: missing turn_id fails open and creates no active ledger', () => {
   assert.strictEqual(out.trim(), '');
   const state = path.join(home, 'dev-rigor-stack', 'state');
   assert.strictEqual(fs.existsSync(state) && fs.readdirSync(state).some((name) => name.startsWith('ground-v4-')), false);
+  const warned = JSON.parse(prompt(home, 'ground-no-turn', 'What enforcement is active?'));
+  assert.match(warned.hookSpecificOutput.additionalContext, /mechanical enforcement is unavailable.*turn_id/i);
+  assert.strictEqual(prompt(home, 'ground-no-turn', 'Thanks, continue normally.').trim(), '');
+});
+
+test('ground: retention prunes expired and over-budget inactive state but preserves current files', () => {
+  const home = freshHome();
+  const state = path.join(home, 'dev-rigor-stack', 'state');
+  fs.mkdirSync(state, { recursive: true });
+  const expired = path.join(state, 'ground-v4-expired.log');
+  fs.writeFileSync(expired, 'old\n');
+  const old = new Date(Date.now() - 8 * 24 * 3600 * 1000);
+  fs.utimesSync(expired, old, old);
+  for (let index = 0; index < 6; index++) {
+    const file = path.join(state, `ground-v4-budget-${index}.log`);
+    fs.writeFileSync(file, Buffer.alloc(1024 * 1024, index));
+    const time = new Date(Date.now() - (6 - index) * 60000);
+    fs.utimesSync(file, time, time);
+  }
+  record(home, 'retention-active', 'apply_patch', { command: '*** Update File: src/active.ts' });
+  assert.strictEqual(fs.existsSync(expired), false);
+  const files = fs.readdirSync(state).map((name) => path.join(state, name));
+  const total = files.reduce((sum, file) => sum + fs.statSync(file).size, 0);
+  assert.ok(total <= 5 * 1024 * 1024 + 4096, `state budget exceeded: ${total}`);
+  assert.ok(files.some((file) => path.basename(file).startsWith('ground-v4-') && fs.statSync(file).size < 4096));
+});
+
+test('ground: state permissions are owner-only on POSIX', () => {
+  if (process.platform === 'win32') return;
+  const home = freshHome();
+  record(home, 'permissions', 'apply_patch', { command: '*** Update File: src/app.ts' });
+  const state = path.join(home, 'dev-rigor-stack', 'state');
+  assert.strictEqual(fs.statSync(state).mode & 0o777, 0o700);
+  for (const name of fs.readdirSync(state)) assert.strictEqual(fs.statSync(path.join(state, name)).mode & 0o777, 0o600);
 });
 
 test('ground: inability to persist a block fails open instead of creating a retry loop', () => {
