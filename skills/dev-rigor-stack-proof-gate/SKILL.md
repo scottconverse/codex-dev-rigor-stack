@@ -1,5 +1,7 @@
 ---
 name: dev-rigor-stack-proof-gate
+metadata:
+  version: 1.7.0
 description: Run the complete dev-rigor-stack adversarial Proof Gate independently. Use for "$dev-rigor-stack-proof-gate", "/dev-rigor-stack-proof-gate", "prove it works", claim refutation, anti-theater verification, cleanroom evidence, or the VERIFY stage of the overall stack.
 ---
 

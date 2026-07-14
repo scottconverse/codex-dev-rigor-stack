@@ -55,12 +55,18 @@ def main() -> int:
 
     ps = (ROOT / "install.ps1").read_text(encoding="utf-8")
     sh = (ROOT / "install.sh").read_text(encoding="utf-8")
-    ps_order = re.search(r"\$Order = @\(([^\n]+)\)", ps)
-    sh_order = re.search(r'^order="([^"]+)"', sh, re.MULTILINE)
-    assert ps_order and sh_order, "could not locate installer order"
-    ps_names = re.findall(r"'([^']+)'", ps_order.group(1))
-    assert ps_names == names, "PowerShell installer order differs from manifest"
-    assert sh_order.group(1).split() == names, "shell installer drift"
+    transaction_path = ROOT / manifest["codex"]["transaction_coordinator"]
+    transaction_test = ROOT / manifest["codex"]["transaction_test"]
+    assert transaction_path.is_file(), "shared installer transaction coordinator is missing"
+    assert transaction_test.is_file(), "installer transaction acceptance test is missing"
+    transaction = transaction_path.read_text(encoding="utf-8")
+    order = re.search(r"const SKILLS = Object\.freeze\(\[(.*?)\]\);", transaction, re.DOTALL)
+    assert order, "could not locate coordinator skill order"
+    coordinator_names = re.findall(r"'([^']+)'", order.group(1))
+    assert coordinator_names == names, "shared transaction coordinator order differs from manifest"
+    for wrapper, operation in ((ps, "install"), (sh, "install")):
+        assert "install-transaction.js" in wrapper, "installer does not delegate to shared coordinator"
+        assert operation in wrapper, "installer does not select the install operation"
 
     hooks = manifest["codex"]["hooks"]
     assert hooks["status"] == "active", "Codex hooks must be active"
@@ -72,7 +78,7 @@ def main() -> int:
         ROOT / "codex" / "hooks" / "revoke-trust.js",
     ):
         assert path.is_file(), f"missing active Codex hook file: {path}"
-    assert "wire-hooks.js" in ps and "wire-hooks.js" in sh, "installers do not wire Codex hooks"
+    assert "wire-hooks.js" in transaction, "shared coordinator does not wire Codex hooks"
 
     coordinator = (ROOT / "skills" / "dev-rigor-stack" / "SKILL.md").read_text(encoding="utf-8")
     for name in sorted(CANONICAL - {"dev-rigor-stack"}):

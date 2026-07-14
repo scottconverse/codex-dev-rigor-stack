@@ -1,5 +1,7 @@
 ---
 name: dev-rigor-stack-gauntletgate
+metadata:
+  version: 1.7.0
 description: Run the complete GauntletGate advancement gate independently with lite, walkthrough, full, or all lanes and an honest verdict. Use for "$dev-rigor-stack-gauntletgate", "/dev-rigor-stack-gauntletgate", stage gate, sprint gate, readiness gate, or the overall stack's release gauntlet.
 ---
 

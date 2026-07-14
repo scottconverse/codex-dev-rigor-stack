@@ -1,5 +1,7 @@
 ---
 name: dev-rigor-stack-continuity
+metadata:
+  version: 1.7.0
 description: Restore, reconcile, and persist durable dev-rigor-stack project state across sessions, agents, and machines. Use for "$dev-rigor-stack-continuity", "/dev-rigor-stack-continuity", project handoff, resume work, record locked decisions, or close a rigor-stack session safely.
 ---
 

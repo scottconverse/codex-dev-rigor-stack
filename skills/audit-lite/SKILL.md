@@ -1,5 +1,7 @@
 ---
 name: audit-lite
+metadata:
+  version: 1.7.0
 description: Fast single-pass audit of a small code change, bug fix, or scoped diff — covers correctness, UX, docs, tests, and runtime behavior in one tight report. Use this skill whenever the user wants a quick audit, lite audit, smoke audit, spot check, sanity check, or pre-merge review of a recent fix or small feature. Trigger on phrases like "audit this fix," "quick audit," "lite audit," "is this fix ready," "review this small change," "between fixes," "smoke check before merge," or any review request scoped to a single bug fix, a few files, or a recent diff. Prefer this over `audit-team` when the change is small, time is short, and the full multi-role package would be overkill. Escalate to `audit-team` if findings warrant it.
 ---
 

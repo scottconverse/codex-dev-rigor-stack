@@ -1,6 +1,7 @@
 # Security Policy
 
-**Current supported version:** 1.7.0
+**Current release status:** no version is approved for installation. Version 1.7.0 is an
+unreleased review candidate; versions 1.6.0–1.6.3 are unsupported.
 
 ## Security model
 
@@ -17,7 +18,21 @@ from stdin, writes Codex hook JSON to stdout, and stores append-only state benea
 `CODEX_HOME/dev-rigor-stack/state`. Task records and evidence tokens contain hashes and
 bounded metadata rather than raw sensitive command arguments. Correlation tokens detect
 stale/mismatched evidence but are not a security boundary against a process that can read
-the task salt.
+or rewrite local task state. The same boundary applies to exact-task recovery transaction
+tokens: they bind a completion to one task, checkpoint, and unique failure occurrence for
+stale/replay detection, but do not make model-readable local state tamper-proof.
+
+Task identity is paired with
+`task-genesis-v4-<64 lowercase hex task key>.json`, which commits the exact task key to its
+task-local salt. Accepted proof is paired with
+`evidence-v4-<16 lowercase hex proof ID>.json`, whose strict schema binds the task, turn,
+hashed edit set, evidence class, execution/descriptor hashes, result, and checkpoint.
+Descriptors retain only bounded semantic and hashed correlation fields; they never retain
+secrets or raw sensitive command arguments. These files make accidental copying, stale
+reuse, schema drift, and mismatch visible. They are local evidence and correlation—not a
+security boundary against a process with permission to rewrite the profile. Missing or
+tampered canonical evidence is release-invalid, as are unreconciled pending tool
+observations or subagent pending observations.
 
 On Windows, `DevRigorHookActivator-1.7.0.exe` provides that review without a terminal. It
 uses Codex's local app-server protocol, accepts only the exact seven expected dev-rigor
@@ -25,10 +40,13 @@ events sourced from the user's `hooks.json`, shows their commands and hashes, re
 explicit confirmation, writes those hashes through `config/batchWrite`, and re-reads
 `hooks/list` before reporting success. It cannot trust unrelated hooks.
 
-The 1.7.0 Windows executable is built from the published source but is not Authenticode-signed.
-Browser downloads may therefore trigger Windows SmartScreen. The landing page publishes
-the exact binary SHA-256 and the complete matching C# source; do not continue when the
-downloaded hash differs.
+The 1.7.0 Windows executable will be built from the published source only after a clean
+independent verdict and the owner's explicit release decision. While the review hold is
+active, no executable, checksum, or end-user installation route is published. Maintainer
+source installers remain available solely for isolated review-profile testing. An authorized release
+must publish the exact binary SHA-256 and matching source/build record; do not continue when
+the downloaded hash differs. Browser downloads may trigger Windows SmartScreen because the
+future executable is not Authenticode-signed.
 
 The installers write only to the selected skills target, Codex hook runtime/configuration,
 and their staging, rollback, and backup trees. Injected mid-commit and backup-finalization

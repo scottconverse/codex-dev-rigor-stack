@@ -18,11 +18,19 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      # Preserve the upstream Claude hook source and separately prove the active Codex port.
-      - name: Upstream Claude hook source self-check (42 tests)
+      # Keep the retained provenance source internally consistent; it is not active architecture.
+      - name: Retained provenance source self-check (42 tests)
         run: node plugin/hooks/test-hooks.js
       - name: Active Codex hook self-check
-        run: node codex/hooks/test-hooks.js
+        run: |
+          node codex/hooks/test-hooks.js
+          node codex/hooks/test-association-concurrency.js
+          node codex/hooks/test-recovery.js
+          node codex/hooks/test-lifecycle-oracle.js
+          node codex/hooks/revoke-trust.js --self-test
+          node codex/hooks/test-revoke-trust-cas.js
+          node desktop/test-live-hook-lifecycle-support.js
+          node codex/install-transaction.test.js
       - name: Bundle and capability contracts
         run: |
           python3 tools/check_bundle.py
@@ -37,19 +45,21 @@ jobs:
       - name: Installer smoke (Linux)
         if: runner.os == 'Linux'
         run: |
-          bash install.sh --target "$RUNNER_TEMP/codex-home/skills" --no-backup
+          ./install.sh --target "$RUNNER_TEMP/codex-home/skills" --no-backup
           test -f "$RUNNER_TEMP/codex-home/hooks.json"
           test -f "$RUNNER_TEMP/codex-home/dev-rigor-stack/hooks/dev-rigor-ground.js"
           python3 tools/fingerprint_install_tree.py "$RUNNER_TEMP/codex-home" --seed
           before=$(python3 tools/fingerprint_install_tree.py "$RUNNER_TEMP/codex-home")
           for point in mid-commit backup-finalization; do
-            if DEV_RIGOR_INSTALL_TEST_FAIL_AT="$point" bash install.sh --target "$RUNNER_TEMP/codex-home/skills"; then
+            if DEV_RIGOR_INSTALL_TEST_FAIL_AT="$point" ./install.sh --target "$RUNNER_TEMP/codex-home/skills"; then
               echo "injected $point failure unexpectedly succeeded" >&2; exit 1
             fi
             test "$(python3 tools/fingerprint_install_tree.py "$RUNNER_TEMP/codex-home")" = "$before"
             test "$(find "$RUNNER_TEMP/codex-home/skills" -mindepth 1 -maxdepth 1 -type d ! -name .backup | wc -l)" -eq 19
           done
           sh tools/test_clean_rollback.sh
+          CI=1 ./uninstall.sh --codex-home "$RUNNER_TEMP/codex-home" --skip-trust-revocation
+          test ! -e "$RUNNER_TEMP/codex-home/dev-rigor-stack"
       - name: Installer smoke (Windows)
         if: runner.os == 'Windows'
         shell: powershell
@@ -86,10 +96,11 @@ jobs:
         run: |
           npm install --global @openai/codex@0.143.0
           $env:CODEX_HOME = "$env:RUNNER_TEMP\codex-home"
-          .\desktop\build.ps1 -OutputDirectory "$env:RUNNER_TEMP\activator-build" -RunIntegrationTest -IntegrationCwd "$env:GITHUB_WORKSPACE"
+          .\desktop\build.ps1 -OutputDirectory "$env:RUNNER_TEMP\activator-build-a" -RunIntegrationTest -IntegrationCwd "$env:GITHUB_WORKSPACE"
+          .\desktop\build.ps1 -OutputDirectory "$env:RUNNER_TEMP\activator-build-b"
           .\desktop\verify-binary-equivalence.ps1 `
-            -PublishedExecutable ".\candidate-artifacts\1.7.0\DevRigorHookActivator-1.7.0.exe" `
-            -RebuiltExecutable "$env:RUNNER_TEMP\activator-build\DevRigorHookActivator.exe"
+            -PublishedExecutable "$env:RUNNER_TEMP\activator-build-a\DevRigorHookActivator.exe" `
+            -RebuiltExecutable "$env:RUNNER_TEMP\activator-build-b\DevRigorHookActivator.exe"
           # Prove the uninstall/reinstall trust lifecycle: revoke exact owned hashes,
           # preserve foreign state in the revoker contract, remove definitions, reinstall,
           # and require the oracle to begin untrusted both times.

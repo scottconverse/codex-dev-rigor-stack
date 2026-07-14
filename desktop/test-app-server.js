@@ -42,7 +42,8 @@ function assertExact(hooks) {
     }
   }
   if (hooks.some((hook) => !hook.key || !hook.currentHash)) throw new Error('hook key/hash missing');
-  if (hooks.some((hook) => hook.handlerType !== 'command' || hook.source !== 'user' || !hook.enabled || hook.timeoutSec !== 5)) {
+  if (hooks.some((hook) => hook.handlerType !== 'command' || hook.source !== 'user' || !hook.enabled ||
+      hook.timeoutSec !== (['preToolUse', 'postToolUse', 'stop', 'subagentStop'].includes(hook.eventName) ? 15 : 5))) {
     throw new Error('hook metadata does not match the enabled command contract');
   }
   if (hooks.some((hook) => !/[a-f0-9]{64}/.test(hook.command || ''))) {

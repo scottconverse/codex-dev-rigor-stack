@@ -188,9 +188,11 @@ namespace DevRigorStack.Desktop
                 default: return false;
             }
 
+            int expectedTimeout = hook.EventName == "preToolUse" || hook.EventName == "postToolUse" ||
+                hook.EventName == "stop" || hook.EventName == "subagentStop" ? 15 : 5;
             if (!String.Equals(hook.HandlerType, "command", StringComparison.OrdinalIgnoreCase) ||
                 !String.Equals(hook.Source, "user", StringComparison.OrdinalIgnoreCase) ||
-                !hook.Enabled || hook.TimeoutSec != 5 ||
+                !hook.Enabled || hook.TimeoutSec != expectedTimeout ||
                 !String.Equals(hook.Matcher ?? "", expectedMatcher, StringComparison.Ordinal) ||
                 !String.Equals(hook.StatusMessage ?? "", expectedStatus, StringComparison.Ordinal))
                 return false;

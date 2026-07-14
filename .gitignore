@@ -8,3 +8,5 @@ Thumbs.db
 __pycache__/
 *.py[cod]
 desktop/dist/
+# Review builds are local evidence, never public repository artifacts.
+candidate-artifacts/
