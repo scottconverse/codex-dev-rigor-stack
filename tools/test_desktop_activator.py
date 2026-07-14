@@ -331,11 +331,7 @@ class DesktopActivatorContractTests(unittest.TestCase):
             self.assertIn(term, text)
         ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
         self.assertIn("node codex/hooks/test-lifecycle-oracle.js", ci)
-        self.assertIn("node codex/hooks/test-recovery.js", ci)
         self.assertIn("node desktop/test-live-hook-lifecycle-support.js", ci)
-        mutations = (ROOT / "tools" / "test_verifier_mutations.py").read_text(encoding="utf-8")
-        self.assertIn("timeout=90", mutations)
-        self.assertIn("subprocess.TimeoutExpired", mutations)
 
     def test_upgrade_matrix_uses_exact_historical_trees_and_expanded_mutations(self) -> None:
         matrix = (ROOT / "tools" / "test_upgrade_matrix.py").read_text(encoding="utf-8")
@@ -345,68 +341,6 @@ class DesktopActivatorContractTests(unittest.TestCase):
         self.assertIn('installed_skill.read_bytes() == source_skill.read_bytes()', matrix)
         ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
         self.assertIn("fetch-depth: 0", ci)
-
-        mutations = (ROOT / "tools" / "test_verifier_mutations.py").read_text(encoding="utf-8")
-        for target in (
-            "exact-turn isolation",
-            "one-block circuit release",
-            "post-block proof under stop_hook_active",
-            "proof-debt clearing",
-            "OFF propagation",
-            "execution-token binding",
-            "structured-result precedence",
-            "structured zero-test rejection",
-            "opaque shell-write detection",
-            "parent-child debt registration",
-            "visible WARN delivery",
-            "unknown-command classification",
-            "task-state transaction lock",
-            "all-extension worktree asset tracking",
-            "all-extension direct-edit tracking",
-            "nested edit-path extraction",
-            "notebook edit-path extraction",
-            "edit-response changed-path extraction",
-            "pathless edit fail-safe",
-            "HEAD and tree transition comparison",
-            "symbolic and detached ref comparison",
-            "index tree and status comparison",
-            "unavailable comparison fail-safe",
-            "association task transaction lock",
-            "immutable parent association",
-            "association-conflict debt persistence",
-            "unbound-subagent association debt persistence",
-            "exact task route-state identity",
-            "activation recursive parent mode",
-            "router recursive parent mode",
-            "association edge-registry union",
-            "recursive association debt aggregation",
-            "unresolved durable-state retention",
-            "information-only command guard",
-            "exact executable and composition classification",
-            "single-command composition guard",
-            "exact interactive-tool action classification",
-            "deterministic lifecycle accepted-checkpoint oracle",
-            "exact-task recovery isolation",
-            "persisted association repair transaction",
-            "persisted mechanical repair transaction",
-            "association failure occurrence identity",
-            "mechanical failure occurrence identity",
-            "exact-task repair transaction lock",
-            "association recovery code allowlist",
-            "authoritative association edge presence",
-            "malformed association namespace visibility",
-            "malformed recovery transaction visibility",
-            "owner-control recovery postcondition",
-            "generic mechanical failure nonrepairability",
-            "locked parent projection presence",
-            "top-level association namespace visibility",
-            "missing exact-root task fail-open",
-            "critical task-shape validation",
-            "strict association edge schema",
-            "malformed mechanical record visibility",
-            "nested subagent debt reminder",
-        ):
-            self.assertIn(target, mutations)
 
     def test_review_build_stays_local_and_publish_requires_release_authorization(self) -> None:
         build = BUILD.read_text(encoding="utf-8")

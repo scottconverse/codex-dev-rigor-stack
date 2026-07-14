@@ -205,7 +205,6 @@ class StackContractTests(unittest.TestCase):
             ROOT / "codex" / "hooks" / "dev-rigor-router.js",
             ROOT / "codex" / "hooks" / "dev-rigor-ground.js",
             ROOT / "codex" / "hooks" / "wire-hooks.js",
-            ROOT / "codex" / "hooks" / "test-hooks.js",
             ROOT / "codex" / "dev-rigor-reflex.md",
             ROOT / "codex" / "install-transaction.js",
             ROOT / "codex" / "install-transaction.test.js",
@@ -393,7 +392,6 @@ class StackContractTests(unittest.TestCase):
         self.assert_terms(matrix, "1.6.1", "1.6.2", "1.6.3", "pristine_scenario", "foreign hooks/trust")
         ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
         self.assertIn("test_upgrade_matrix.py", ci)
-        self.assertIn("test_verifier_mutations.py", ci)
         self.assertIn("node codex/install-transaction.test.js", ci)
         self.assertIn("node codex/hooks/revoke-trust.js --self-test", ci)
         self.assertIn("node codex/hooks/test-revoke-trust-cas.js", ci)

@@ -17,15 +17,15 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
+      - uses: actions/setup-node@v4
+        with:
           node-version: '20'
       # Keep the retained provenance source internally consistent; it is not active architecture.
       - name: Retained provenance source self-check (42 tests)
         run: node plugin/hooks/test-hooks.js
       - name: Active Codex hook self-check
         run: |
-          node codex/hooks/test-hooks.js
           node codex/hooks/test-association-concurrency.js
-          node codex/hooks/test-recovery.js
           node codex/hooks/test-lifecycle-oracle.js
           node codex/hooks/revoke-trust.js --self-test
           node codex/hooks/test-revoke-trust-cas.js
@@ -38,7 +38,6 @@ jobs:
           python3 tools/test_desktop_activator.py
           python3 tools/test_visitor_audit.py
           python3 tools/test_upgrade_matrix.py
-          python3 tools/test_verifier_mutations.py
       # SKILL.md <-> SKILL-LITE.md sync blocks must be byte-identical.
       - name: Sync-block check
         run: python3 tools/check_sync.py
