@@ -1076,13 +1076,19 @@ test('ground: exact supported test, build, and run shapes remain qualifying', ()
   if (process.platform !== 'win32') fs.chmodSync(path.join(shimDirectory, shimName), 0o755);
   const originalPath = process.env.PATH;
   process.env.PATH = `${shimDirectory}${path.delimiter}${originalPath}`;
+  const originalTrusted = process.env.DEV_RIGOR_TEST_TRUSTED_DIR;
+  process.env.DEV_RIGOR_TEST_TRUSTED_DIR = shimDirectory;
   try {
     const dotnetHome = freshHome();
     record(dotnetHome, 'ground-supported-dotnet', 'apply_patch', { command: '*** Update File: src/app.cs' });
     record(dotnetHome, 'ground-supported-dotnet', 'Bash', { command: 'dotnet build src/App.csproj' }, { exit_code: 0 });
     assert.strictEqual(stop(dotnetHome, 'ground-supported-dotnet', receipt).trim(), '');
     assert.ok(stateLines(dotnetHome).some((line) => line.startsWith('B ')));
-  } finally { process.env.PATH = originalPath; }
+  } finally {
+    process.env.PATH = originalPath;
+    if (originalTrusted !== undefined) process.env.DEV_RIGOR_TEST_TRUSTED_DIR = originalTrusted;
+    else delete process.env.DEV_RIGOR_TEST_TRUSTED_DIR;
+  }
 
   const home = freshHome();
   record(home, 'ground-supported-browser', 'apply_patch', { command: '*** Update File: src/ui.ts' });
@@ -2659,30 +2665,37 @@ test('ground: same-path executable replacement between PreToolUse and PostToolUs
   fs.writeFileSync(target, before);
   if (process.platform !== 'win32') fs.chmodSync(target, 0o755);
   const environment = { PATH: `${shim}${path.delimiter}${process.env.PATH}` };
-  record(home, session, 'apply_patch', {
-    command: '*** Update File: src/app.ts', cwd: repo,
-  }, {}, turn);
-  const input = { command: 'pytest -q' };
-  const rawPre = preTool(home, session, 'Bash', input, repo, toolUseId, turn, environment);
-  const parsedPre = rawPre.trim() ? JSON.parse(rawPre) : {};
-  fs.writeFileSync(target, after);
-  if (process.platform !== 'win32') fs.chmodSync(target, 0o755);
-  const effective = parsedPre.hookSpecificOutput && parsedPre.hookSpecificOutput.updatedInput
-    ? parsedPre.hookSpecificOutput.updatedInput.command : input.command;
-  const execution = process.platform === 'win32'
-    ? spawnSync('powershell.exe', ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', effective], {
-      cwd: repo, env: { ...process.env, ...environment }, encoding: 'utf8',
-    })
-    : spawnSync('bash', ['-c', effective], {
-      cwd: repo, env: { ...process.env, ...environment }, encoding: 'utf8',
-  });
-  assert.strictEqual(execution.status, 0, execution.stderr);
-  postTool(home, session, 'Bash', input, execution.stdout, repo, toolUseId, turn, environment);
-  const stopOutput = stop(home, session, receipt, false, 'stop', turn, repo);
-  assert.ok(stopOutput.trim(), 'same-path executable replacement was accepted as proof');
-  assert.strictEqual(JSON.parse(stopOutput).decision, 'block');
-  assert.ok(!stateLines(home).some((line) => /^T proof-id:/.test(line)),
-    'a replaced executable produced accepted proof from its stale PreToolUse identity');
+  const originalTrusted = process.env.DEV_RIGOR_TEST_TRUSTED_DIR;
+  process.env.DEV_RIGOR_TEST_TRUSTED_DIR = shim;
+  try {
+    record(home, session, 'apply_patch', {
+      command: '*** Update File: src/app.ts', cwd: repo,
+    }, {}, turn);
+    const input = { command: 'pytest -q' };
+    const rawPre = preTool(home, session, 'Bash', input, repo, toolUseId, turn, environment);
+    const parsedPre = rawPre.trim() ? JSON.parse(rawPre) : {};
+    fs.writeFileSync(target, after);
+    if (process.platform !== 'win32') fs.chmodSync(target, 0o755);
+    const effective = parsedPre.hookSpecificOutput && parsedPre.hookSpecificOutput.updatedInput
+      ? parsedPre.hookSpecificOutput.updatedInput.command : input.command;
+    const execution = process.platform === 'win32'
+      ? spawnSync('powershell.exe', ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', effective], {
+        cwd: repo, env: { ...process.env, ...environment }, encoding: 'utf8',
+      })
+      : spawnSync('bash', ['-c', effective], {
+        cwd: repo, env: { ...process.env, ...environment }, encoding: 'utf8',
+    });
+    assert.strictEqual(execution.status, 0, execution.stderr);
+    postTool(home, session, 'Bash', input, execution.stdout, repo, toolUseId, turn, environment);
+    const stopOutput = stop(home, session, receipt, false, 'stop', turn, repo);
+    assert.ok(stopOutput.trim(), 'same-path executable replacement was accepted as proof');
+    assert.strictEqual(JSON.parse(stopOutput).decision, 'block');
+    assert.ok(!stateLines(home).some((line) => /^T proof-id:/.test(line)),
+      'a replaced executable produced accepted proof from its stale PreToolUse identity');
+  } finally {
+    if (originalTrusted !== undefined) process.env.DEV_RIGOR_TEST_TRUSTED_DIR = originalTrusted;
+    else delete process.env.DEV_RIGOR_TEST_TRUSTED_DIR;
+  }
 });
 
 test('ground: a real correlated node test run that executes zero tests cannot satisfy proof', () => {
@@ -2907,27 +2920,34 @@ test('ground: same-size executable replacement with altered bytes is detected', 
   if (process.platform !== 'win32') fs.chmodSync(target, 0o755);
   const environment = { PATH: `${shim}${path.delimiter}${process.env.PATH}` };
 
-  record(home, session, 'apply_patch', {
-    command: '*** Update File: src/app.ts', cwd: repo,
-  }, {}, turn);
+  const originalTrusted = process.env.DEV_RIGOR_TEST_TRUSTED_DIR;
+  process.env.DEV_RIGOR_TEST_TRUSTED_DIR = shim;
+  try {
+    record(home, session, 'apply_patch', {
+      command: '*** Update File: src/app.ts', cwd: repo,
+    }, {}, turn);
 
-  const input = { command: 'python scripts/render.py' };
-  const rawPre = preTool(home, session, 'Bash', input, repo, toolUseId, turn, environment);
-  assert.ok(rawPre.trim() !== '', 'should trust mock python');
+    const input = { command: 'python scripts/render.py' };
+    const rawPre = preTool(home, session, 'Bash', input, repo, toolUseId, turn, environment);
+    assert.ok(rawPre.trim() !== '', 'should trust mock python');
 
-  fs.writeFileSync(target, buffer2);
-  if (process.platform !== 'win32') fs.chmodSync(target, 0o755);
+    fs.writeFileSync(target, buffer2);
+    if (process.platform !== 'win32') fs.chmodSync(target, 0o755);
 
-  const parsedPre = JSON.parse(rawPre);
-  const effective = parsedPre.hookSpecificOutput && parsedPre.hookSpecificOutput.updatedInput
-    ? parsedPre.hookSpecificOutput.updatedInput.command : input.command;
+    const parsedPre = JSON.parse(rawPre);
+    const effective = parsedPre.hookSpecificOutput && parsedPre.hookSpecificOutput.updatedInput
+      ? parsedPre.hookSpecificOutput.updatedInput.command : input.command;
 
-  postTool(home, session, 'Bash', input, 'Exit code: 0\n1 passed', repo, toolUseId, turn, environment);
+    postTool(home, session, 'Bash', input, 'Exit code: 0\n1 passed', repo, toolUseId, turn, environment);
 
-  const stopOutput = stop(home, session, 'receipt', false, 'stop', turn, repo);
-  const parsedStop = JSON.parse(stopOutput);
-  assert.strictEqual(parsedStop.decision, 'block', 'Same-size altered binary replacement was not blocked');
-  assert.match(parsedStop.reason, /latest runnable edit/i);
+    const stopOutput = stop(home, session, 'receipt', false, 'stop', turn, repo);
+    const parsedStop = JSON.parse(stopOutput);
+    assert.strictEqual(parsedStop.decision, 'block', 'Same-size altered binary replacement was not blocked');
+    assert.match(parsedStop.reason, /latest runnable edit/i);
+  } finally {
+    if (originalTrusted !== undefined) process.env.DEV_RIGOR_TEST_TRUSTED_DIR = originalTrusted;
+    else delete process.env.DEV_RIGOR_TEST_TRUSTED_DIR;
+  }
 });
 
 test('ground: isNativeBinary rejects fake PE starting with MZ but without signature', () => {
@@ -2945,14 +2965,52 @@ test('ground: isNativeBinary rejects fake PE starting with MZ but without signat
   if (process.platform !== 'win32') fs.chmodSync(target, 0o755);
 
   const environment = { PATH: `${shim}${path.delimiter}${process.env.PATH}` };
+  const originalTrusted = process.env.DEV_RIGOR_TEST_TRUSTED_DIR;
+  process.env.DEV_RIGOR_TEST_TRUSTED_DIR = shim;
+  try {
+    record(home, session, 'apply_patch', {
+      command: '*** Update File: src/app.ts', cwd: unitRepo,
+    }, {}, turn);
+
+    const output = preTool(home, session, 'Bash', {
+      command: 'python scripts/render.py',
+    }, unitRepo, 'tool-fake-pe', turn, environment);
+    assert.strictEqual(output.trim(), '', 'should reject fake PE');
+  } finally {
+    if (originalTrusted !== undefined) process.env.DEV_RIGOR_TEST_TRUSTED_DIR = originalTrusted;
+    else delete process.env.DEV_RIGOR_TEST_TRUSTED_DIR;
+  }
+});
+
+test('ground: a valid native shadow placed on PATH is rejected if outside trusted directories', () => {
+  const home = freshHome();
+  const session = 'ground-valid-native-shadow';
+  const turn = 'turn-valid-native-shadow';
+  const shim = path.join(tmpRoot, `valid-shadow-shim-${++serial}`);
+  fs.mkdirSync(shim, { recursive: true });
+  const filename = process.platform === 'win32' ? 'python.exe' : 'python';
+  const target = path.join(shim, filename);
+
+  const buffer = Buffer.alloc(100, 0);
+  if (process.platform === 'win32') {
+    buffer[0] = 0x4d; buffer[1] = 0x5a;
+    buffer.writeUInt32LE(64, 0x3c);
+    buffer[64] = 0x50; buffer[65] = 0x45;
+  } else {
+    buffer[0] = 0x7f; buffer[1] = 0x45; buffer[2] = 0x4c; buffer[3] = 0x46;
+  }
+  fs.writeFileSync(target, buffer);
+  if (process.platform !== 'win32') fs.chmodSync(target, 0o755);
+
+  const environment = { PATH: `${shim}${path.delimiter}${process.env.PATH}` };
   record(home, session, 'apply_patch', {
     command: '*** Update File: src/app.ts', cwd: unitRepo,
   }, {}, turn);
 
   const output = preTool(home, session, 'Bash', {
     command: 'python scripts/render.py',
-  }, unitRepo, 'tool-fake-pe', turn, environment);
-  assert.strictEqual(output.trim(), '', 'should reject fake PE');
+  }, unitRepo, 'tool-valid-shadow', turn, environment);
+  assert.strictEqual(output.trim(), '', 'should reject valid native shadow in untrusted path');
 });
 
 (async () => {

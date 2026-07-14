@@ -1272,11 +1272,48 @@ function resolveExecutablePath(token, cwd) {
   return '';
 }
 
+function isTrustedSystemPath(filePath) {
+  const normalized = path.resolve(filePath);
+  const home = os.homedir();
+  const whitelist = [];
+  if (process.platform === 'win32') {
+    whitelist.push(
+      'C:\\Program Files',
+      'C:\\Program Files (x86)',
+      'C:\\Windows',
+      path.join(home, 'AppData', 'Local', 'Programs'),
+      path.join(home, 'AppData', 'Local', 'Microsoft', 'WindowsApps')
+    );
+  } else {
+    whitelist.push(
+      '/usr',
+      '/bin',
+      '/sbin',
+      '/opt',
+      '/System'
+    );
+  }
+  whitelist.push(path.dirname(process.execPath));
+  if (process.env.DEV_RIGOR_TEST_TRUSTED_DIR) {
+    whitelist.push(process.env.DEV_RIGOR_TEST_TRUSTED_DIR);
+  }
+  for (const entry of whitelist) {
+    try {
+      const realEntry = fs.realpathSync.native(entry);
+      if (pathInside(normalized, realEntry)) {
+        return true;
+      }
+    } catch (_) {}
+  }
+  return false;
+}
+
 function executableOriginHash(command, cwd) {
   const tokens = parseSimpleCommand(command);
   if (!tokens || !cwd) return '';
   const resolved = resolveExecutablePath(tokens[0], cwd);
   if (!resolved || pathInside(resolved, repositoryBoundary(cwd))) return '';
+  if (!isTrustedSystemPath(resolved)) return '';
   try {
     const content = fs.readFileSync(resolved);
     return hash(canonicalPath(resolved), content).slice(0, 16);
