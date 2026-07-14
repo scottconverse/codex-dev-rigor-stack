@@ -53,8 +53,8 @@ const codexBinary = resolveCodexBinary();
 const codexVersion = execFileSync(codexBinary, ['--version'], {
   encoding: 'utf8', timeout: 5000, windowsHide: true,
 }).trim();
-if (!/\b0\.143\.0\b/.test(codexVersion)) {
-  throw new Error(`Authenticated lifecycle requires Codex 0.143.0; received ${redactSensitive(codexVersion)}`);
+if (!/\b0\.144\.2\b/.test(codexVersion)) {
+  throw new Error(`Authenticated lifecycle requires Codex 0.144.2; received ${redactSensitive(codexVersion)}`);
 }
 const child = spawnCodexAppServer(codexBinary, { ...process.env, CODEX_HOME: codexHome });
 
