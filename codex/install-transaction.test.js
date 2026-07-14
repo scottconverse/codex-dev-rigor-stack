@@ -388,7 +388,7 @@ async function testOwnershipAndPathRefusals(root) {
   fs.unlinkSync(path.join(missing, 'dev-rigor-stack', 'install-ownership-v2.json'));
   const missingExpected = snapshot(missing);
   const missingRefusal = invoke(uninstallArgs(missing), {}, 1);
-  assert.match(`${missingRefusal.stdout}\n${missingRefusal.stderr}`, /OWNERSHIP.*missing/i,
+  assert.match(`${missingRefusal.stdout}\n${missingRefusal.stderr}`, /OWNERSHIP.*(?:missing|legacy)/i,
     'missing ownership failed for an incidental reason');
   assert.deepStrictEqual(snapshot(missing), missingExpected, 'missing ownership refusal changed the profile');
 

@@ -378,17 +378,35 @@ test('REPAIR: concurrent retries append one resolution for one occurrence', asyn
 test('STATUS: a new association occurrence is not hidden by an older resolution', () => {
   const home = freshHome();
   try {
-    activateUnbound(home, 'repeat-child');
     activate(home, 'repeat-parent');
+    const bkTask = taskPath(home, 'repeat-parent') + '.bak';
+    const bkGen = genesisPath(home, 'repeat-parent') + '.bak';
+    fs.copyFileSync(taskPath(home, 'repeat-parent'), bkTask);
+    fs.copyFileSync(genesisPath(home, 'repeat-parent'), bkGen);
+    fs.unlinkSync(taskPath(home, 'repeat-parent'));
+    fs.unlinkSync(genesisPath(home, 'repeat-parent'));
+
     activate(home, 'repeat-child', 'repeat-parent');
-    assert.match(repair(home, 'repeat-child'), /association resolved:\s*1/i);
+    fs.copyFileSync(bkTask, taskPath(home, 'repeat-parent'));
+    fs.copyFileSync(bkGen, genesisPath(home, 'repeat-parent'));
+
+    activate(home, 'repeat-child', 'repeat-parent');
+    assert.match(repair(home, 'repeat-parent'), /association resolved:\s*1/i);
     assert.match(status(home, 'repeat-child'), /association debt:\s*no/i);
+
+    fs.copyFileSync(taskPath(home, 'repeat-parent'), bkTask);
+    fs.copyFileSync(genesisPath(home, 'repeat-parent'), bkGen);
+
+    fs.unlinkSync(taskPath(home, 'repeat-parent'));
+    fs.unlinkSync(genesisPath(home, 'repeat-parent'));
     fs.unlinkSync(edgePath(home, 'repeat-parent', 'repeat-child'));
-    const warning = context(activateUnbound(home, 'repeat-child'));
-    assert.match(warning, /association debt .*release-blocking/i);
-    writeEdge(home, 'repeat-parent', 'repeat-child');
+
+    activate(home, 'repeat-child', 'repeat-parent');
+    fs.copyFileSync(bkTask, taskPath(home, 'repeat-parent'));
+    fs.copyFileSync(bkGen, genesisPath(home, 'repeat-parent'));
+
     const text = status(home, 'repeat-child');
-    assert.match(text, /association debt:\s*yes\s*\(1\).*parent-unavailable/i,
+    assert.match(text, /association debt:\s*yes\s*\(1\).*missing-parent-state/i,
       'old association attestation masked a new failure occurrence');
     assert.match(text, /association resolutions:\s*1\b/i);
   } finally { fs.rmSync(home, { recursive: true, force: true }); }

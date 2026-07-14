@@ -86,6 +86,33 @@ function identity(value) {
   return typeof value === 'string' && value.length > 0 ? value : '';
 }
 
+function registerRepository(repoPath) {
+  if (!repoPath) return '';
+  const key = hash(repoPath);
+  const registryPath = path.join(stateDir, 'repos-v4.json');
+  let registry = {};
+  try { registry = JSON.parse(fs.readFileSync(registryPath, 'utf8')); } catch (_) {}
+  if (registry[key] !== repoPath) {
+    registry[key] = repoPath;
+    try {
+      ensureStateDir();
+      fs.writeFileSync(registryPath, JSON.stringify(registry) + '\n', { encoding: 'utf8', mode: 0o600 });
+    } catch (_) {}
+  }
+  return key;
+}
+
+function resolveRepository(key) {
+  if (!key) return '';
+  const registryPath = path.join(stateDir, 'repos-v4.json');
+  try {
+    const registry = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
+    return registry[key] || '';
+  } catch (_) {
+    return '';
+  }
+}
+
 function ensureStateDir() {
   fs.mkdirSync(stateDir, { recursive: true, mode: 0o700 });
   try { fs.chmodSync(stateDir, 0o700); } catch (_) { /* Windows inherits profile ACLs. */ }
@@ -244,6 +271,7 @@ function createTaskLock(target) {
     fs.linkSync(temporary, target);
     return { target, owner };
   } catch (error) {
+    if (error.code === 'EEXIST') return null;
     if (!fs.existsSync(target)) throw error;
     return null;
   } finally {
@@ -254,9 +282,10 @@ function createTaskLock(target) {
 function withTaskLock(session, callback) {
   ensureStateDir();
   const target = taskLockPath(session);
-  const timeout = Math.max(250, Math.min(8000, Number(process.env.DEV_RIGOR_LOCK_TIMEOUT_MS) || 3000));
+  const timeout = Math.max(250, Math.min(30000, Number(process.env.DEV_RIGOR_LOCK_TIMEOUT_MS) || 15000));
   const deadline = Date.now() + timeout;
   let lock = null;
+  let lastReclaimCheck = 0;
   while (true) {
     try {
       lock = createTaskLock(target);
@@ -264,8 +293,12 @@ function withTaskLock(session, callback) {
     } catch (error) {
       if (!fs.existsSync(target)) throw error;
     }
-    if (reclaimTaskLock(target)) continue;
-    if (Date.now() >= deadline) throw new Error('task-lock-timeout');
+    const now = Date.now();
+    if (now - lastReclaimCheck >= 1000) {
+      lastReclaimCheck = now;
+      if (reclaimTaskLock(target)) continue;
+    }
+    if (now >= deadline) throw new Error('task-lock-timeout');
     pause(8);
   }
   try { return callback(); }
@@ -426,7 +459,20 @@ function saveTask(session, task) {
   const target = taskPath(session);
   const temporary = `${target}.${process.pid}.${crypto.randomBytes(4).toString('hex')}.tmp`;
   fs.writeFileSync(temporary, JSON.stringify(task) + '\n', { encoding: 'utf8', mode: 0o600 });
-  fs.renameSync(temporary, target);
+  let retries = 10;
+  while (true) {
+    try {
+      fs.renameSync(temporary, target);
+      break;
+    } catch (e) {
+      if (['EPERM', 'EBUSY', 'EACCES'].includes(e.code) && retries-- > 0) {
+        const start = Date.now();
+        while (Date.now() - start < 15) {}
+        continue;
+      }
+      throw e;
+    }
+  }
   try { fs.chmodSync(target, 0o600); } catch (_) { /* Windows inherits profile ACLs. */ }
   return true;
 }
@@ -520,7 +566,7 @@ function pruneState(preserve = new Set()) {
   const retentionMs = 7 * 24 * 3600 * 1000;
   const ledgerReferences = protectedLedgerNames(entries);
   const pendingReferences = protectedPendingNames(entries);
-  const protectedState = /^(?:task(?:-genesis|-lock)?|association|association-debt|mechanical|evidence)-v4-/;
+  const protectedState = /^(?:task(?:-genesis)?|association|association-debt|mechanical|evidence)-v4-/;
   const activeSnapshot = (entry) => entry.name.startsWith('pre-v4-') && now - entry.stat.mtimeMs < 3600 * 1000;
   const activeReceipt = (entry) => entry.name.startsWith('exec-v4-') && now - entry.stat.mtimeMs < 3600 * 1000;
   for (const entry of entries) {
@@ -685,7 +731,7 @@ function fingerprintPath(root, item, budget, deadline, depth) {
       kind = 'symlink';
       contentHash = hash(fs.readlinkSync(absolute));
     } else if (stat.isFile()) {
-      if (item.status === 'tracked') {
+      if (item.status === 'tracked' || item.status === 'hidden-index' || item.tracked === true) {
         // Clean filters can hide real worktree-byte changes from Git's status and
         // index. Persist privacy-bounded metadata for every clean tracked path so
         // ordinary filter-normalized writes still change the paired snapshot.
@@ -761,12 +807,22 @@ function worktreeSnapshot(cwd, deadline = Date.now() + SNAPSHOT_BUDGET_MS, budge
     if (Date.now() >= deadline) return { available: false, reason: 'git-timeout' };
     const indexed = indexPaths(indexResult.stdout, deadline);
     const observedPaths = new Map();
-    for (const item of statusPaths(statusResult.stdout, deadline)) observedPaths.set(item.name, item);
+    for (const item of statusPaths(statusResult.stdout, deadline)) {
+      item.tracked = indexed.has(item.name);
+      observedPaths.set(item.name, item);
+    }
     for (const [name, metadata] of indexed) {
       if (Date.now() >= deadline) return { available: false, reason: 'git-timeout' };
       if (!observedPaths.has(name)) observedPaths.set(name, { name, status: metadata.hidden ? 'hidden-index' : 'tracked' });
     }
-    if (observedPaths.size > 20000) return { available: false, reason: 'path-limit' };
+    if (observedPaths.size > 20000) {
+      for (const [name, item] of observedPaths.entries()) {
+        if (item.status === 'tracked' || item.status === 'hidden-index' || (typeof item.status === 'string' && item.status.includes('D'))) {
+          observedPaths.delete(name);
+        }
+      }
+      if (observedPaths.size > 20000) return { available: false, reason: 'path-limit' };
+    }
     const entries = {};
     for (const item of observedPaths.values()) {
       item.gitlink = Boolean(indexed.get(item.name) && indexed.get(item.name).gitlink);
@@ -793,15 +849,28 @@ function saveSnapshot(session, turn, toolUseId, snapshot) {
   try {
     ensureStateDir();
     const target = snapshotPath(session, turn, toolUseId);
-    fs.writeFileSync(target, JSON.stringify(snapshot) + '\n', { encoding: 'utf8', mode: 0o600 });
-    try { fs.chmodSync(target, 0o600); } catch (_) { /* Windows inherits profile ACLs. */ }
-    return true;
+    try {
+      fs.writeFileSync(target, JSON.stringify(snapshot) + '\n', { encoding: 'utf8', mode: 0o600, flag: 'wx' });
+      try { fs.chmodSync(target, 0o600); } catch (_) { /* Windows inherits profile ACLs. */ }
+      return true;
+    } catch (error) {
+      if (error && error.code === 'EEXIST') {
+        try {
+          JSON.parse(fs.readFileSync(target, 'utf8'));
+          return true;
+        } catch (_) {}
+      }
+      return false;
+    }
   } catch (_) { return false; }
 }
 
 function takeSnapshot(session, turn, toolUseId, cwd, execution = null) {
   if (!toolUseId || !cwd) return false;
   const snapshot = worktreeSnapshot(cwd);
+  if (snapshot.available) {
+    snapshot.repoRootHash = registerRepository(repositoryBoundary(cwd));
+  }
   if (execution && execution.nonce) {
     snapshot.executionNonce = execution.nonce;
     snapshot.executionClass = execution.eventClass;
@@ -846,17 +915,18 @@ function reconcilePending(session, turn, cwd) {
   });
   if (pending === undefined || pending.length === 0) return pending;
   const deadline = Date.now() + postObservationBudgetMs();
-  const after = cwd ? worktreeSnapshot(cwd, deadline) : { available: false, reason: 'missing-cwd' };
   return pending.map((item) => {
     const before = consumeSnapshotByName(item.id);
     if (/^exec-v4-[a-f0-9]{64}\.receipt$/.test(String(item.receipt || ''))) {
       try { fs.unlinkSync(path.join(stateDir, item.receipt)); } catch (_) { /* absent receipt is expected after failed tools */ }
     }
+    const targetCwd = before && (before.repoRootHash ? resolveRepository(before.repoRootHash) : before.repoRoot) || cwd;
+    const after = targetCwd ? worktreeSnapshot(targetCwd, deadline) : { available: false, reason: 'missing-cwd' };
     return {
       id: item.id,
       eventClass: /^[RTB]$/.test(item.eventClass) ? item.eventClass : 'U',
-      observed: worktreeChanges(before, after, cwd, deadline),
-      root: after && after.root || hash(cwd),
+      observed: worktreeChanges(before, after, targetCwd, deadline),
+      root: after && after.root || hash(targetCwd),
     };
   });
 }
@@ -1046,16 +1116,29 @@ function explicitSuccess(value) {
   return typeof value.status === 'string' && /^(?:ok|passed|success|succeeded|successful)$/i.test(value.status.trim());
 }
 
-function executionPassed(response, receipt = null) {
+function zeroTestsExecuted(text) {
+  return /1\.\.0|\btests\s+0\b|\b0\s+tests\b|\b0\s+passed\b|\bcollected\s+0\s+items\b|\bno\s+tests\s+ran\b|\b0\s+spec(?:s|ifications)?\b/i.test(text);
+}
+
+function executionPassed(response, receipt = null, eventClass = '') {
   if (receipt && receipt.expected && !receipt.valid) return false;
   if (explicitFailure(response)) return false;
   const structured = structuredResult(response);
   if (structured.found) return structured.passed && !structured.failed;
+  const text = textValues(response).join('\n');
+  if (eventClass === 'T' && zeroTestsExecuted(text)) return false;
   const process = processResult(response);
   if (process.nonzero || (receipt && receipt.valid && receipt.code !== 0)) return false;
-  if (process.zero || (receipt && receipt.valid && receipt.code === 0)) return true;
+  if (process.zero || (receipt && receipt.valid && receipt.code === 0)) {
+    if (eventClass === 'T' && (
+      /\b0\s+(?:tests?\s+)?passed\b/i.test(text) ||
+      /\b[1-9]\d*\s+(?:tests?\s+)?failed\b/i.test(text)
+    )) {
+      return false;
+    }
+    return true;
+  }
   if (explicitSuccess(response)) return true;
-  const text = textValues(response).join('\n');
   if (/(?:exit(?:ed)?(?:\s+with)?(?:\s+code)?|status)\s*[:=]?\s*[1-9]\d*/i.test(text) ||
       /(?:^|\n)\s*(?:error|failure|failed|rejected|declined|cancelled)(?:\s*[:=]|\s*$)/im.test(text) ||
       /(?:^|\n)\s*(?:(?:execution|command|tool call)\s+)?(?:was\s+)?(?:rejected|blocked)\s+by\s+(?:policy|the user)\b/im.test(text) ||
@@ -1221,7 +1304,17 @@ function executableOriginHash(command, cwd) {
   if (!tokens || !cwd) return '';
   const resolved = resolveExecutablePath(tokens[0], cwd);
   if (!resolved || pathInside(resolved, repositoryBoundary(cwd))) return '';
-  return hash(canonicalPath(resolved)).slice(0, 16);
+  try {
+    const stat = fs.statSync(resolved);
+    if (!stat.isFile()) return '';
+    const fd = fs.openSync(resolved, 'r');
+    const buffer = Buffer.alloc(Math.min(65536, stat.size));
+    const bytesRead = fs.readSync(fd, buffer, 0, buffer.length, 0);
+    fs.closeSync(fd);
+    return hash(canonicalPath(resolved), stat.size, buffer.subarray(0, bytesRead)).slice(0, 16);
+  } catch (_) {
+    return '';
+  }
 }
 
 function informationOnly(executable, args) {
@@ -1248,6 +1341,28 @@ function packageScriptClass(args) {
   return 'U';
 }
 
+function isNativeBinary(filePath) {
+  if (/\.(?:cmd|bat|ps1|lnk|vbs|js|wsf|sh|bash)$/i.test(filePath)) return false;
+  try {
+    const fd = fs.openSync(filePath, 'r');
+    const buffer = Buffer.alloc(4);
+    const bytesRead = fs.readSync(fd, buffer, 0, 4, 0);
+    fs.closeSync(fd);
+    if (bytesRead < 2) return false;
+    if (buffer[0] === 0x4d && buffer[1] === 0x5a) return true;
+    if (bytesRead >= 4 && buffer[0] === 0x7f && buffer[1] === 0x45 && buffer[2] === 0x4c && buffer[3] === 0x46) return true;
+    if (bytesRead >= 4 && (
+      (buffer[0] === 0xca && buffer[1] === 0xfe && buffer[2] === 0xba && buffer[3] === 0xbe) ||
+      (buffer[0] === 0xfe && buffer[1] === 0xed && buffer[2] === 0xfa && buffer[3] === 0xce) ||
+      (buffer[0] === 0xfe && buffer[1] === 0xed && buffer[2] === 0xfa && buffer[3] === 0xcf) ||
+      (buffer[0] === 0xcf && buffer[1] === 0xfa && buffer[2] === 0xed && buffer[3] === 0xfe)
+    )) return true;
+    return false;
+  } catch (_) {
+    return false;
+  }
+}
+
 function shellCommandClass(command, cwd = '') {
   if (INSPECTION_COMMAND.test(command)) return 'I';
   const tokens = parseSimpleCommand(command);
@@ -1255,6 +1370,10 @@ function shellCommandClass(command, cwd = '') {
   if (/[\\/]/.test(tokens[0]) || /^[a-z]:/i.test(tokens[0])) return 'U';
   if (!executableOriginHash(command, cwd)) return 'U';
   const executable = executableName(tokens[0]);
+  if (['node', 'python', 'python3', 'py'].includes(executable)) {
+    const resolved = resolveExecutablePath(tokens[0], cwd);
+    if (!resolved || !isNativeBinary(resolved)) return 'U';
+  }
   const args = tokens.slice(1);
   const lowered = args.map((value) => value.toLowerCase());
   if (informationOnly(executable, args)) return 'U';
@@ -1539,7 +1658,7 @@ function main() {
             changed = true;
           }
         } else {
-          const paths = new Set([...editedPaths(payload.tool_input), ...reported]);
+          const paths = new Set([...editedPaths(payload.tool_input), ...changedPaths(payload.tool_response)]);
           if (paths.size === 0) {
             noteWrite(recordEdit(session, turn, task, 'E', `unobserved-edit:${hash(tool, payload.tool_use_id || '')}`));
             changed = true;
@@ -1582,11 +1701,17 @@ function main() {
           );
         }
 
-        if (!executionPassed(payload.tool_response, proofReceipt)) {
+        const isDirectWrite = DIRECT_WRITE.test(command);
+        if (!executionPassed(payload.tool_response, proofReceipt, eventClass)) {
           noteWrite(append(session, turn, `F class:${eventClass}`));
-        } else if (!observationAvailable || eventClass === 'I' || eventClass === 'U') {
-          noteWrite(append(session, turn, 'I result:pass'));
-        } else if (task.dirtyEdits.length === 0) {
+        } else {
+          if (isDirectWrite) {
+            const rootHash = (after && after.root) || (before && before.root) || hash(cwd);
+            noteWrite(recordArtifact(session, turn, task, 'G', syntheticRepositoryArtifact(rootHash, 'mutating-command')));
+          }
+          if (!observationAvailable || eventClass === 'I' || eventClass === 'U') {
+            noteWrite(append(session, turn, 'I result:pass'));
+          } else if (task.dirtyEdits.length === 0) {
           noteWrite(append(session, turn, `${eventClass} observation-only result:pass`));
         } else {
           const edits = [...task.dirtyEdits];
@@ -1615,6 +1740,7 @@ function main() {
             ledgerFailed = true;
           }
         }
+      }
 
         if (observationAvailable && observed.items.length) {
           observed.items.forEach((item) => noteWrite(recordArtifact(session, turn, task, 'G', item)));

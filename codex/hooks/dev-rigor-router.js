@@ -13,7 +13,7 @@ const associationDir = path.join(stateDir, 'associations-v4');
 const associationDebtDir = path.join(stateDir, 'association-debt-v4');
 const associationResolutionDir = path.join(stateDir, 'association-resolutions-v4');
 const disciplinesDir = path.join(__dirname, '..', 'disciplines');
-const LOCK_WAIT_MS = 1800;
+const LOCK_WAIT_MS = 15000;
 const ASSOCIATION_DEBT_CODES = new Set([
   'association-state-failed', 'association-parent-conflict',
   'association-edge-persist-failed', 'association-parent-state-failed',
@@ -257,6 +257,7 @@ function createTaskLock(target) {
     fs.linkSync(temporary, target);
     return { target, owner };
   } catch (error) {
+    if (error.code === 'EEXIST') return null;
     if (!fs.existsSync(target)) throw error;
     return null;
   } finally {
@@ -301,7 +302,20 @@ function saveTaskByKey(key, task) {
   const target = taskPathByKey(key);
   const temporary = `${target}.${process.pid}.${crypto.randomBytes(4).toString('hex')}.tmp`;
   fs.writeFileSync(temporary, JSON.stringify(task) + '\n', { encoding: 'utf8', mode: 0o600 });
-  fs.renameSync(temporary, target);
+  let retries = 10;
+  while (true) {
+    try {
+      fs.renameSync(temporary, target);
+      break;
+    } catch (e) {
+      if (['EPERM', 'EBUSY', 'EACCES'].includes(e.code) && retries-- > 0) {
+        const start = Date.now();
+        while (Date.now() - start < 15) {}
+        continue;
+      }
+      throw e;
+    }
+  }
   try { fs.chmodSync(target, 0o600); } catch (_) { /* Windows inherits profile ACLs. */ }
 }
 

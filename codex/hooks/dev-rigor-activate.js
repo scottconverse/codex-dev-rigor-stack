@@ -11,6 +11,7 @@ const codexHome = process.env.CODEX_HOME || path.join(os.homedir(), '.codex');
 const stateDir = path.join(codexHome, 'dev-rigor-stack', 'state');
 const associationDir = path.join(stateDir, 'associations-v4');
 const associationDebtDir = path.join(stateDir, 'association-debt-v4');
+const associationResolutionDir = path.join(stateDir, 'association-resolutions-v4');
 const disciplinesDir = path.join(__dirname, '..', 'disciplines');
 const LOCK_WAIT_MS = 3500;
 
@@ -303,6 +304,7 @@ function createTaskLock(target) {
     fs.linkSync(temporary, target);
     return { target, owner };
   } catch (error) {
+    if (error.code === 'EEXIST') return null;
     if (!fs.existsSync(target)) throw error;
     return null;
   } finally {
@@ -341,7 +343,20 @@ function saveTaskByKey(key, task) {
   const temporary = `${target}.${process.pid}.${crypto.randomBytes(4).toString('hex')}.tmp`;
   fs.writeFileSync(temporary, JSON.stringify(task) + '\n', { encoding: 'utf8', mode: 0o600 });
   if (!writeTaskGenesis(key, task)) throw new Error('task-identity-invalid');
-  fs.renameSync(temporary, target);
+  let retries = 10;
+  while (true) {
+    try {
+      fs.renameSync(temporary, target);
+      break;
+    } catch (e) {
+      if (['EPERM', 'EBUSY', 'EACCES'].includes(e.code) && retries-- > 0) {
+        const start = Date.now();
+        while (Date.now() - start < 15) {}
+        continue;
+      }
+      throw e;
+    }
+  }
   try { fs.chmodSync(target, 0o600); } catch (_) { /* Windows inherits profile ACLs. */ }
 }
 
@@ -425,8 +440,9 @@ function writeAssociationDebt(parentKey, childKey, code) {
     for (const name of fs.readdirSync(directory)) {
       try {
         const current = JSON.parse(fs.readFileSync(path.join(directory, name), 'utf8'));
-        if (current && current.version === 4 && current.parentKey === parentKey && current.childKey === childKey &&
-            current.code === code && current.status === 'unresolved' && /^[a-f0-9]{16}$/.test(current.id || '')) return current.id;
+                if (current && current.version === 4 && current.parentKey === parentKey && current.childKey === childKey &&
+            current.code === code && current.status === 'unresolved' && /^[a-f0-9]{16}$/.test(current.id || '') &&
+            !fs.existsSync(path.join(associationResolutionDir, parentKey, `${current.id}.json`))) return current.id;
       } catch (_) { /* malformed markers remain visible structural debt */ }
     }
   } catch (_) { /* first marker in this namespace */ }

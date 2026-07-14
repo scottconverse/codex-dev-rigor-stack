@@ -474,6 +474,10 @@ test('ground: the same turn is blocked at most once when Codex omits stop_hook_a
   assert.strictEqual(first.decision, 'block');
   expectSystemMessage(stop(home, 'ground-circuit', 'Explanation after hook feedback.'), /proof debt remains unresolved/i);
   assert.strictEqual(stop(home, 'ground-circuit', 'Later conversation in the same turn.').trim(), '');
+  const state = path.join(home, 'dev-rigor-stack', 'state');
+  const ledgerName = fs.readdirSync(state).find((name) => name.startsWith('ground-v4-'));
+  const lines = fs.readFileSync(path.join(state, ledgerName), 'utf8').trim().split('\n');
+  assert.strictEqual(lines.filter((line) => line.startsWith('U ')).length, 1, 'turn should be released at most once in ledger');
 });
 
 test('ground: stop_hook_active clears a prior block instead of leaving poison state', () => {
@@ -924,7 +928,7 @@ test('ground: inspection commands cannot satisfy proof', () => {
 });
 
 test('ground: harmless and unknown shell commands cannot satisfy substantive proof', () => {
-  const commands = ['echo hello', 'pwd', 'Get-Date', 'git fetch', 'sleep 0', 'custom-status-probe --quiet'];
+  const commands = ['echo hello', 'pwd', 'Get-Date', 'git fetch', 'sleep 0', 'custom-status-probe --quiet', 'curl https://example.invalid/test'];
   for (const [index, command] of commands.entries()) {
     const home = freshHome();
     const session = `ground-harmless-${index}`;
