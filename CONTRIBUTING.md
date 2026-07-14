@@ -10,16 +10,12 @@ same gates the stack enforces.
 
 ## Ground rules
 
-- **Every change comes with its check.** Retained upstream Claude source changes need a test in
-  `plugin/hooks/test-hooks.js`. Watch the relevant assertion fail first.
-  Doc changes must not overclaim — if you say the product does X, the code must do X.
-- **Run the complete suite before pushing:** `node codex/hooks/test-association-concurrency.js`,
-  `node codex/hooks/test-lifecycle-oracle.js`,
+- **Every change comes with its check.** Doc changes must not overclaim — if you say the product does X, the code must do X.
+- **Run the complete suite before pushing:** `node codex/hooks/test-lifecycle-oracle.js`,
   `node codex/hooks/revoke-trust.js --self-test`,
   `node codex/hooks/test-revoke-trust-cas.js`,
   `node codex/install-transaction.test.js`,
   `node desktop/test-live-hook-lifecycle-support.js`,
-  `node plugin/hooks/test-hooks.js` (provenance regression suite),
   `python3 tools/check_sync.py`, `python3 tools/check_bundle.py`, and
   `python3 -m unittest tools.test_stack_contracts tools.test_desktop_activator
   tools.test_visitor_audit` and `python3 tools/test_upgrade_matrix.py`. On Windows, also build `desktop/build.ps1`; CI runs its

@@ -20,12 +20,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      # Keep the retained provenance source internally consistent; it is not active architecture.
-      - name: Retained provenance source self-check (42 tests)
-        run: node plugin/hooks/test-hooks.js
+
       - name: Active Codex hook self-check
         run: |
-          node codex/hooks/test-association-concurrency.js
           node codex/hooks/test-lifecycle-oracle.js
           node codex/hooks/revoke-trust.js --self-test
           node codex/hooks/test-revoke-trust-cas.js

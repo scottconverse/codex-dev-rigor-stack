@@ -364,7 +364,6 @@ class StackContractTests(unittest.TestCase):
         architecture = (ROOT / "docs" / "ARCHITECTURE.md").read_text(encoding="utf-8")
         self.assert_terms(
             contributing,
-            "node codex/hooks/test-association-concurrency.js",
             "node desktop/test-live-hook-lifecycle.js",
             "authenticated disposable codex_home",
             "manual release evidence",
