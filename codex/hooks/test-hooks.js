@@ -2878,6 +2878,83 @@ test('revoke-trust: explicit alternate CODEX_HOME overrides the ambient profile 
   assert.notStrictEqual(childEnvironment.CODEX_HOME, path.resolve(ambient));
 });
 
+test('ground: same-size executable replacement with altered bytes is detected', () => {
+  const home = freshHome();
+  const session = 'ground-same-size-replacement';
+  const turn = 'turn-same-size-replacement';
+  const toolUseId = 'tool-same-size-replacement';
+  const repo = freshGitRepo();
+  const shim = path.join(tmpRoot, `same-size-shim-${++serial}`);
+  fs.mkdirSync(shim, { recursive: true });
+  const filename = process.platform === 'win32' ? 'python.exe' : 'python';
+  const target = path.join(shim, filename);
+
+  const size = 70000;
+  const buffer1 = Buffer.alloc(size, 0);
+  if (process.platform === 'win32') {
+    buffer1[0] = 0x4d; buffer1[1] = 0x5a;
+    buffer1.writeUInt32LE(64, 0x3c);
+    buffer1[64] = 0x50; buffer1[65] = 0x45;
+  } else {
+    buffer1[0] = 0x7f; buffer1[1] = 0x45; buffer1[2] = 0x4c; buffer1[3] = 0x46;
+  }
+  buffer1[size - 1] = 1;
+
+  const buffer2 = Buffer.from(buffer1);
+  buffer2[size - 1] = 2;
+
+  fs.writeFileSync(target, buffer1);
+  if (process.platform !== 'win32') fs.chmodSync(target, 0o755);
+  const environment = { PATH: `${shim}${path.delimiter}${process.env.PATH}` };
+
+  record(home, session, 'apply_patch', {
+    command: '*** Update File: src/app.ts', cwd: repo,
+  }, {}, turn);
+
+  const input = { command: 'python scripts/render.py' };
+  const rawPre = preTool(home, session, 'Bash', input, repo, toolUseId, turn, environment);
+  assert.ok(rawPre.trim() !== '', 'should trust mock python');
+
+  fs.writeFileSync(target, buffer2);
+  if (process.platform !== 'win32') fs.chmodSync(target, 0o755);
+
+  const parsedPre = JSON.parse(rawPre);
+  const effective = parsedPre.hookSpecificOutput && parsedPre.hookSpecificOutput.updatedInput
+    ? parsedPre.hookSpecificOutput.updatedInput.command : input.command;
+
+  postTool(home, session, 'Bash', input, 'Exit code: 0\n1 passed', repo, toolUseId, turn, environment);
+
+  const stopOutput = stop(home, session, 'receipt', false, 'stop', turn, repo);
+  const parsedStop = JSON.parse(stopOutput);
+  assert.strictEqual(parsedStop.decision, 'block', 'Same-size altered binary replacement was not blocked');
+  assert.match(parsedStop.reason, /latest runnable edit/i);
+});
+
+test('ground: isNativeBinary rejects fake PE starting with MZ but without signature', () => {
+  const home = freshHome();
+  const session = 'ground-fake-pe-check';
+  const turn = 'turn-fake-pe-check';
+  const shim = path.join(tmpRoot, `fake-pe-shim-${++serial}`);
+  fs.mkdirSync(shim, { recursive: true });
+  const filename = process.platform === 'win32' ? 'python.exe' : 'python';
+  const target = path.join(shim, filename);
+
+  const buffer = Buffer.alloc(100, 0);
+  buffer[0] = 0x4d; buffer[1] = 0x5a;
+  fs.writeFileSync(target, buffer);
+  if (process.platform !== 'win32') fs.chmodSync(target, 0o755);
+
+  const environment = { PATH: `${shim}${path.delimiter}${process.env.PATH}` };
+  record(home, session, 'apply_patch', {
+    command: '*** Update File: src/app.ts', cwd: unitRepo,
+  }, {}, turn);
+
+  const output = preTool(home, session, 'Bash', {
+    command: 'python scripts/render.py',
+  }, unitRepo, 'tool-fake-pe', turn, environment);
+  assert.strictEqual(output.trim(), '', 'should reject fake PE');
+});
+
 (async () => {
   let failed = 0;
   const filter = process.env.DEV_RIGOR_TEST_FILTER || '';

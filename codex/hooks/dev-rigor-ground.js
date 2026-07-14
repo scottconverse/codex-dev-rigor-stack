@@ -86,32 +86,6 @@ function identity(value) {
   return typeof value === 'string' && value.length > 0 ? value : '';
 }
 
-function registerRepository(repoPath) {
-  if (!repoPath) return '';
-  const key = hash(repoPath);
-  const registryPath = path.join(stateDir, 'repos-v4.json');
-  let registry = {};
-  try { registry = JSON.parse(fs.readFileSync(registryPath, 'utf8')); } catch (_) {}
-  if (registry[key] !== repoPath) {
-    registry[key] = repoPath;
-    try {
-      ensureStateDir();
-      fs.writeFileSync(registryPath, JSON.stringify(registry) + '\n', { encoding: 'utf8', mode: 0o600 });
-    } catch (_) {}
-  }
-  return key;
-}
-
-function resolveRepository(key) {
-  if (!key) return '';
-  const registryPath = path.join(stateDir, 'repos-v4.json');
-  try {
-    const registry = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
-    return registry[key] || '';
-  } catch (_) {
-    return '';
-  }
-}
 
 function ensureStateDir() {
   fs.mkdirSync(stateDir, { recursive: true, mode: 0o700 });
@@ -833,6 +807,7 @@ function worktreeSnapshot(cwd, deadline = Date.now() + SNAPSHOT_BUDGET_MS, budge
     return {
       available: true,
       root: hash(canonicalPath(root)),
+      repoRoot: root,
       headState, head, headTree, refKind, refHash,
       indexTree: indexTreeResult.stdout.toString('ascii').trim(),
       indexHash: hash(indexResult.stdout),
@@ -868,9 +843,7 @@ function saveSnapshot(session, turn, toolUseId, snapshot) {
 function takeSnapshot(session, turn, toolUseId, cwd, execution = null) {
   if (!toolUseId || !cwd) return false;
   const snapshot = worktreeSnapshot(cwd);
-  if (snapshot.available) {
-    snapshot.repoRootHash = registerRepository(repositoryBoundary(cwd));
-  }
+
   if (execution && execution.nonce) {
     snapshot.executionNonce = execution.nonce;
     snapshot.executionClass = execution.eventClass;
@@ -920,7 +893,7 @@ function reconcilePending(session, turn, cwd) {
     if (/^exec-v4-[a-f0-9]{64}\.receipt$/.test(String(item.receipt || ''))) {
       try { fs.unlinkSync(path.join(stateDir, item.receipt)); } catch (_) { /* absent receipt is expected after failed tools */ }
     }
-    const targetCwd = before && (before.repoRootHash ? resolveRepository(before.repoRootHash) : before.repoRoot) || cwd;
+    const targetCwd = before && before.repoRoot || cwd;
     const after = targetCwd ? worktreeSnapshot(targetCwd, deadline) : { available: false, reason: 'missing-cwd' };
     return {
       id: item.id,
@@ -1305,13 +1278,8 @@ function executableOriginHash(command, cwd) {
   const resolved = resolveExecutablePath(tokens[0], cwd);
   if (!resolved || pathInside(resolved, repositoryBoundary(cwd))) return '';
   try {
-    const stat = fs.statSync(resolved);
-    if (!stat.isFile()) return '';
-    const fd = fs.openSync(resolved, 'r');
-    const buffer = Buffer.alloc(Math.min(65536, stat.size));
-    const bytesRead = fs.readSync(fd, buffer, 0, buffer.length, 0);
-    fs.closeSync(fd);
-    return hash(canonicalPath(resolved), stat.size, buffer.subarray(0, bytesRead)).slice(0, 16);
+    const content = fs.readFileSync(resolved);
+    return hash(canonicalPath(resolved), content).slice(0, 16);
   } catch (_) {
     return '';
   }
@@ -1347,9 +1315,24 @@ function isNativeBinary(filePath) {
     const fd = fs.openSync(filePath, 'r');
     const buffer = Buffer.alloc(4);
     const bytesRead = fs.readSync(fd, buffer, 0, 4, 0);
+    if (bytesRead < 2) {
+      fs.closeSync(fd);
+      return false;
+    }
+    if (buffer[0] === 0x4d && buffer[1] === 0x5a) {
+      const peOffsetBuf = Buffer.alloc(4);
+      const peOffsetRead = fs.readSync(fd, peOffsetBuf, 0, 4, 0x3c);
+      if (peOffsetRead === 4) {
+        const peOffset = peOffsetBuf.readUInt32LE(0);
+        const peSigBuf = Buffer.alloc(4);
+        const peSigRead = fs.readSync(fd, peSigBuf, 0, 4, peOffset);
+        fs.closeSync(fd);
+        return peSigRead === 4 && peSigBuf[0] === 0x50 && peSigBuf[1] === 0x45 && peSigBuf[2] === 0 && peSigBuf[3] === 0;
+      }
+      fs.closeSync(fd);
+      return false;
+    }
     fs.closeSync(fd);
-    if (bytesRead < 2) return false;
-    if (buffer[0] === 0x4d && buffer[1] === 0x5a) return true;
     if (bytesRead >= 4 && buffer[0] === 0x7f && buffer[1] === 0x45 && buffer[2] === 0x4c && buffer[3] === 0x46) return true;
     if (bytesRead >= 4 && (
       (buffer[0] === 0xca && buffer[1] === 0xfe && buffer[2] === 0xba && buffer[3] === 0xbe) ||
