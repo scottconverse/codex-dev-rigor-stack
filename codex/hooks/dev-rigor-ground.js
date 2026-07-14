@@ -1278,8 +1278,7 @@ function isTrustedSystemPath(filePath) {
   if (process.platform === 'win32') {
     whitelist.push(
       'C:\\Program Files',
-      'C:\\Program Files (x86)',
-      'C:\\Windows'
+      'C:\\Program Files (x86)'
     );
   } else {
     whitelist.push(
