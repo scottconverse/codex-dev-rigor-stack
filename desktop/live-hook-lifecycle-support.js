@@ -142,7 +142,7 @@ function assertCandidateInstallation({ candidateRoot, codexHome, expectedSkillCo
   assertInventory(
     'Installed runtime',
     fileInventory(path.join(candidate, 'codex')),
-    fileInventory(path.join(installed, 'dev-rigor-stack'), { skipTopLevel: new Set(['state']) }),
+    fileInventory(path.join(installed, 'dev-rigor-stack'), { skipTopLevel: new Set(['state', 'install-ownership-v2.json']) }),
   );
   for (const skill of skills) {
     assertInventory(
