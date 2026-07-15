@@ -1,5 +1,7 @@
 ---
 name: dev-rigor-stack-merge-gate
+metadata:
+  version: 1.7.0
 description: Run the dev-rigor-stack green-path merge decision independently. Use for "$dev-rigor-stack-merge-gate", "/dev-rigor-stack-merge-gate", pre-merge evidence validation, or deciding whether a reviewed unit may merge without bypasses.
 ---
 

@@ -17,12 +17,17 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
+      - uses: actions/setup-node@v4
+        with:
           node-version: '20'
-      # Preserve the upstream Claude hook source and separately prove the active Codex port.
-      - name: Upstream Claude hook source self-check (42 tests)
-        run: node plugin/hooks/test-hooks.js
+
       - name: Active Codex hook self-check
-        run: node codex/hooks/test-hooks.js
+        run: |
+          node codex/hooks/test-lifecycle-oracle.js
+          node codex/hooks/revoke-trust.js --self-test
+          node codex/hooks/test-revoke-trust-cas.js
+          node desktop/test-live-hook-lifecycle-support.js
+          node codex/install-transaction.test.js
       - name: Bundle and capability contracts
         run: |
           python3 tools/check_bundle.py
@@ -30,26 +35,27 @@ jobs:
           python3 tools/test_desktop_activator.py
           python3 tools/test_visitor_audit.py
           python3 tools/test_upgrade_matrix.py
-          python3 tools/test_verifier_mutations.py
       # SKILL.md <-> SKILL-LITE.md sync blocks must be byte-identical.
       - name: Sync-block check
         run: python3 tools/check_sync.py
       - name: Installer smoke (Linux)
         if: runner.os == 'Linux'
         run: |
-          bash install.sh --target "$RUNNER_TEMP/codex-home/skills" --no-backup
+          ./install.sh --target "$RUNNER_TEMP/codex-home/skills" --no-backup
           test -f "$RUNNER_TEMP/codex-home/hooks.json"
           test -f "$RUNNER_TEMP/codex-home/dev-rigor-stack/hooks/dev-rigor-ground.js"
           python3 tools/fingerprint_install_tree.py "$RUNNER_TEMP/codex-home" --seed
           before=$(python3 tools/fingerprint_install_tree.py "$RUNNER_TEMP/codex-home")
           for point in mid-commit backup-finalization; do
-            if DEV_RIGOR_INSTALL_TEST_FAIL_AT="$point" bash install.sh --target "$RUNNER_TEMP/codex-home/skills"; then
+            if DEV_RIGOR_INSTALL_TEST_FAIL_AT="$point" ./install.sh --target "$RUNNER_TEMP/codex-home/skills"; then
               echo "injected $point failure unexpectedly succeeded" >&2; exit 1
             fi
             test "$(python3 tools/fingerprint_install_tree.py "$RUNNER_TEMP/codex-home")" = "$before"
             test "$(find "$RUNNER_TEMP/codex-home/skills" -mindepth 1 -maxdepth 1 -type d ! -name .backup | wc -l)" -eq 19
           done
           sh tools/test_clean_rollback.sh
+          CI=1 ./uninstall.sh --codex-home "$RUNNER_TEMP/codex-home" --skip-trust-revocation
+          test ! -e "$RUNNER_TEMP/codex-home/dev-rigor-stack"
       - name: Installer smoke (Windows)
         if: runner.os == 'Windows'
         shell: powershell

@@ -1,5 +1,7 @@
 ---
 name: dev-rigor-stack-docs-gate
+metadata:
+  version: 1.7.0
 description: Run the dev-rigor-stack deliverable documentation gate independently. Use for "$dev-rigor-stack-docs-gate", "/dev-rigor-stack-docs-gate", release documentation, README/manual/architecture/landing-page readiness, or proof that user-facing claims match the product.
 ---
 

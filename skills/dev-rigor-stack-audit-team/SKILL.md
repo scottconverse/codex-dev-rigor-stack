@@ -1,5 +1,7 @@
 ---
 name: dev-rigor-stack-audit-team
+metadata:
+  version: 1.7.0
 description: Run the complete five-role dev-rigor-stack Audit Team independently across engineering, UI/UX, documentation, tests, and runtime QA. Use for "$dev-rigor-stack-audit-team", "/dev-rigor-stack-audit-team", deep audit, high-blast review, pre-release review, or requests to tear a project apart with evidence.
 ---
 

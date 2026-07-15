@@ -1,5 +1,7 @@
 ---
 name: coder-tdd-qa
+metadata:
+  version: 1.7.0
 description: "Engineering, TDD, and QA standards for coding work — hard rules, a test-first loop that guarantees tests are real (not merely present), anti-fabrication evidence rules, a falsification pass, and a size-gated release checklist. Use for coding, debugging, feature work, refactoring, and UI/frontend/interface work (layout, styling, components). The Release Gate section applies only when pushing, publishing, or releasing."
 ---
 

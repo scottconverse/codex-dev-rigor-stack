@@ -80,17 +80,17 @@ const definitions = {
   },
   PreToolUse: {
     matcher: '^(Bash|PowerShell|apply_patch|Edit|Write|MultiEdit|NotebookEdit|mcp__.*(preview|browser|chrome|computer|screenshot|navigate|snapshot|exec|run|test|shell|terminal|jupyter|notebook|ide|eval).*)$',
-    hooks: [{ type: 'command', ...command('dev-rigor-ground.js', ' snapshot'), timeout: 5, statusMessage: 'Snapshotting dev-rigor worktree state' }],
+    hooks: [{ type: 'command', ...command('dev-rigor-ground.js', ' snapshot'), timeout: 15, statusMessage: 'Snapshotting dev-rigor worktree state' }],
   },
   PostToolUse: {
     matcher: '^(Bash|PowerShell|apply_patch|Edit|Write|MultiEdit|NotebookEdit|mcp__.*(preview|browser|chrome|computer|screenshot|navigate|snapshot|exec|run|test|shell|terminal|jupyter|notebook|ide|eval).*)$',
-    hooks: [{ type: 'command', ...command('dev-rigor-ground.js', ' record'), timeout: 5 }],
+    hooks: [{ type: 'command', ...command('dev-rigor-ground.js', ' record'), timeout: 15 }],
   },
   Stop: {
-    hooks: [{ type: 'command', ...command('dev-rigor-ground.js', ' check'), timeout: 5, statusMessage: 'Checking dev-rigor evidence' }],
+    hooks: [{ type: 'command', ...command('dev-rigor-ground.js', ' check'), timeout: 15, statusMessage: 'Checking dev-rigor evidence' }],
   },
   SubagentStop: {
-    hooks: [{ type: 'command', ...command('dev-rigor-ground.js', ' check'), timeout: 5, statusMessage: 'Checking subagent evidence' }],
+    hooks: [{ type: 'command', ...command('dev-rigor-ground.js', ' check'), timeout: 15, statusMessage: 'Checking subagent evidence' }],
   },
 };
 

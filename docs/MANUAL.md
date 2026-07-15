@@ -125,7 +125,12 @@ a command, editing configuration, or knowing where Codex stores its files.
 
 ### Scripted installation for maintainers and compatible clients
 
-### Windows PowerShell
+**Review-hold restriction:** the commands below remain documented so independent reviewers
+can exercise installation and rollback in a disposable `CODEX_HOME`. They are not approval
+to install 1.7.0 into an active profile. Until the hold is lifted, use only an isolated test
+target and remove it after verification.
+
+### Windows PowerShell (isolated reviewer/maintainer use during the hold)
 
 ```powershell
 git clone https://github.com/scottconverse/codex-dev-rigor-stack
@@ -133,7 +138,7 @@ cd codex-dev-rigor-stack
 powershell -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
-### Bash, macOS, Linux, or Git Bash
+### Bash, macOS, Linux, or Git Bash (isolated reviewer/maintainer use during the hold)
 
 ```sh
 git clone https://github.com/scottconverse/codex-dev-rigor-stack
@@ -303,15 +308,26 @@ the product may advance.
 - **UserPromptSubmit router and task controls:** routes investigation, grounding,
   decomposition, and release work. The exact owner commands `DevRigorON`,
   `DevRigorWARN`, `DevRigorOFF`, and `DevRigorSTATUS` affect only the current task.
-  Quoted or embedded command text is inert.
-- **PreToolUse/PostToolUse evidence recorder:** fingerprints the dirty Git worktree before
-  and after the exact `tool_use_id`, then records important direct edits (`E`), tool-generated
-  source changes (`G`), inspections (`I`), runs/renders (`R`), tests (`T`), builds (`B`),
-  and failures (`F`). Opaque shell writes therefore re-arm proof even when the tool does
-  not report changed files. Missing pre-observation makes unknown commands conservative
-  non-proof. It stores hashes and bounded metadata, not paths or raw sensitive commands.
+  Exact `DevRigorREPAIR` performs owner-directed recovery for this exact task only. Quoted
+  or embedded command text is inert.
+- **PreToolUse/PostToolUse evidence recorder:** fingerprints the repository before and
+  after the exact `tool_use_id`: HEAD/tree, symbolic or detached reference, semantic index,
+  complete status, and every Git-reported path. It records all direct edit paths (`E`) and
+  tool-generated changes (`G`) regardless of extension, including images, fonts, documents,
+  archives, binaries, notebooks, extensionless files, nested edit requests, and authoritative
+  response paths. Opaque shell writes and clean-to-clean commits therefore re-arm proof even
+  when a tool does not report changed files. Missing, corrupt, incomplete, or unbounded
+  comparison becomes a visible conservative change plus mechanical debt; it never becomes
+  proof. State stores hashes and a fixed public type taxonomy, not paths, arbitrary suffixes,
+  file contents, or raw sensitive commands.
+- **Exact evidence classification:** only explicitly supported command shapes and exact
+  interaction actions can emit run/render (`R`), test (`T`), or build (`B`) evidence.
+  Version/help/list/eval/dry-run commands, shell composition, unknown executables, keyword
+  lookalikes, and discovery commands remain inspection/non-proof. Failure precedence is
+  explicit policy/tool failure, structured test/build result, process exit status, then
+  bounded text inference only when structured evidence is absent.
 - **Stop/SubagentStop substantive gate:** evaluates the authoritative current turn. In
-  `ON`, an important edit without a later qualifying run/render/test/build may block once.
+  `ON`, an observed artifact edit without a later qualifying run/render/test/build may block once.
   The retry is released to keep conversation usable, but records `U: released-unproved`
   and persistent proof debt instead of a successful checkpoint. `WARN` records the same
   gap without blocking; `OFF` disables mechanical blocking for that task. Missing or
@@ -324,16 +340,58 @@ when Codex supplies authoritative parent identity; otherwise it visibly fails op
 `WARN` and never guesses. A parent `OFF` or later mode change propagates to associated
 running and future subagents. Controls never leak into another task.
 
-`DevRigorSTATUS` reports the current checkpoint, substantive block count, local debt IDs,
-recursively associated-subagent debt, and observed PreToolUse/PostToolUse/Stop counts. It
+Every task-state mutation is serialized by a bounded owner-verified cross-process lock.
+Parent binding is immutable, each authoritative association has its own append-only edge,
+and the legacy child list is maintained only as a locked compatibility projection. Missing,
+corrupt, conflicting, cyclic, orphaned, or incomplete association state remains visible as
+association debt. Unresolved task, association, and mechanical state is never age- or
+budget-pruned; fresh invocation snapshots cannot be deleted by another concurrent hook.
+
+`DevRigorSTATUS` reports the current checkpoint, substantive block count, local proof,
+mechanical, and association debt IDs, append-only mechanical/association resolution IDs,
+recursively associated-subagent debt, and observed
+PreToolUse/PostToolUse/Stop counts. It
 does not call hook delivery or trust “verified”; only Codex's hook review establishes
 configuration trust, and only a live lifecycle run establishes client delivery.
 
+`DevRigorREPAIR` does not delete history or make a best guess. A failed task-scoped owner
+control is mechanically repairable only when its exact intended ON/WARN/OFF postcondition
+was recorded with the failure; repair applies that postcondition inside the lock, persists
+the exact-task transaction, and only then appends a completion bound to the exact occurrence.
+Generic, legacy, corrupt, or association-marker-persistence failures that do not encode a
+verifiable outcome remain release-blocking instead of being acknowledged away.
+Every new failure gets a new occurrence identity, so an old or delayed resolution cannot
+clear a later recurrence. Unknown or legacy taskless markers stay visible and
+release-blocking. A normal association marker can be repaired only by its owning parent
+task; the historical `parent-unavailable` marker is deliberately self-owned by the child.
+For association debt, repair only attests state that is already
+authoritative: the child `parentKey`, exact immutable edge, and locked parent child-list
+projection must all match, and the marker code must be in the exact emitted-code allowlist.
+Repair never assigns or changes a parent. Missing exact-root state, malformed critical task
+fields, malformed mechanical lines, wrong-schema edges, corrupt state namespaces, conflict,
+failed invariants, and forged or stale resolution records remain visible debt.
+Concurrent or repeated execution is idempotent. Repair transaction IDs and tokens provide
+correlation and stale/replay detection; like proof IDs, they are not a security boundary
+against a process that can rewrite local task state.
+
 Evidence IDs correlate the task, turn, edit set, evidence class, exact execution
-fingerprint, result, and target checkpoint
-with the canonical local ledger. They prevent accidental stale reuse; they are not a
-security boundary against a model that can read its own task state. Tokens and ledgers
-exclude secrets and raw sensitive command arguments.
+fingerprint, result, and target checkpoint with the canonical local ledger. Each accepted
+proof has one protocol-write-once `evidence-v4-<16 lowercase hex proof ID>.json` record.
+That record contains the task/turn hashes, hashed edit identities, evidence class,
+execution and descriptor hashes, result, checkpoint, and a bounded semantic descriptor:
+tool family, executable, operation, hashed target and type, executable-origin hash, result
+source, and receipt/response hashes. It excludes secrets and
+raw sensitive command arguments. Missing, malformed, mismatched, or tampered canonical evidence is reported as
+`invalid canonical evidence`; it is not accepted merely because an older task checkpoint
+or ledger line exists. Evidence tokens prevent accidental stale reuse and correlate the
+records; they are not a security boundary against a model or process that can read and
+rewrite local task state.
+
+`pending tool observations` are in-flight PreToolUse snapshots whose matching PostToolUse
+has not yet been consumed. Stop reconciles them across retries and compaction. Until that
+happens, they remain release-blocking, and parent STATUS separately reports every
+associated `subagent pending observations` count. A release is INVALID while either count
+is nonzero or any current accepted-proof claim has invalid canonical evidence.
 
 Codex requires explicit trust for non-managed hooks. On Windows, use the graphical
 activator to inspect and approve the exact seven current hashes. It discovers them with
@@ -351,6 +409,12 @@ The complete installer prevents partial installs by staging all 19 sources, the 
 and the merged hook configuration before replacement. A commit or backup-finalization
 failure restores the prior set. If automatic recovery itself fails, the recovery tree is
 preserved and reported instead of deleted.
+Install and uninstall share one canonical-home lock and one durable phase-journal state
+machine. A later invocation recovers a dead prior process before starting. `hooks.json` is
+the last shared surface applied and uses compare-and-swap: if another process changes it
+after staging, the transaction aborts visibly and restores earlier surfaces without
+overwriting the foreign bytes. An unresolved recovery conflict is retained and blocks a
+new transaction; it is never converted into destructive cleanup.
 If a required sibling or evidence artifact is missing at runtime, the affected gate is
 INVALID and the gap is reported. Degrade never means silently using a shorter contract or
 self-reviewing. Where the complete equivalent can be executed inline, the coordinator
@@ -362,33 +426,46 @@ states that path explicitly and still preserves independent/fresh-context judgme
 
 Pull or download the new repository version and rerun the installer. It stages the 19
 managed skill folders, active Codex hook runtime, and current owned hook definitions,
-then transactionally commits them and retains timestamped backups. Reopen the graphical
+then migrates the complete current v4 task/control, task-genesis, proof, mechanical, per-turn,
+canonical `evidence-v4-` record, snapshot, route, and association state into the staged
+runtime before commit. The persistent
+task-genesis filename must be exactly `task-genesis-v4-<64 lowercase hex task key>.json`.
+Malformed lookalikes make install and uninstall refuse before mutation, preserving the full
+profile for review. Legacy v1–v3 ledgers remain quarantined and transient task locks are never
+migrated. A migration failure restores
+the untouched prior runtime and state byte-for-byte. Reopen the graphical
 activator after every update. If any script or definition changed, review and trust the new
 seven hashes, require **Verified — all 7 hooks trusted**, and restart Codex Desktop.
 
 ### Backup
 
-One installation timestamp can have two coordinated backup locations:
+One installation backup ID can have two coordinated backup locations. The ID contains its
+creation time plus transaction identity so a concurrent or repeated update cannot overwrite
+another backup:
 
-- `<target>/.backup/codex-dev-rigor-stack/<timestamp>/` contains the prior managed skill
+- `<target>/.backup/codex-dev-rigor-stack/<backup-id>/` contains the prior managed skill
   folders.
-- `<CODEX_HOME>/.backup/codex-dev-rigor-stack/<timestamp>/runtime` contains the prior
+- `<CODEX_HOME>/.backup/codex-dev-rigor-stack/<backup-id>/runtime` contains the prior
   managed hook runtime, and the adjacent `hooks.json` is the prior merged hook configuration.
 
 Keep both locations together. Restoring only one creates a mixed-version installation.
+Each created backup-ID directory has a lineage/scope owner marker and an immutable-tree
+digest in the active ownership record. Uninstall removes only listed, marker-valid,
+digest-matching IDs. An unknown sibling or any listed backup changed after creation is
+preserved and reported rather than recursively deleted.
 
 ### Restore
 
 For a no-terminal restore, open a Codex Desktop task before closing the app and ask:
-`Restore dev-rigor-stack from backup timestamp <timestamp>. Restore the 19 managed skills and managed runtime from that timestamp. Rebuild only the owned definitions into the current hooks.json with the restored wire-hooks.js; never replace hooks.json wholesale. Preserve every unrelated skill, hook, and trust entry.`
-Require Codex to report the restored skills/runtime, the matching timestamp, and an
+`Restore dev-rigor-stack from backup ID <backup-id>. Restore the 19 managed skills and managed runtime from that backup ID. Rebuild only the owned definitions into the current hooks.json with the restored wire-hooks.js; never replace hooks.json wholesale. Preserve every unrelated skill, hook, and trust entry.`
+Require Codex to report the restored skills/runtime, the matching backup ID, and an
 owned-only hook merge that retained current foreign hooks.
 Then reopen the graphical activator, review the restored definitions, require all seven
 trusted, and restart Codex Desktop.
 
 For a manual maintainer restore:
 
-1. Close Codex Desktop and choose one timestamp present in both backup locations.
+1. Close Codex Desktop and choose one backup ID present in both backup locations.
 2. Copy the saved skill folders from the target backup into `<target>`, replacing only
    matching managed stack folders.
 3. Replace `<CODEX_HOME>/dev-rigor-stack` with the saved `runtime` directory.
@@ -408,13 +485,17 @@ For a manual maintainer restore:
 ### Uninstall
 
 For a no-terminal uninstall, open a Codex Desktop task and ask:
-`Uninstall dev-rigor-stack. First run the managed revoke-trust.js through Codex app-server and verify exactly 7/7 owned trusted hashes were removed while foreign trust state was preserved. Then remove only the 19 managed skills, seven owned hook definitions, and managed runtime; preserve every unrelated skill, hook, trust entry, and backup.`
+`Uninstall dev-rigor-stack. First run the managed revoke-trust.js through Codex app-server and verify exactly 7/7 owned trusted hashes were removed while foreign trust state was preserved. Then transactionally remove the 19 managed skills, seven owned hook definitions, managed runtime, and the stack-owned backup namespaces. Preserve every unrelated skill, hook, trust entry, and foreign backup namespace.`
 Codex must revoke trust before removing the definitions/runtime, preserve foreign hooks,
 and report every path changed. The repository uninstaller treats trust, owned hook
-definitions, runtime, and all 19 skills as one transaction: an interrupted uninstall
+definitions, runtime, backups, and all 19 skills as one transaction: an interrupted uninstall
 restores the starting state byte-for-byte; a successful uninstall removes all owned
-components and keeps foreign configuration. Restoring an older version is a separate,
+components and keeps foreign configuration and backups. Restoring an older version is a separate,
 explicit restore operation.
+The installed ownership record distinguishes stack-created empty `skills/`, `hooks.json`,
+and backup scaffolding from pre-existing or unknown scaffolding. Only a stack-created path
+is eligible for a final non-recursive empty-directory removal. Later foreign content always
+keeps the containing path in place. A missing live `hooks.json` is not recreated by uninstall.
 Restart Codex Desktop afterward.
 
 Maintainers may run the transactional uninstaller after closing Codex Desktop:
@@ -427,9 +508,24 @@ powershell -ExecutionPolicy Bypass -File .\uninstall.ps1
 ./uninstall.sh
 ```
 
-Keep backups if you may restore later. Restart Codex afterward.
+If you may restore later, restore before uninstall or explicitly export the coordinated
+backup-ID directories outside the stack-owned backup namespaces. A successful uninstall
+deliberately removes those owned namespaces. Restart Codex afterward.
 
 ## Troubleshooting
+
+### An interrupted installer left a recovery journal
+
+Rerun the same current installer or uninstaller against the exact same `CODEX_HOME` and
+skills target. Before staging new work, the shared coordinator takes the home lock and
+idempotently rolls back a `PREPARING`, `PREPARED`, or `APPLYING` journal, or finishes cleanup
+for a `COMMITTED` journal. If it reports a live lock owner or a recovery conflict, do not
+delete `.transactions`, `.staging`, or `.rollback` manually; close the other operation or
+preserve the reported recovery artifacts for review.
+
+The journal and flush/rename protocol covers abrupt process termination and restart. Absolute
+survival of physical power loss still depends on the host filesystem and storage honoring
+flush and atomic-rename guarantees; the stack does not claim stronger hardware durability.
 
 ### PowerShell says scripts are disabled
 
@@ -491,7 +587,8 @@ to make it shorter.
   Desktop graphical activation. Version 1.6.2's prompt-boundary repair was incomplete;
   1.6.3 introduced exact Codex turn identity and a hard retry circuit breaker. Version
   1.7.0 preserves exact-turn isolation and adds task modes, typed evidence, non-destructive
-  receipt handling, persistent proof debt, safe compaction/subagent behavior, and
+  receipt handling, complete repository/artifact observation, exact command classification,
+  persistent proof/mechanical/association debt, concurrency-safe compaction/subagent behavior, and
   transactional upgrade/uninstall. Versions 1.6.0–1.6.3 are unsupported.
 
 ## Security and honest limits

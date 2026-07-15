@@ -1,5 +1,7 @@
 ---
 name: dev-rigor-stack-plan
+metadata:
+  version: 1.7.0
 description: >
   Run the dev-rigor-stack PLAN stage independently: trace current behavior,
   challenge unnecessary work, define acceptance criteria and tests, classify blast

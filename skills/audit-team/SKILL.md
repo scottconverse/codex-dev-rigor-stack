@@ -1,5 +1,7 @@
 ---
 name: audit-team
+metadata:
+  version: 1.7.0
 description: Deep multi-role audit of a project by a simulated team — Principal Engineer, Senior UI/UX Designer, Technical Writer, Test Engineer, and QA Engineer — that reviews code, UX, docs, tests, and runtime behavior, then produces an executive report plus five per-role deep-dive reports with severity-ranked findings, blast-radius analysis, a this-sprint punch list, and a next-sprint watchlist. Use this skill whenever the user asks for an audit, review, code review, design review, doc review, test audit, QA audit, pre-release check, pre-merge check, "tear this apart," "tell me what's wrong," "is this ready to ship," or a second opinion before handing a project to a dev team, a customer, or leadership. Also trigger when the user provides a repo, folder, PR, or project and asks for findings, gaps, risks, quality issues, or readiness assessment. Prefer this skill over generic code review — it catches what single-role reviews miss and produces deliverables a dev team can act on this sprint.
 ---
 

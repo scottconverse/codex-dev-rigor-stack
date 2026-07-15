@@ -1,5 +1,7 @@
 ---
 name: gauntletgate
+metadata:
+  version: 1.7.0
 description: Run the GauntletGate stage-gate — an adversarial end-of-stage/sprint/release gauntlet a product must pass to advance. Dispatches to three lanes (lite, walkthrough, full) by argument. Use when asked to gate a stage/sprint/release, run the gauntlet, do a readiness/advancement check, or run any of "gauntletgate all | lite | full | walkthrough" or a combination.
 ---
 

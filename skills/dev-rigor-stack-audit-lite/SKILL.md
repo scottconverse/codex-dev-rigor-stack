@@ -1,5 +1,7 @@
 ---
 name: dev-rigor-stack-audit-lite
+metadata:
+  version: 1.7.0
 description: Run the complete dev-rigor-stack Audit Lite review independently for a small change or scoped diff. Use for "$dev-rigor-stack-audit-lite", "/dev-rigor-stack-audit-lite", quick audit, smoke review, small-fix readiness, or the light REVIEW lane.
 ---
 

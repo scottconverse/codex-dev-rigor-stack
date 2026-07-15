@@ -1,5 +1,7 @@
 ---
 name: proof-gate
+metadata:
+  version: 1.7.0
 description: >
   Adversarial build-and-verify loop for high-stakes or trust-sensitive delivery
   work — releases, migrations, security/compliance changes, anything where a

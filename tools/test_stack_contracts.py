@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -76,21 +77,30 @@ class StackContractTests(unittest.TestCase):
         )
 
     def test_visitor_audit_keeps_strong_mechanics_and_hands_off_installer(self) -> None:
-        text = self.text("visitor-audit")
-        self.assert_terms(
-            text,
-            "entire rendered surface",
-            "every link",
-            "every public page",
-            "every safe public control",
-            "visual",
-            "checksum",
-            "acquisition handoff",
-            "blocker",
-            "critical",
-            "major",
-            "minor",
-            "nit",
+        for skill in ("visitor-audit", "dev-rigor-stack-visitor-audit"):
+            text = self.text(skill)
+            with self.subTest(skill=skill):
+                self.assertGreaterEqual(len(text.splitlines()), 150, "visitor skill was abbreviated")
+                self.assertNotIn("read `../visitor-audit/skill.md`", text.lower())
+                self.assert_terms(
+                    text,
+                    "entire rendered surface",
+                    "every link",
+                    "every public page",
+                    "every safe public control",
+                    "visual",
+                    "checksum",
+                    "acquisition handoff",
+                    "blocker",
+                    "critical",
+                    "major",
+                    "minor",
+                    "nit",
+                )
+        self.assertEqual(
+            (SKILLS / "visitor-audit" / "scripts" / "check_links.py").read_text(encoding="utf-8").rstrip(),
+            (SKILLS / "dev-rigor-stack-visitor-audit" / "scripts" / "check_links.py").read_text(encoding="utf-8").rstrip(),
+            "both standalone Visitor entrypoints must ship the same mechanical link checker",
         )
 
     def test_gauntlet_consumes_the_canonical_walkthrough(self) -> None:
@@ -124,6 +134,10 @@ class StackContractTests(unittest.TestCase):
         for name, path in surfaces.items():
             with self.subTest(surface=name):
                 self.assertIn("1.7.0", path.read_text(encoding="utf-8"))
+        for skill in sorted(CANONICAL_SKILLS | COMPATIBILITY_SKILLS):
+            with self.subTest(surface=f"{skill} skill"):
+                skill_text = self.text(skill)
+                self.assertRegex(skill_text, r"(?m)^metadata:\s*\n\s+version:\s*1\.7\.0\s*$")
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
         self.assertNotIn("Dates are release (tag) dates.", changelog)
         self.assertIn("does not imply a Git tag", changelog)
@@ -191,8 +205,10 @@ class StackContractTests(unittest.TestCase):
             ROOT / "codex" / "hooks" / "dev-rigor-router.js",
             ROOT / "codex" / "hooks" / "dev-rigor-ground.js",
             ROOT / "codex" / "hooks" / "wire-hooks.js",
-            ROOT / "codex" / "hooks" / "test-hooks.js",
             ROOT / "codex" / "dev-rigor-reflex.md",
+            ROOT / "codex" / "install-transaction.js",
+            ROOT / "codex" / "install-transaction.test.js",
+            ROOT / "codex" / "hooks" / "test-revoke-trust-cas.js",
         )
         for path in required:
             self.assertTrue(path.is_file(), f"missing active Codex hook artifact: {path}")
@@ -201,14 +217,26 @@ class StackContractTests(unittest.TestCase):
         router = (ROOT / "codex" / "hooks" / "dev-rigor-router.js").read_text(encoding="utf-8")
         self.assert_terms(ground, "payload.session_id", "payload.turn_id", "ground-v4-", "released-unproved")
         self.assertNotIn("ground-v2-", ground)
-        self.assertNotIn("ground-v", router)
+        # The router may validate/read grounding-ledger references for STATUS and
+        # recovery, but only the grounding hook may derive or own a turn ledger.
+        self.assertNotIn("function ledgerPath(", router)
+        self.assertNotIn("`ground-v4-${hash(session, turn)}.log`", router)
 
+        transaction = (ROOT / "codex" / "install-transaction.js").read_text(encoding="utf-8")
+        self.assert_terms(
+            transaction,
+            "wire-hooks.js",
+            "staging",
+            "rollback",
+            "hooks.json",
+            "install-ownership-v2.json",
+            "before-hooks-cas",
+            "recover-only",
+        )
         for installer in (ROOT / "install.ps1", ROOT / "install.sh"):
             text = installer.read_text(encoding="utf-8")
-            self.assertIn("wire-hooks.js", text)
-            self.assertIn("staging", text.lower())
-            self.assertIn("rollback", text.lower())
-            self.assertIn("hooks.json", text)
+            self.assertIn("install-transaction.js", text)
+            self.assertIn("install", text)
         self.assertIn(
             'target="$codex_home/skills"',
             (ROOT / "install.sh").read_text(encoding="utf-8"),
@@ -237,7 +265,7 @@ class StackContractTests(unittest.TestCase):
             "trust",
         )
 
-    def test_task_controls_and_proof_debt_are_release_visible(self) -> None:
+    def test_task_controls_and_all_debt_classes_are_release_visible(self) -> None:
         core = (ROOT / "codex" / "dev-rigor-core.md").read_text(encoding="utf-8")
         reflex = (ROOT / "codex" / "dev-rigor-reflex.md").read_text(encoding="utf-8")
         manual = (ROOT / "docs" / "MANUAL.md").read_text(encoding="utf-8")
@@ -245,21 +273,143 @@ class StackContractTests(unittest.TestCase):
         coordinator = self.text("dev-rigor-stack")
         for text in (core, reflex, manual):
             self.assert_terms(text, "devrigoron", "devrigorwarn", "devrigoroff", "devrigorstatus")
-        self.assert_terms(reflex, "generated", "unresolved proof debt", "security boundary")
-        self.assert_terms(manual, "released-unproved", "same edit set", "authoritative parent identity")
-        self.assert_terms(release, "devrigorstatus", "unresolved proof debt", "mark the release invalid")
-        self.assert_terms(coordinator, "no unresolved proof debt", "verified superseding set")
+        self.assert_terms(core, "invalid canonical evidence", "pending tool observations", "subagent pending observations")
+        self.assert_terms(reflex, "generated", "proof, mechanical, association", "security boundary")
+        self.assert_terms(
+            reflex,
+            "task-genesis-v4-",
+            "evidence-v4-",
+            "invalid canonical evidence",
+            "pending tool observations",
+            "subagent pending observations",
+        )
+        self.assert_terms(manual, "released-unproved", "mechanical debt", "association debt", "authoritative parent identity")
+        self.assert_terms(release, "devrigorstatus", "proof, mechanical, or association debt", "mark the release invalid")
+        self.assert_terms(coordinator, "no unresolved proof, mechanical, or association debt", "verified superseding set")
+
+    def test_release_gate_requires_pr11_safety_evidence_before_go(self) -> None:
+        release = self.text("dev-rigor-stack-release")
+        self.assert_terms(
+            release,
+            "before go",
+            "exact classifier negatives and positives",
+            "version/help/list/eval/dry-run",
+            "exact supported run/test/build shapes",
+            "head/tree",
+            "symbolic/detached reference",
+            "semantic index",
+            "complete status",
+            "every git-reported artifact",
+            "assume-unchanged",
+            "skip-worktree",
+            "submodule commit movement",
+            "task-state transactions",
+            "32 concurrent children",
+            "immutable parent binding",
+            "mutation suite",
+            "zero survivors",
+            "authenticated disposable-profile",
+            "disappearing-report",
+            "first stop blocks",
+            "second stop releases with debt",
+            "third stop is silent",
+            "later conversation passes",
+        )
+
+    def test_canonical_evidence_and_task_identity_are_release_visible(self) -> None:
+        ground = (ROOT / "codex" / "hooks" / "dev-rigor-ground.js").read_text(encoding="utf-8")
+        router = (ROOT / "codex" / "hooks" / "dev-rigor-router.js").read_text(encoding="utf-8")
+        transaction = (ROOT / "codex" / "install-transaction.js").read_text(encoding="utf-8")
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        manual = (ROOT / "docs" / "MANUAL.md").read_text(encoding="utf-8")
+        architecture = (ROOT / "docs" / "ARCHITECTURE.md").read_text(encoding="utf-8")
+        security = (ROOT / "SECURITY.md").read_text(encoding="utf-8")
+        coordinator = self.text("dev-rigor-stack")
+        release = self.text("dev-rigor-stack-release")
+
+        self.assert_terms(
+            ground,
+            "task-genesis-v4-",
+            "evidence-v4-",
+            "descriptorhash",
+            "executionhash",
+            "originhash",
+            "responsehash",
+        )
+        self.assert_terms(router, "invalid canonical evidence", "pending tool observations", "subagent pending observations")
+        self.assert_terms(transaction, "task-genesis-v4-", "evidence-v4-")
+        for text in (readme, manual, architecture, security):
+            self.assert_terms(
+                text,
+                "evidence-v4-",
+                "task-genesis-v4-",
+                "raw sensitive command arguments",
+                "correlation",
+                "not a security boundary",
+            )
+        for text in (coordinator, release):
+            self.assert_terms(
+                text,
+                "invalid canonical evidence",
+                "pending tool observations",
+                "subagent pending observations",
+                "release invalid",
+                "same affected edit set",
+            )
+
+    def test_contributor_and_injected_contracts_name_the_complete_release_checks(self) -> None:
+        contributing = (ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
+        reflex = (ROOT / "codex" / "dev-rigor-reflex.md").read_text(encoding="utf-8")
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        architecture = (ROOT / "docs" / "ARCHITECTURE.md").read_text(encoding="utf-8")
+        self.assert_terms(
+            contributing,
+            "node desktop/test-live-hook-lifecycle.js",
+            "authenticated disposable codex_home",
+            "manual release evidence",
+        )
+        self.assert_terms(reflex, "latest relevant artifact edit", "every direct or observed/tool-generated artifact change")
+        self.assertNotIn("latest runnable edit", reflex.lower())
+        self.assertNotIn("inheritance, and transactional migration/uninstall", readme.lower())
+        self.assertNotIn("review 6 commands", architecture.lower())
+        self.assert_terms(architecture, "review 7 hooks")
 
     def test_transactional_uninstaller_and_upgrade_matrix_ship_with_the_bundle(self) -> None:
         manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
         self.assertEqual(manifest["codex"]["uninstaller"], "uninstall.ps1")
-        for path in (ROOT / "uninstall.ps1", ROOT / "uninstall.sh", ROOT / "tools" / "test_upgrade_matrix.py"):
+        self.assertEqual(manifest["codex"]["transaction_coordinator"], "codex/install-transaction.js")
+        self.assertEqual(manifest["codex"]["transaction_test"], "codex/install-transaction.test.js")
+        for path in (
+            ROOT / "uninstall.ps1",
+            ROOT / "uninstall.sh",
+            ROOT / "codex" / "install-transaction.js",
+            ROOT / "codex" / "install-transaction.test.js",
+            ROOT / "tools" / "test_upgrade_matrix.py",
+        ):
             self.assertTrue(path.is_file(), f"missing transactional lifecycle artifact: {path}")
         matrix = (ROOT / "tools" / "test_upgrade_matrix.py").read_text(encoding="utf-8")
         self.assert_terms(matrix, "1.6.1", "1.6.2", "1.6.3", "pristine_scenario", "foreign hooks/trust")
         ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
         self.assertIn("test_upgrade_matrix.py", ci)
-        self.assertIn("test_verifier_mutations.py", ci)
+        self.assertIn("node codex/install-transaction.test.js", ci)
+        self.assertIn("node codex/hooks/revoke-trust.js --self-test", ci)
+        self.assertIn("node codex/hooks/test-revoke-trust-cas.js", ci)
+
+    def test_posix_installers_are_executable_and_exercised_directly(self) -> None:
+        modes = subprocess.run(
+            ["git", "ls-files", "-s", "--", "install.sh", "uninstall.sh"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.splitlines()
+        self.assertEqual(len(modes), 2)
+        self.assertTrue(all(line.startswith("100755 ") for line in modes), modes)
+
+        ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+        self.assertIn("./install.sh", ci)
+        self.assertIn("./uninstall.sh", ci)
+        self.assertNotRegex(ci, r"(?m)\b(?:bash|sh)\s+(?:\./)?(?:install|uninstall)\.sh\b")
 
 
 if __name__ == "__main__":

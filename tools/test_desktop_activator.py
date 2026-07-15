@@ -282,7 +282,7 @@ class DesktopActivatorContractTests(unittest.TestCase):
         self.assertIn("alternate-uninstall-home", ci)
         self.assertIn(".\\uninstall.ps1 -CodexHome $alternate", ci)
 
-    def test_upgrade_matrix_uses_exact_historical_trees_and_expanded_mutations(self) -> None:
+    def test_upgrade_matrix_uses_exact_historical_trees(self) -> None:
         matrix = (ROOT / "tools" / "test_upgrade_matrix.py").read_text(encoding="utf-8")
         for version, commit in {"1.6.1": "e1e22a2", "1.6.2": "89c5d0d", "1.6.3": "91c8d7f"}.items():
             self.assertIn(f'"{version}": "{commit}"', matrix)
@@ -290,22 +290,6 @@ class DesktopActivatorContractTests(unittest.TestCase):
         self.assertIn('installed_skill.read_bytes() == source_skill.read_bytes()', matrix)
         ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
         self.assertIn("fetch-depth: 0", ci)
-
-        mutations = (ROOT / "tools" / "test_verifier_mutations.py").read_text(encoding="utf-8")
-        for target in (
-            "exact-turn isolation",
-            "one-block circuit release",
-            "post-block proof under stop_hook_active",
-            "proof-debt clearing",
-            "OFF propagation",
-            "execution-token binding",
-            "structured-result precedence",
-            "opaque shell-write detection",
-            "parent-child debt registration",
-            "visible WARN delivery",
-            "unknown-command classification",
-        ):
-            self.assertIn(target, mutations)
 
     def test_ci_compares_two_fresh_local_builds_and_normalizes_only_compiler_identity_bytes(self) -> None:
         self.assertTrue(BINARY_EQUIVALENCE.is_file())

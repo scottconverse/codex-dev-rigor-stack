@@ -1,5 +1,7 @@
 ---
 name: dev-rigor-stack-walkthrough
+metadata:
+  version: 1.7.0
 description: Run the dev-rigor-stack's exhaustive black-box newcomer journey and UI/UX audit. Use for first-run testing, published-installer testing, onboarding and configuration, every-screen/every-control runtime coverage, visual and accessibility inspection, interface-to-function wiring, update/repair/uninstall lifecycle checks, or the walkthrough lane of a stage or release gate. Recognize requests such as "dev rigor walkthrough", "/dev-rigor-stack-walkthrough", "test it like a new user", "click everything", and "audit every screen".
 ---
 

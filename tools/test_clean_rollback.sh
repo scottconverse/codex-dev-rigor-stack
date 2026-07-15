@@ -12,7 +12,7 @@ trap 'rm -rf -- "$root"' EXIT HUP INT TERM
 for point in mid-commit backup-finalization; do
   home="$root/$point"
   if CI=1 DEV_RIGOR_INSTALL_TEST_FAIL_AT="$point" \
-      bash "$repo_dir/install.sh" --target "$home/skills"; then
+      "$repo_dir/install.sh" --target "$home/skills"; then
     echo "injected $point failure unexpectedly succeeded" >&2
     exit 1
   fi

@@ -1,5 +1,7 @@
 ---
 name: dev-rigor-stack
+metadata:
+  version: 1.7.0
 description: >
   Standing delivery discipline for ANY coding unit of work — a bug fix, a module,
   a feature, a refactor — plus the release gate that stands before a tag. Apply
@@ -178,10 +180,26 @@ sub-agent — the coordinator never reviews its own orchestration.
   overclaiming, every link live).
 - **Rollback defined before the tag** — name the trigger (what signal reverts) and the
   owner who calls it.
-- **No unresolved proof debt** — `DevRigorSTATUS` and the canonical evidence records must
-  show that every affected edit set is proved. A circuit-released response remains open
-  debt and makes the release INVALID; later evidence clears it only for the same edit set
-  or a verified superseding set containing every affected edit.
+- **No unresolved proof, mechanical, or association debt** — `DevRigorSTATUS` and the
+  canonical evidence records must show that every affected edit set is proved and every
+  task/association failure is explicitly repaired. For recoverable hook/association state,
+  require exact-task `DevRigorREPAIR` and inspect its append-only transaction-bound,
+  occurrence-specific resolution IDs in `DevRigorSTATUS`. A normal association marker is
+  repairable only by its owning parent task; the self-scoped historical
+  `parent-unavailable` marker belongs to the child. Later healthy state or an old resolution
+  never silently erases an earlier or recurring marker. A circuit-released response remains
+  open debt and makes the release INVALID; later evidence clears proof or correlated
+  mechanical debt only for the same edit set or a verified superseding set containing
+  every affected edit. Missing, corrupt, conflicting, cyclic, or orphaned child state is
+  association debt, never a clean status.
+- **Canonical proof is complete or the release is INVALID** — each accepted proof requires
+  matching task/checkpoint state, exact-turn ledger event, and strict
+  `evidence-v4-<proof ID>.json` record. Treat missing, malformed, mismatched, or tampered
+  records as **invalid canonical evidence**. Evidence tokens are correlation and replay
+  detection, not a security boundary. Do not persist secrets or raw sensitive command
+  arguments. Local `pending tool observations` and recursively aggregated
+  `subagent pending observations` are release-blocking until reconciled. Later proof may
+  resolve a debt only for the same affected edit set or a verified superseding set.
 - **STOP → owner go/no-go on the tag.** The coordinator drives everything to ready,
   then hands the decision to the owner. Merging slices is pre-authorized; declaring the
   release real (the tag) is not.
@@ -256,16 +274,23 @@ The Codex installer bundles and installs every namespaced standalone stage plus 
 backward-compatible **coder-tdd-qa, proof-gate, gauntletgate, audit-lite, audit-team, and
 visitor-audit** entrypoints, so a normal install has every lane present. It also installs
 and wires the active Codex lifecycle layer: SessionStart/SubagentStart core activation,
-UserPromptSubmit routing/task controls, PreToolUse/PostToolUse worktree comparison and typed evidence, and
+UserPromptSubmit routing/task controls, PreToolUse/PostToolUse complete repository/artifact comparison and typed evidence, and
 Stop/SubagentStop substantive proof checks. Codex requires the user to review and trust
 the seven non-managed hooks; Codex Desktop users do that in the graphical activator, not a
 terminal-only command. An untrusted, disabled, missing, or failed hook must be reported as
 unenforced, never represented as active. The full discipline remains in the skills. The
-hooks mechanically require a real qualifying check after important direct/generated
-edits, expose unresolved proof debt, and warn—but do not destructively block—when only
+hooks mechanically require a real exact-classified qualifying check after every observed
+direct/generated artifact edit, expose unresolved proof/mechanical/association debt, and warn—but do not destructively block—when only
 receipt formatting is missing. Exact `DevRigorON`, `DevRigorWARN`, `DevRigorOFF`, and
 `DevRigorSTATUS` commands are task-scoped owner controls; they do not weaken the evidence
-needed for a valid gate. The degrade path is a fallback for
+needed for a valid gate. Exact `DevRigorREPAIR` is narrower and append-only: under the task
+lock it must persist a canonical transaction before it may resolve the exact uniquely
+identified failure occurrence. A mechanical owner-control failure is eligible only when its
+recorded operation supplies an exact ON/WARN/OFF postcondition that the transaction applies;
+generic and legacy failures without a verifiable outcome remain debt. It may attest an
+association only when parent binding, immutable edge, and parent projection already agree.
+It never infers parentage or clears unknown, corrupt, conflicting, mismatched, cross-task,
+or stale replayed state. Recovery tokens are correlation, not a security boundary. The degrade path is a fallback for
 the unusual case (a partial install, stale install, or a skill
 manually removed): if a lane's skill is absent, the coordinator runs the equivalent
 discipline inline, **says so**, and still uses a fresh-context serial pass or bounded

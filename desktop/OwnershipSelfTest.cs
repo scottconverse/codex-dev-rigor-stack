@@ -36,7 +36,8 @@ namespace DevRigorStack.Desktop
                 CurrentHash = "sha256:test",
                 TrustStatus = "untrusted",
                 Matcher = matcher,
-                TimeoutSec = 5,
+                TimeoutSec = eventName == "preToolUse" || eventName == "postToolUse" ||
+                    eventName == "stop" || eventName == "subagentStop" ? 15 : 5,
                 Enabled = true,
                 StatusMessage = status
             };

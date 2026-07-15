@@ -1,5 +1,7 @@
 ---
 name: dev-rigor-stack-build
+metadata:
+  version: 1.7.0
 description: >
   Run the dev-rigor-stack BUILD gate using the complete coder-tdd-qa contract:
   baseline evidence, real RED-GREEN-REFACTOR TDD, security and UI state checks,
