@@ -17,8 +17,6 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-      - uses: actions/setup-node@v4
-        with:
           node-version: '20'
 
       - name: Active Codex hook self-check
@@ -90,7 +88,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: powershell
         run: |
-          npm install --global @openai/codex@0.143.0
+          npm install --global @openai/codex@0.144.2
           $env:CODEX_HOME = "$env:RUNNER_TEMP\codex-home"
           .\desktop\build.ps1 -OutputDirectory "$env:RUNNER_TEMP\activator-build-a" -RunIntegrationTest -IntegrationCwd "$env:GITHUB_WORKSPACE"
           .\desktop\build.ps1 -OutputDirectory "$env:RUNNER_TEMP\activator-build-b"
