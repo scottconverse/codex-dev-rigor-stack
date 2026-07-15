@@ -85,12 +85,15 @@ jobs:
           # Both child installers above must exit nonzero. Their full rollback was
           # asserted, so do not leak the last expected child code into this step.
           $global:LASTEXITCODE = 0
-      - name: Build and run the production Desktop hook trust path (Windows)
+      - name: Build Desktop activator and run isolated Codex trust path (Windows)
         if: runner.os == 'Windows'
         shell: powershell
         run: |
           npm install --global @openai/codex@0.144.2
           $env:CODEX_HOME = "$env:RUNNER_TEMP\codex-home"
+          # The GitHub runner's preinstalled Desktop runtime ignores alternate CODEX_HOME.
+          # Force the just-installed, pinned CLI so this disposable-profile check is real.
+          $env:DEV_RIGOR_CODEX_EXE = (Get-Command codex.cmd -ErrorAction Stop).Source
           .\desktop\build.ps1 -OutputDirectory "$env:RUNNER_TEMP\activator-build-a" -RunIntegrationTest -IntegrationCwd "$env:GITHUB_WORKSPACE"
           .\desktop\build.ps1 -OutputDirectory "$env:RUNNER_TEMP\activator-build-b"
           .\desktop\verify-binary-equivalence.ps1 `
