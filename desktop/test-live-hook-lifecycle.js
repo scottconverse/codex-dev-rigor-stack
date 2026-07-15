@@ -56,7 +56,7 @@ const codexVersion = execFileSync(codexBinary, ['--version'], {
 if (!/\b0\.144\.2\b/.test(codexVersion)) {
   throw new Error(`Authenticated lifecycle requires Codex 0.144.2; received ${redactSensitive(codexVersion)}`);
 }
-const child = spawnCodexAppServer(codexBinary, { ...process.env, CODEX_HOME: codexHome });
+const child = spawnCodexAppServer(codexBinary, { ...process.env, CODEX_HOME: codexHome }, cwd);
 
 const EVENT_NAMES = {
   SessionStart: 'sessionStart',
@@ -222,7 +222,7 @@ function assertExactTrustedHooks(message) {
     if (actual.handlerType !== 'command' || actual.source !== 'user' || !actual.enabled || actual.trustStatus !== 'trusted') {
       throw new Error(`${expected.event} is not an enabled trusted user command hook.`);
     }
-    if (!/^[a-f0-9]{64}$/.test(actual.currentHash || '') || !actual.key) {
+    if (!/^(?:sha256:)?[a-f0-9]{64}$/.test(actual.currentHash || '') || !actual.key) {
       throw new Error(`${expected.event} is missing its current trusted hash identity.`);
     }
     const binding = actual.command.match(/Buffer\.from\('([^']+)','base64'\).*digest\('hex'\)!=='([a-f0-9]{64})'/);
@@ -270,6 +270,7 @@ function startTurn(id, text, outputSchema) {
     input: [{ type: 'text', text }],
     cwd,
     approvalPolicy: 'never',
+    sandboxPolicy: { type: 'workspaceWrite', writableRoots: [cwd] },
   };
   if (outputSchema) params.outputSchema = outputSchema;
   send({ method: 'turn/start', id, params });

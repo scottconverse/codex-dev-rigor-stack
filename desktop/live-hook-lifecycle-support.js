@@ -256,10 +256,11 @@ function resolveCodexBinary() {
   throw new Error('Could not resolve the native Codex executable; set DEV_RIGOR_CODEX_BINARY explicitly.');
 }
 
-function spawnCodexAppServer(binary, env) {
+function spawnCodexAppServer(binary, env, cwd) {
   return spawn(binary, ['app-server'], {
     stdio: ['pipe', 'pipe', 'pipe'],
     env,
+    cwd,
     detached: process.platform !== 'win32',
     windowsHide: true,
   });

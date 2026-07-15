@@ -120,8 +120,11 @@ function snapshotPath(session, turn, toolUseId) {
   return path.join(stateDir, `pre-v4-${hash(session, turn, toolUseId)}.json`);
 }
 
-function executionReceiptPath(session, turn, toolUseId) {
-  return path.join(stateDir, `exec-v4-${hash(session, turn, toolUseId)}.receipt`);
+function executionReceiptPath(session, turn, toolUseId, cwd = '', create = false) {
+  // Shell commands may write inside the workspace but not the profile state directory.
+  const directory = path.join(repositoryBoundary(cwd), '.dev-rigor-receipts');
+  if (create) fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
+  return path.join(directory, `exec-v4-${hash(session, turn, toolUseId)}.receipt`);
 }
 
 function evidencePath(token) {
@@ -935,9 +938,9 @@ ${command}
 if ($__devRigorCode -ne 0) { exit $__devRigorCode }`;
 }
 
-function consumeExecutionReceipt(session, turn, toolUseId, expectedNonce) {
+function consumeExecutionReceipt(session, turn, toolUseId, expectedNonce, cwd) {
   if (!toolUseId || !expectedNonce) return null;
-  const target = executionReceiptPath(session, turn, toolUseId);
+  const target = executionReceiptPath(session, turn, toolUseId, cwd);
   try {
     const value = fs.readFileSync(target, 'utf8').trim();
     try { fs.unlinkSync(target); } catch (_) { /* cleanup is best effort */ }
@@ -1301,7 +1304,14 @@ function isTrustedSystemPath(filePath) {
   return false;
 }
 
+function unwrapPowershellCommand(command) {
+  if (typeof command !== 'string' || !command.includes('$__devRigorCode')) return command;
+  const match = command.match(/&\s*\{([\s\S]*?)\}\s*\n\s*\$__devRigorOk/);
+  return match ? match[1].trim() : command;
+}
+
 function executableOriginHash(command, cwd) {
+  command = unwrapPowershellCommand(command);
   const tokens = parseSimpleCommand(command);
   if (!tokens || !cwd) return '';
   const resolved = resolveExecutablePath(tokens[0], cwd);
@@ -1608,6 +1618,7 @@ function main() {
       mutatingCommand: MUTATING_GENERATOR.test(command) || DIRECT_WRITE.test(command),
     } : null);
     if (!saved) failOpenWarning(session, 'snapshot-unavailable');
+    const receiptPath = saved && executionNonce ? executionReceiptPath(session, turn, toolUseId, cwd, true) : '';
     const pendingRegistered = saved && taskTransaction(session, () => {
       const task = loadGroundTask(session);
       const id = pendingObservationId(session, turn, toolUseId);
@@ -1616,14 +1627,14 @@ function main() {
           id,
           turn: hash(turn),
           eventClass,
-          receipt: executionNonce ? path.basename(executionReceiptPath(session, turn, toolUseId)) : '',
+          receipt: receiptPath ? path.basename(receiptPath) : '',
         });
       }
       saveTask(session, task);
       return true;
     });
     if (pendingRegistered && executionNonce) {
-      const updatedInput = { ...input, command: wrapCommandWithReceipt(command, executionReceiptPath(session, turn, toolUseId), executionNonce) };
+      const updatedInput = { ...input, command: wrapCommandWithReceipt(command, receiptPath, executionNonce) };
       setHookOutput({
         hookSpecificOutput: {
           hookEventName: 'PreToolUse', permissionDecision: 'allow', updatedInput,
@@ -1645,7 +1656,7 @@ function main() {
     const observationDeadline = Date.now() + postObservationBudgetMs();
     const before = isEdit ? null : consumeSnapshot(session, turn, identity(payload.tool_use_id));
     const executionReceipt = !isEdit && before && before.executionNonce
-      ? consumeExecutionReceipt(session, turn, identity(payload.tool_use_id), before.executionNonce)
+      ? consumeExecutionReceipt(session, turn, identity(payload.tool_use_id), before.executionNonce, cwd)
       : null;
     const receiptUnavailable = executionReceipt && !executionReceipt.valid;
     const executionOriginChanged = Boolean(before && before.executionOrigin &&
