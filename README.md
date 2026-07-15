@@ -1,3 +1,5 @@
+Codex is resistant to the hooks this stack implements and may or may not work properly. to date, we have been unable to determine exactly how it will effect your day to day work- us the dev-rigor-stack-lite version if you want something that just works (mostly, it's still prompting and not 'required' hooks)
+
 # codex-dev-rigor-stack
 
 **Current version: 1.7.0 — released**
