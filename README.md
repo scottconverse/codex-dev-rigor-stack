@@ -1,3 +1,9 @@
+> [!WARNING]
+> **THIS IS NOT FINISHED and does not work correctly.** Do not use this repository.
+> The maintained, working successor is
+> [dev-rigor-stack-lite](https://github.com/scottconverse/dev-rigor-stack-lite) — a
+> hook-free, host-portable rewrite. Use that instead.
+
 # codex-dev-rigor-stack
 
 **Current version: 1.7.0 — released**
