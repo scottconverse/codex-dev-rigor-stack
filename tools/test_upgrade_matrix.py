@@ -199,7 +199,9 @@ def run_current_tool(
     state = home / "dev-rigor-stack" / "state"
     before = json.loads((state / f"pre-v4-{hook_state_hash(session, turn, tool_use_id)}.json").read_text(encoding="utf-8"))
     if before.get("executionNonce"):
-        (state / f"exec-v4-{hook_state_hash(session, turn, tool_use_id)}.receipt").write_text(
+        receipt_directory = cwd / ".dev-rigor-receipts"
+        receipt_directory.mkdir(exist_ok=True)
+        (receipt_directory / f"exec-v4-{hook_state_hash(session, turn, tool_use_id)}.receipt").write_text(
             f"{before['executionNonce']}:0", encoding="utf-8"
         )
     run_hook(
