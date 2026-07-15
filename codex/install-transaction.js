@@ -32,13 +32,19 @@ const SKILLS = Object.freeze([
 // Markerless releases are eligible for migration only when every shipped
 // runtime and skill byte matches one immutable archived installation. These
 // are aggregate, length-framed footprints of 1.6.1 e1e22a2, 1.6.2 89c5d0d,
-// 1.6.3 91c8d7f, PR9 1941c2d4..., and PR11 4ba16f8f... respectively.
+// 1.6.3 91c8d7f, PR9 1941c2d4..., and PR11 4ba16f8f... respectively, as
+// produced by both supported installer paths.
 const LEGACY_INSTALL_FOOTPRINTS = new Set([
   '2f752d2300a77584bffb67404d4898d07144eeed53b306e190c92ea622bcd22f',
   '9887e8f49d330558abcdae3195041381b03d295b5aef52a7c20c297eeec71766',
   'd088906e1ad63f9dcb5c295c4189ecc2d65cecf52a4f64006791bce133964330',
   '346b7b7e7c4761e8b4ae2669795b2e583e803d94c6cfa8fd2170909f92f271c4',
   '1b9e2977e2d0731cb43cebb5c9052f1d9e6cfa59e8cc6405bc61902b934fcaeb',
+  '306d074dfa06eecbd594ff1b788fcbe1a481715d1af230c13a53d948f591f02c',
+  '2259cbef847bacfbeb1eaddb2de68239e73de8e9d6438a722b959c94d10bee54',
+  'ca76dd79948a806cc6b7c9db2efd1cbe4acecd3074c86504f037fc71c5fddaeb',
+  'cdbab1703a200eda49a20088c27f67c4996a19308e3420fbb0f41ddac900dbc1',
+  '77109682f61c5c770de5a8a5bf37880b61017da71e89d7b26c8cc49ecfb4e085',
 ]);
 const CREATED_KEYS = Object.freeze([
   'homeBackupNamespace', 'homeBackupParent', 'hooksConfig',

@@ -122,17 +122,43 @@ namespace DevRigorStack.Desktop
         {
             string scriptPath = Path.Combine(codexHome, "dev-rigor-stack", "hooks", script);
             string commandPath = portable ? scriptPath.Replace('\\', '/') : scriptPath;
+            return BuildIntegrityCommandForPath(commandPath, suffix);
+        }
+
+        private static string BuildIntegrityCommandForPath(string scriptPath, string suffix)
+        {
             byte[] content = File.ReadAllBytes(scriptPath);
             byte[] digest;
             using (SHA256 sha = SHA256.Create()) digest = sha.ComputeHash(content);
             string hash = BitConverter.ToString(digest).Replace("-", "").ToLowerInvariant();
-            string encodedPath = Convert.ToBase64String(Encoding.UTF8.GetBytes(commandPath));
+            string encodedPath = Convert.ToBase64String(Encoding.UTF8.GetBytes(scriptPath));
             string loader = "const f=Buffer.from('" + encodedPath + "','base64').toString(),b=require('fs').readFileSync(f);" +
                 "if(require('crypto').createHash('sha256').update(b).digest('hex')!=='" + hash + "')" +
                 "{console.error('Dev Rigor hook integrity check failed: '+f);process.exit(2)}" +
                 "const M=require('module'),m=new M(f,module);m.filename=f;m.paths=M._nodeModulePaths(require('path').dirname(f));" +
                 "process.argv.splice(1,0,f);m._compile(b.toString(),f)";
             return "node -e \"" + loader + "\"" + suffix;
+        }
+
+        private static bool MatchesIntegrityCommand(string command, string expectedScriptPath, string suffix)
+        {
+            const string prefix = "node -e \"const f=Buffer.from('";
+            const string pathEnd = "','base64').toString()";
+            if (String.IsNullOrWhiteSpace(command) || !command.StartsWith(prefix, StringComparison.Ordinal)) return false;
+            int encodedEnd = command.IndexOf(pathEnd, prefix.Length, StringComparison.Ordinal);
+            if (encodedEnd <= prefix.Length) return false;
+
+            string decodedPath;
+            try
+            {
+                decodedPath = Encoding.UTF8.GetString(Convert.FromBase64String(command.Substring(prefix.Length, encodedEnd - prefix.Length)));
+                if (!String.Equals(Path.GetFullPath(decodedPath), Path.GetFullPath(expectedScriptPath), StringComparison.OrdinalIgnoreCase)) return false;
+                return String.Equals(command, BuildIntegrityCommandForPath(decodedPath, suffix), StringComparison.Ordinal);
+            }
+            catch (ArgumentException) { return false; }
+            catch (FormatException) { return false; }
+            catch (IOException) { return false; }
+            catch (UnauthorizedAccessException) { return false; }
         }
 
         private static bool IsOwned(HookRecord hook, string codexHome, string expectedSource)
@@ -197,17 +223,8 @@ namespace DevRigorStack.Desktop
                 !String.Equals(hook.StatusMessage ?? "", expectedStatus, StringComparison.Ordinal))
                 return false;
 
-            string nativeCommand;
-            string portableCommand;
-            try
-            {
-                nativeCommand = BuildIntegrityCommand(codexHome, script, suffix, false);
-                portableCommand = BuildIntegrityCommand(codexHome, script, suffix, true);
-            }
-            catch (IOException) { return false; }
-            catch (UnauthorizedAccessException) { return false; }
-            return String.Equals(hook.Command, nativeCommand, StringComparison.OrdinalIgnoreCase) ||
-                   String.Equals(hook.Command, portableCommand, StringComparison.OrdinalIgnoreCase);
+            string expectedScriptPath = Path.Combine(codexHome, "dev-rigor-stack", "hooks", script);
+            return MatchesIntegrityCommand(hook.Command, expectedScriptPath, suffix);
         }
     }
 

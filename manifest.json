@@ -33,6 +33,8 @@
   "codex": {
     "installer": "install.ps1",
     "uninstaller": "uninstall.ps1",
+    "transaction_coordinator": "codex/install-transaction.js",
+    "transaction_test": "codex/install-transaction.test.js",
     "publication_state": "released",
     "restart_required": true,
     "hooks": {

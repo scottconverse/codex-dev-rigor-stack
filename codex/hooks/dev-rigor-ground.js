@@ -1292,7 +1292,11 @@ function isTrustedSystemPath(filePath) {
       '/System'
     );
   }
-  whitelist.push(path.dirname(process.execPath));
+  const currentRuntimeBin = path.dirname(process.execPath);
+  whitelist.push(currentRuntimeBin);
+  // npm's launcher resolves from the same POSIX Node runtime under lib/, not bin/.
+  // Trust that one runtime root, never an arbitrary PATH location.
+  if (process.platform !== 'win32') whitelist.push(path.dirname(currentRuntimeBin));
   for (const entry of whitelist) {
     try {
       const realEntry = fs.realpathSync.native(entry);

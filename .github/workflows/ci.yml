@@ -17,8 +17,6 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-      - uses: actions/setup-node@v4
-        with:
           node-version: '20'
 
       - name: Active Codex hook self-check
@@ -54,6 +52,7 @@ jobs:
             test "$(find "$RUNNER_TEMP/codex-home/skills" -mindepth 1 -maxdepth 1 -type d ! -name .backup | wc -l)" -eq 19
           done
           sh tools/test_clean_rollback.sh
+          find "$RUNNER_TEMP/codex-home/skills" "$RUNNER_TEMP/codex-home/dev-rigor-stack" -name .rollback-proof.txt -type f -delete
           CI=1 ./uninstall.sh --codex-home "$RUNNER_TEMP/codex-home" --skip-trust-revocation
           test ! -e "$RUNNER_TEMP/codex-home/dev-rigor-stack"
       - name: Installer smoke (Windows)
@@ -86,12 +85,18 @@ jobs:
           # Both child installers above must exit nonzero. Their full rollback was
           # asserted, so do not leak the last expected child code into this step.
           $global:LASTEXITCODE = 0
-      - name: Build and run the production Desktop hook trust path (Windows)
+      - name: Build Desktop activator and run isolated Codex trust path (Windows)
         if: runner.os == 'Windows'
         shell: powershell
         run: |
-          npm install --global @openai/codex@0.143.0
+          npm install --global @openai/codex@0.144.2
           $env:CODEX_HOME = "$env:RUNNER_TEMP\codex-home"
+          # The GitHub runner's preinstalled Desktop runtime ignores alternate CODEX_HOME.
+          # Force the native executable from the just-installed, pinned CLI so this
+          # disposable-profile check cannot be redirected through a batch wrapper.
+          $codexPackage = Join-Path (Split-Path (Get-Command codex.cmd -ErrorAction Stop).Source -Parent) 'node_modules\@openai\codex'
+          $env:DEV_RIGOR_CODEX_EXE = Get-ChildItem $codexPackage -Recurse -Filter codex.exe | Select-Object -First 1 -ExpandProperty FullName
+          if (-not $env:DEV_RIGOR_CODEX_EXE) { throw 'Pinned Codex native executable was not installed.' }
           .\desktop\build.ps1 -OutputDirectory "$env:RUNNER_TEMP\activator-build-a" -RunIntegrationTest -IntegrationCwd "$env:GITHUB_WORKSPACE"
           .\desktop\build.ps1 -OutputDirectory "$env:RUNNER_TEMP\activator-build-b"
           .\desktop\verify-binary-equivalence.ps1 `
