@@ -52,6 +52,7 @@ jobs:
             test "$(find "$RUNNER_TEMP/codex-home/skills" -mindepth 1 -maxdepth 1 -type d ! -name .backup | wc -l)" -eq 19
           done
           sh tools/test_clean_rollback.sh
+          find "$RUNNER_TEMP/codex-home/skills" "$RUNNER_TEMP/codex-home/dev-rigor-stack" -name .rollback-proof.txt -type f -delete
           CI=1 ./uninstall.sh --codex-home "$RUNNER_TEMP/codex-home" --skip-trust-revocation
           test ! -e "$RUNNER_TEMP/codex-home/dev-rigor-stack"
       - name: Installer smoke (Windows)
