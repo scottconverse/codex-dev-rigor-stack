@@ -214,7 +214,7 @@ class DesktopActivatorContractTests(unittest.TestCase):
             "ledgerClasses(unproved) !== 'E/K/U'",
             "task.unresolved",
             "block count by other than one",
-            "Refusing to run the live lifecycle test against the active Codex profile",
+            "assertLifecycleIsolation",
             "work directory must exist and be empty",
             "execFileSync('git', ['init', '--quiet', cwd]",
         ):
