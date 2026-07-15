@@ -1,6 +1,6 @@
 # Security Policy
 
-**Candidate under review:** 1.7.0. **Approved installation version:** none.
+**Current release:** 1.7.0.
 
 ## Security model
 
@@ -17,7 +17,10 @@ from stdin, writes Codex hook JSON to stdout, and stores append-only state benea
 `CODEX_HOME/dev-rigor-stack/state`. Task records and evidence tokens contain hashes and
 bounded metadata rather than raw sensitive command arguments. Correlation tokens detect
 stale/mismatched evidence but are not a security boundary against a process that can read
-the task salt.
+the task salt. Each accepted proof is recorded as
+`evidence-v4-<16 lowercase hex proof ID>.json`; task ownership is recorded as
+`task-genesis-v4-<64 lowercase hex task key>.json`. These canonical filenames and their
+contents must agree before the runtime accepts them as evidence.
 
 The Windows graphical activator source implements that review without a terminal. It uses
 Codex's local app-server protocol, accepts only the exact seven expected dev-rigor events

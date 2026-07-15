@@ -114,8 +114,10 @@ failure (`F`). Result precedence is explicit policy/tool failure, structured tes
 result, process exit status, then bounded text inference only when structured evidence is
 absent. Raw sensitive command arguments are not persisted. Correlation tokens bind task,
 turn, edit set, evidence class, the exact execution fingerprint, target checkpoint, and
-result; they detect stale/mismatched evidence but are
-not represented as a security boundary against a process that can read task state.
+result. Each accepted proof has an `evidence-v4-<16 lowercase hex proof ID>.json` record,
+and each task owner has a `task-genesis-v4-<64 lowercase hex task key>.json` record.
+They detect stale/mismatched evidence but are correlation mechanisms, not a security boundary
+against a process that can read task state.
 
 In `ON`, an unproved important edit can cause one substantive block. A retry with no new
 tool event is released to prevent response-discard loops, records `U: released-unproved`,
