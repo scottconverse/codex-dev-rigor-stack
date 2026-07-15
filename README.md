@@ -1,6 +1,6 @@
 # codex-dev-rigor-stack
 
-**Candidate version: 1.7.0 — review hold; no version is currently approved for installation**
+**Current version: 1.7.0 — released**
 
 MIT licensed.
 
@@ -127,12 +127,10 @@ rewrites.
 
 ### Codex Desktop — no terminal
 
-1. Do not install or activate 1.7.0 while its independent-review hold is active.
-2. Wait for a tagged release and an explicit owner go/no-go. No candidate executable is
-   tracked or published. Maintainers create review builds locally in the gitignored
-   `candidate-artifacts/` directory.
-3. After publication is explicitly authorized, follow the tagged release's installation
-   and graphical trust instructions. Do not use an artifact recovered from repository history.
+1. Use the tagged `1.7.0` source from this repository.
+2. Install the stack into Codex Desktop, then review and trust its seven hooks through Codex.
+3. Prebuilt activator artifacts are not tracked in the repository; build them from the tagged
+   source when you need the graphical review app.
 
 The activator uses Codex's supported app-server APIs to read, trust, and re-read the exact
 hook hashes. Every command also embeds the expected SHA-256 of its JavaScript, reads the

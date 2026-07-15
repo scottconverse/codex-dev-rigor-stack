@@ -33,7 +33,7 @@
   "codex": {
     "installer": "install.ps1",
     "uninstaller": "uninstall.ps1",
-    "publication_state": "review-hold",
+    "publication_state": "released",
     "restart_required": true,
     "hooks": {
       "status": "active",

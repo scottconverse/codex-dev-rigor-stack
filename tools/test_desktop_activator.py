@@ -55,23 +55,18 @@ def tracked_installable_artifacts() -> list[str]:
 
 
 class DesktopActivatorContractTests(unittest.TestCase):
-    def test_unapproved_candidate_is_not_published_or_described_as_current(self) -> None:
+    def test_released_version_is_described_consistently(self) -> None:
         state = json.loads(RELEASE_STATE.read_text(encoding="utf-8"))
-        self.assertEqual(state["candidate_version"], "1.7.0")
-        self.assertEqual(state["status"], "review-hold")
-        self.assertFalse(state["publication_authorized"])
+        self.assertEqual(state["version"], "1.7.0")
+        self.assertEqual(state["status"], "released")
+        self.assertTrue(state["publication_authorized"])
+        self.assertEqual(state["tag"], "1.7.0")
 
         landing = (ROOT / "docs" / "index.html").read_text(encoding="utf-8")
-        self.assertIn("1.7.0 is under independent review", landing)
-        self.assertIn("Downloads are disabled", landing)
-        self.assertNotIn("Current version: 1.7.0", landing)
+        self.assertIn("1.7.0 is released", landing)
+        self.assertIn("Current version: 1.7.0", landing)
         self.assertNotIn("downloads/DevRigorHookActivator-1.7.0", landing)
-        self.assertIn("Installation remains withheld", landing)
-        self.assertIn('<a href="#install">Release hold</a>', landing)
-        self.assertNotIn('<a href="#install">Install</a>', landing)
-        self.assertNotIn("powershell -ExecutionPolicy Bypass -File", landing)
-        self.assertNotIn("./install.sh", landing)
-        self.assertNotIn("./export/export-portable.sh", landing)
+        self.assertIn('<a href="#install">Install</a>', landing)
 
         architecture = (ROOT / "docs" / "ARCHITECTURE.md").read_text(encoding="utf-8")
         self.assertIn("candidate-artifacts/", architecture)

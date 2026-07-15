@@ -103,16 +103,14 @@ and Stop/SubagentStop evidence gate. The original Claude source remains only as 
 
 ### Codex Desktop installation — no terminal
 
-1. Open a normal Codex Desktop task and ask:
-   Do not request installation while 1.7.0 is on independent-review hold.
+1. Open a normal Codex Desktop task against the tagged 1.7.0 source and ask it to install
+   dev-rigor-stack.
 2. Codex stages all 19 skill folders, the hook runtime, and the merged seven owned
    definitions, then commits them as one rollback-protected transaction while preserving
    unrelated hooks and creating backups.
-3. Wait for a tagged release, an explicit owner go/no-go, and restored publication links.
-   No candidate executable or checksum is tracked or published during review. Maintainer
-   review builds exist only in the local gitignored `candidate-artifacts/` directory.
-4. Once publication is authorized, verify the tagged release's checksum before opening it.
-   Stop if Codex reports a mismatch.
+3. Review the exact seven hook definitions and hashes before trusting them.
+4. A prebuilt activator is not tracked in the repository; build it from the tagged source
+   when you need the graphical review app.
 5. Read all seven rows. Selecting a row exposes its exact command, source, matcher, and
    current hash.
 6. Choose **Review and trust these 7 hooks**. The confirmation lists the exact seven hashes;
@@ -125,12 +123,7 @@ a command, editing configuration, or knowing where Codex stores its files.
 
 ### Scripted installation for maintainers and compatible clients
 
-**Review-hold restriction:** the commands below remain documented so independent reviewers
-can exercise installation and rollback in a disposable `CODEX_HOME`. They are not approval
-to install 1.7.0 into an active profile. Until the hold is lifted, use only an isolated test
-target and remove it after verification.
-
-### Windows PowerShell (isolated reviewer/maintainer use during the hold)
+### Windows PowerShell (maintainer and compatible-client installation)
 
 ```powershell
 git clone https://github.com/scottconverse/codex-dev-rigor-stack
@@ -581,7 +574,7 @@ to make it shorter.
 
 ## Versioning
 
-- **Version 1.7.0** is an unreleased candidate on independent-review hold and continues the product lineage from 1.5.1.
+- **Version 1.7.0** is the current released version and continues the product lineage from 1.5.1.
 - The earlier 1.0.0 Codex package number is retained only as historical record of an
   interim reset; future versions advance monotonically from 1.6.0. Version 1.6.1 repaired
   Desktop graphical activation. Version 1.6.2's prompt-boundary repair was incomplete;

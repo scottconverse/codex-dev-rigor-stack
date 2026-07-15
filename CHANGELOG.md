@@ -3,23 +3,21 @@
 All notable changes to dev-rigor-stack. A version heading does not imply a Git tag exists
 in this repository.
 
-## 1.7.0 candidate — unreleased, independent-review hold
+## 1.7.0 — released
 
 Task-scoped substantive enforcement redesign. This candidate preserves 1.6.3's exact-turn
 isolation and one-block circuit breaker while correcting the state and policy model that
 made earlier receipt enforcement destructive.
 
-Independent review returned `TAG NO-GO`; this candidate remains unreleased. Every tracked
-executable and associated candidate/download artifact has been removed from both the Pages
-tree and the repository candidate tree. Local review builds are gitignored, and the build
-script refuses publication while `release-state.json` says publication is unauthorized.
+The owner released this version at Git tag `1.7.0`. The repository does not track a prebuilt
+activator or checksum; release builds remain reproducible from the tagged source.
 Remediation adds an invocation-bound `PreToolUse` worktree snapshot
 before `PostToolUse`, prevents harmless or unknown shell commands from becoming proof,
 detects opaque tracked-source writes, binds proof IDs to execution fingerprints and target
 checkpoints, surfaces non-destructive warnings in the UI, reports accurate block/checkpoint/
 delivery state, aggregates associated-subagent debt, binds trust revocation to an explicit
 `CODEX_HOME`, installs exact archived 1.6.1–1.6.3 trees in the upgrade matrix, and expands
-mutation coverage across the redesigned safety invariants. No tag or release is authorized.
+mutation coverage across the redesigned safety invariants.
 
 - **Separated substance from formatting:** an important direct or generated edit still
   requires a later qualifying run, render, test, or build. Missing or invalid receipt text

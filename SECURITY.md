@@ -41,9 +41,8 @@ clean-profile inspection before installing into an active Codex home.
 
 ## Supported versions
 
-No version is currently approved for installation. Version 1.7.0 remains an unreleased
-candidate on independent-review hold. After approval, updating will use a fresh repository download or pull followed by
-rerunning the installer; backups are enabled by default.
+Version 1.7.0 is the current released version. Update from its tagged repository source and
+rerun the installer; backups are enabled by default.
 
 Versions 1.6.0 through 1.6.3 are unsupported. Their hook enforcement lacks the complete
 independently reviewed 1.7.0 remediation; earlier Stop-hook state can outlive the coding
