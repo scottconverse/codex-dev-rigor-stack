@@ -211,9 +211,9 @@ class DesktopActivatorContractTests(unittest.TestCase):
             "UNPROVED_EDIT_RESPONSE",
             "CONVERSATION_OK",
             "missing-receipt",
-            "startsWith('K ')",
+            "ledgerClasses(unproved) !== 'E/K/U'",
             "task.unresolved",
-            "blocked more than once",
+            "block count by other than one",
             "Refusing to run the live lifecycle test against the active Codex profile",
             "work directory must exist and be empty",
             "execFileSync('git', ['init', '--quiet', cwd]",
@@ -249,7 +249,7 @@ class DesktopActivatorContractTests(unittest.TestCase):
         attributes = (ROOT / ".gitattributes").read_text(encoding="utf-8")
         self.assertIn("*.cs text eol=lf", attributes)
         rollback = (ROOT / "tools" / "test_clean_rollback.sh").read_text(encoding="utf-8")
-        self.assertIn('bash "$repo_dir/install.sh"', rollback)
+        self.assertIn('"$repo_dir/install.sh" --target', rollback)
         ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
         self.assertIn("$global:LASTEXITCODE = 0", ci)
 
