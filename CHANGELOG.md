@@ -9,34 +9,19 @@ Task-scoped substantive enforcement redesign. This candidate preserves 1.6.3's e
 isolation and one-block circuit breaker while correcting the state and policy model that
 made earlier receipt enforcement destructive.
 
-- **Hardened the owner publication boundary after adversarial review:** review builds now
-  remain local and Git-ignored, unsupported 1.6.x downloads and the unapproved 1.7.0 binary
-  are removed from current public repository/Pages surfaces, CI compares two fresh builds,
-  and the build script refuses any publish directory while `publication_authorized` is false.
-- **Made the release identity universal:** all nineteen independently invokable skill
-  entrypoints now declare bundle version 1.7.0, and a contract rejects any stale or missing
-  skill, document, installer, exporter, landing-page, or manifest version surface.
-- **Removed the abbreviated namespaced Visitor wrapper:** both `$visitor-audit` and
-  `$dev-rigor-stack-visitor-audit` now ship the complete public-surface protocol and their
-  own mechanically tested link checker. A contract rejects a shortened copy.
-
-Independent review returned `TAG NO-GO`; this candidate remains unreleased and its Pages
-downloads are disabled. Remediation adds an invocation-bound `PreToolUse` repository snapshot
+Independent review returned `TAG NO-GO`; this candidate remains unreleased. Every tracked
+executable and associated candidate/download artifact has been removed from both the Pages
+tree and the repository candidate tree. Local review builds are gitignored, and the build
+script refuses publication while `release-state.json` says publication is unauthorized.
+Remediation adds an invocation-bound `PreToolUse` worktree snapshot
 before `PostToolUse`, prevents harmless or unknown shell commands from becoming proof,
-detects opaque artifact writes, binds proof IDs to execution fingerprints and target
+detects opaque tracked-source writes, binds proof IDs to execution fingerprints and target
 checkpoints, surfaces non-destructive warnings in the UI, reports accurate block/checkpoint/
 delivery state, aggregates associated-subagent debt, binds trust revocation to an explicit
 `CODEX_HOME`, installs exact archived 1.6.1–1.6.3 trees in the upgrade matrix, and expands
 mutation coverage across the redesigned safety invariants. No tag or release is authorized.
 
-A second adversarial review found substring command classification, clean-to-clean Git
-transitions, lost concurrent task and child updates, and excluded asset types. This revision
-closes each demonstrated bypass with exact conservative classification, complete repository
-and artifact identity, owner-verified cross-process task transactions, immutable association
-edges, deterministic lifecycle oracles, and focused regressions/mutations. The candidate
-remains on hold; no tag or release is authorized.
-
-- **Separated substance from formatting:** every observed direct or generated artifact edit still
+- **Separated substance from formatting:** an important direct or generated edit still
   requires a later qualifying run, render, test, or build. Missing or invalid receipt text
   after real proof is now a visible warning and cannot discard a report.
 - **Made proof debt explicit:** the one-block circuit release records
@@ -47,58 +32,24 @@ remains on hold; no tag or release is authorized.
   `DevRigorOFF`, and `DevRigorSTATUS` commands survive retry and compaction, propagate
   only to authoritatively associated subagents, and never leak to another task. Unbound
   subagents visibly fail open in WARN rather than guessing a parent.
-- **Typed evidence instead of output folklore:** records every direct edit (`E`), every
-  observed/generated artifact change (`G`), inspections (`I`), runs/renders (`R`), tests (`T`), builds (`B`),
+- **Typed evidence instead of output folklore:** records direct edits (`E`), generated
+  source changes (`G`), inspections (`I`), runs/renders (`R`), tests (`T`), builds (`B`),
   explicit/structured failure (`F`), block (`K`), circuit release (`U`), warning (`W`),
   and checkpoint (`C`). Result precedence is policy/tool failure, structured test/build
   result, process status, then bounded text inference only when structured evidence is absent.
-  Structured test metadata with zero or no confirmed passing tests remains non-proof even
-  when the process exits successfully.
-- **Bound evidence safely:** every accepted proof requires matching task/checkpoint state,
-  exact-turn ledger event, and strict `evidence-v4-<proof ID>.json` record. Its correlation
-  ID binds task, turn, edit set, evidence class, execution fingerprint, privacy-safe semantic
-  descriptor, result, and checkpoint while excluding secrets and raw sensitive command
-  arguments. Missing or tampered canonical evidence is release-invalid. Tokens detect
+- **Bound evidence safely:** correlation IDs bind task, turn, edit set, evidence class,
+  result, and checkpoint while excluding raw sensitive commands and secrets. They detect
   accidental stale reuse and are explicitly not represented as a security boundary.
-- **Complete repository and artifact observation:** fingerprints HEAD/tree, attached or
-  detached reference, semantic index, complete status, and every Git-reported path. Direct
-  edits cover source, image, font, document, archive, binary, notebook, unknown-extension,
-  and extensionless artifacts. Missing or uncertain comparison cannot become proof.
-- **Exact command and interaction classification:** only supported executable/subcommand
-  shapes and known exact interaction actions emit `R`, `T`, or `B`. Version/help/list/eval,
-  composed, unknown, discovery, dry-run, and keyword-lookalike commands remain non-proof.
-- **Concurrency-safe state and associations:** every task mutation uses the same bounded,
-  owner-verified cross-process lock. Immutable parent binding and per-edge association files
-  prevent concurrent siblings or debt from disappearing. Recursive STATUS treats missing,
-  corrupt, cyclic, orphaned, conflicting, and incomplete association state as debt.
-- **Occurrence-bound exact-task recovery:** every repairable mechanical or association
-  failure has a unique occurrence identity. `DevRigorREPAIR` persists a canonical exact-task
-  transaction before appending a completion, normal markers are repairable only by their
-  owning parent task, and STATUS rejects missing-transaction, cross-task, synthesized, or
-  stale replayed completions. Mechanical owner-control failures are eligible only when their
-  recorded operation supplies an exact ON/WARN/OFF postcondition that repair applies;
-  generic and legacy failures without a verifiable outcome remain debt. Missing exact-root
-  state, malformed critical fields/ledgers/namespaces, wrong-schema or missing edges, missing
-  parent projections, and unknown marker codes fail visibly. Concurrent retry is idempotent. Recovery tokens provide
-  correlation and replay detection, not a local-state security boundary.
-- **Bounded disposable state without debt erasure:** old per-turn ledgers remain subject to
-  the five-megabyte budget, while unresolved task, proof, mechanical, and association state
-  is never age- or budget-pruned and fresh invocation snapshots cannot be pruned concurrently.
-  POSIX permissions are owner-only; missing identity/state persistence fails open visibly.
+- **Bounded state growth and failure:** inactive state is retained for seven days within a
+  five-megabyte budget, current task files are preserved, POSIX permissions are owner-only,
+  and missing identity/state persistence fails open with a once-per-state warning.
 - **Made migration and uninstall transactional:** upgrade tests cover broken 1.6.1,
   withdrawn 1.6.2, 1.6.3, clean profiles, and profiles containing foreign hooks/trust.
-  Same-version repair/update now preserves every current v4 task/control, exact task-genesis,
-  proof, canonical `evidence-v4-` record, mechanical, per-turn, snapshot, route, and
-  association record transactionally while
-  excluding legacy poisoned ledgers and transient locks. Malformed task-genesis lookalikes
-  fail closed before mutation; injected failure restores the untouched prior state.
   Failed upgrade or uninstall restores the starting state byte-for-byte; successful
   uninstall removes all owned components while preserving foreign configuration.
-- **Proved the real disappearing-report path deterministically:** the authenticated
-  disposable Codex app-server lifecycle verifies that a long report remains present and
-  later conversation passes normally, while direct invocation of the installed real hook
-  on captured task/turn identity deterministically asserts first block, second release with
-  debt, third silent Stop, and exact STATUS debt.
+- **Proved the real disappearing-report path:** the authenticated disposable Codex
+  app-server lifecycle verifies that a long proved report remains present, an unproved
+  coding turn blocks only once and retains debt, and later conversation passes normally.
 
 ## 1.6.3 — 2026-07-13
 

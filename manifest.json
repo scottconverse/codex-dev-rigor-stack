@@ -33,9 +33,6 @@
   "codex": {
     "installer": "install.ps1",
     "uninstaller": "uninstall.ps1",
-    "transaction_coordinator": "codex/install-transaction.js",
-    "transaction_test": "codex/install-transaction.test.js",
-    "desktop_hook_activator_review_build": "desktop/build.ps1 (local ignored output only while publication is unauthorized)",
     "publication_state": "review-hold",
     "restart_required": true,
     "hooks": {

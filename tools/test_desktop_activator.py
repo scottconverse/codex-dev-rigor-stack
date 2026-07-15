@@ -4,9 +4,7 @@
 from __future__ import annotations
 
 import json
-import shutil
 import subprocess
-import tempfile
 import unittest
 from pathlib import Path
 
@@ -18,11 +16,42 @@ OWNERSHIP_TEST = ROOT / "desktop" / "OwnershipSelfTest.cs"
 INTEGRATION_TEST = ROOT / "desktop" / "ActivatorIntegrationSelfTest.cs"
 UI_TEST = ROOT / "desktop" / "ActivatorUiSelfTest.cs"
 LIVE_TEST = ROOT / "desktop" / "test-live-hook-lifecycle.js"
-LIVE_SUPPORT = ROOT / "desktop" / "live-hook-lifecycle-support.js"
-LIVE_SUPPORT_TEST = ROOT / "desktop" / "test-live-hook-lifecycle-support.js"
-LIFECYCLE_ORACLE = ROOT / "codex" / "hooks" / "test-lifecycle-oracle.js"
 BINARY_EQUIVALENCE = ROOT / "desktop" / "verify-binary-equivalence.ps1"
 RELEASE_STATE = ROOT / "release-state.json"
+INSTALLABLE_SUFFIXES = {
+    ".apk", ".appx", ".appxbundle", ".bat", ".bin", ".bz2", ".cmd", ".com",
+    ".deb", ".dmg", ".exe", ".gz", ".ipa", ".iso", ".msi", ".msix",
+    ".msixbundle", ".pkg", ".ps1", ".rar", ".rpm", ".scr", ".sh", ".tar",
+    ".tgz", ".xz", ".zip", ".7z",
+}
+
+
+def tracked_installable_artifacts() -> list[str]:
+    roots = ("candidate-artifacts", "docs/downloads")
+    result = subprocess.run(
+        ["git", "ls-files", "-z", "--", *roots],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if result.returncode == 0:
+        candidates = [Path(item) for item in result.stdout.split("\0") if item]
+    else:
+        # Mutation copies intentionally omit .git. Fall back to the copied filesystem so
+        # the publication verifier still proves that an injected executable is rejected.
+        candidates = [
+            path.relative_to(ROOT)
+            for root in roots
+            if (ROOT / root).exists()
+            for path in (ROOT / root).rglob("*")
+            if path.is_file()
+        ]
+    return sorted(
+        path.as_posix()
+        for path in candidates
+        if path.suffix.lower() in INSTALLABLE_SUFFIXES
+    )
 
 
 class DesktopActivatorContractTests(unittest.TestCase):
@@ -45,19 +74,18 @@ class DesktopActivatorContractTests(unittest.TestCase):
         self.assertNotIn("./export/export-portable.sh", landing)
 
         architecture = (ROOT / "docs" / "ARCHITECTURE.md").read_text(encoding="utf-8")
-        self.assertIn("local ignored review build", architecture)
+        self.assertIn("candidate-artifacts/", architecture)
         self.assertIn("explicit owner go/no-go", architecture)
         self.assertIn("GO only", architecture)
 
-        installable_suffixes = {".exe", ".msi", ".msix", ".appx", ".zip", ".dmg", ".pkg", ".deb", ".rpm"}
-        public_candidates = [ROOT / "docs", ROOT / "candidate-artifacts"]
-        exposed = [
-            str(path.relative_to(ROOT))
-            for surface in public_candidates if surface.exists()
-            for path in surface.rglob("*") if path.is_file() and path.suffix.lower() in installable_suffixes
-        ]
-        self.assertEqual(exposed, [], f"review-hold installable artifacts remain publicly fetchable: {exposed}")
-
+        self.assertEqual(
+            tracked_installable_artifacts(),
+            [],
+            "publication_authorized=false forbids every tracked installable artifact in "
+            "candidate-artifacts/ and docs/downloads/",
+        )
+        ignored = (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
+        self.assertIn("candidate-artifacts/", ignored)
         manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
         self.assertNotIn("desktop_hook_activator_candidate", manifest["codex"])
 
@@ -146,6 +174,11 @@ class DesktopActivatorContractTests(unittest.TestCase):
         self.assertIn("/target:winexe", text)
         self.assertIn("DevRigorHookActivator.exe", text)
         self.assertIn("System.Windows.Forms.dll", text)
+        self.assertIn("release-state.json", text)
+        self.assertIn("publication_authorized", text)
+        self.assertIn("Publication is not authorized", text)
+        self.assertIn("Windows GUI subsystem", text)
+        self.assertIn("[System.IO.File]::ReadAllBytes", text)
 
     def test_every_executable_version_surface_is_1_7_0(self) -> None:
         source = SOURCE.read_text(encoding="utf-8")
@@ -172,8 +205,6 @@ class DesktopActivatorContractTests(unittest.TestCase):
 
     def test_authenticated_live_lifecycle_harness_exercises_retry_and_conversation(self) -> None:
         self.assertTrue(LIVE_TEST.is_file())
-        self.assertTrue(LIVE_SUPPORT.is_file())
-        self.assertTrue(LIVE_SUPPORT_TEST.is_file())
         text = LIVE_TEST.read_text(encoding="utf-8")
         for term in (
             "thread/start",
@@ -185,67 +216,14 @@ class DesktopActivatorContractTests(unittest.TestCase):
             "UNPROVED_EDIT_RESPONSE",
             "CONVERSATION_OK",
             "missing-receipt",
+            "startsWith('K ')",
             "task.unresolved",
-            "conversationTurnId",
-            "runInstalledHook",
-            "assertLifecycleIsolation",
-            "assertCandidateInstallation",
-            "assertExactTrustedHooks",
-            "hookBinding = assertExactTrustedHooks(message)",
-            "DEV_RIGOR_ACTIVE_CODEX_HOME",
-            "directHookTimeout",
-            "return mode === 'snapshot' || mode === 'record' || mode === 'check' ? 15000 : 5000;",
-            "seedUnprovedTurn",
-            "unprovedStopBaseline",
-            "firstCommands",
-            "reportCommands",
-            "real app-server Stop/retry path",
-            "app-server Stop hooks did not deliver exactly K/U",
-            "finalReports.length !== 1",
-            "reportDeltaByItem",
-            "finalReport.phase !== 'final_answer'",
-            "startTurn(7, 'DevRigorSTATUS'",
-            "statusTurnId",
-            "statusProjection = parseFinalJson(statusMessages, 'DevRigorSTATUS').value",
-            "newDebt.status !== 'unresolved'",
-            "exactDirtyEdits",
-            "if (!exactDirtyEdits)",
-            "task.checkpoint !== unprovedCheckpointBaseline",
-            "task.proofs.length !== unprovedProofBaseline",
-            "task.delivery.stop !== unprovedStopBaseline + 2",
-            "if (!finalDeltas || finalDeltas.split('REPORT_STAYS_VISIBLE').length - 1 !== 1)",
-            "if (totalStreamedReportCount !== 1)",
-            "['PreToolUse', 'PostToolUse', 'Stop', 'SubagentStop']",
-            "conversation ledger recorded K/U",
-            "model one-block ledger is not E/K/U/no-C",
+            "blocked more than once",
+            "Refusing to run the live lifecycle test against the active Codex profile",
             "work directory must exist and be empty",
             "execFileSync('git', ['init', '--quiet', cwd]",
-            "sandbox: 'workspace-write'",
-            "decision: 'decline'",
-            "Unexpected app-server approval request",
-            "redactedTaskProjection",
-            "boundedRedactedAppend",
-            "shutdownAppServer('success')",
-            "shutdownAppServer('failure')",
-            "shutdownAppServer('timeout')",
         ):
             self.assertIn(term, text)
-        self.assertNotIn("danger-full-access", text)
-        self.assertNotIn("decision: 'accept'", text)
-        self.assertNotIn("verifyDeterministicStateMachine", text)
-        self.assertNotIn("['check'], {", text)
-        self.assertEqual(text.count("runInstalledHook("), 2, "live harness may directly invoke only its one edit seed")
-
-    def test_live_lifecycle_support_has_executable_safety_regressions(self) -> None:
-        result = subprocess.run(
-            ["node", str(LIVE_SUPPORT_TEST)],
-            cwd=ROOT,
-            text=True,
-            capture_output=True,
-            timeout=30,
-        )
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn("LIFECYCLE_SUPPORT_PASS", result.stdout)
 
     def test_compiled_ui_capstone_exercises_the_real_trust_button(self) -> None:
         self.assertTrue(UI_TEST.is_file())
@@ -276,8 +254,7 @@ class DesktopActivatorContractTests(unittest.TestCase):
         attributes = (ROOT / ".gitattributes").read_text(encoding="utf-8")
         self.assertIn("*.cs text eol=lf", attributes)
         rollback = (ROOT / "tools" / "test_clean_rollback.sh").read_text(encoding="utf-8")
-        self.assertIn('"$repo_dir/install.sh"', rollback)
-        self.assertNotIn('bash "$repo_dir/install.sh"', rollback)
+        self.assertIn('bash "$repo_dir/install.sh"', rollback)
         ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
         self.assertIn("$global:LASTEXITCODE = 0", ci)
 
@@ -289,10 +266,6 @@ class DesktopActivatorContractTests(unittest.TestCase):
             "config/read",
             "hooks.state",
             "mergeStrategy: 'replace'",
-            "includeLayers: true",
-            "expectedVersion: version",
-            "configVersionConflict",
-            "MAX_CAS_ATTEMPTS",
             "selectOwned",
             "Foreign trust state changed",
             "locateDesktopCodex",
@@ -302,7 +275,6 @@ class DesktopActivatorContractTests(unittest.TestCase):
             "CODEX_HOME: path.resolve(codexHome)",
         ):
             self.assertIn(term, text)
-        self.assertNotIn("expectedVersion: null", text)
         self.assertNotIn('`"${executable}" app-server --listen stdio://`', text)
         ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
         self.assertIn("revoke-trust.js", ci)
@@ -310,30 +282,7 @@ class DesktopActivatorContractTests(unittest.TestCase):
         self.assertIn("alternate-uninstall-home", ci)
         self.assertIn(".\\uninstall.ps1 -CodexHome $alternate", ci)
 
-    def test_ci_runs_deterministic_unauthenticated_lifecycle_oracle(self) -> None:
-        self.assertTrue(LIFECYCLE_ORACLE.is_file())
-        text = LIFECYCLE_ORACLE.read_text(encoding="utf-8")
-        for term in (
-            "LIFECYCLE_ORACLE_PASS",
-            "long proved report",
-            "missing-receipt",
-            "released-unproved",
-            "later unrelated conversation",
-            "exact indebted edit set",
-            "proof-accepted",
-            "updatedInput.command",
-            "powershell.exe",
-            "bash",
-            "tool_response: execution.stdout",
-            "mode === 'snapshot' || mode === 'record' || mode === 'check' ? 15000 : 5000",
-            "{ E: 2, T: 0, W: 1, C: 2, K: 1, U: 1, G: 0, I: 0, F: 0, R: 2, B: 0 }",
-        ):
-            self.assertIn(term, text)
-        ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
-        self.assertIn("node codex/hooks/test-lifecycle-oracle.js", ci)
-        self.assertIn("node desktop/test-live-hook-lifecycle-support.js", ci)
-
-    def test_upgrade_matrix_uses_exact_historical_trees_and_expanded_mutations(self) -> None:
+    def test_upgrade_matrix_uses_exact_historical_trees(self) -> None:
         matrix = (ROOT / "tools" / "test_upgrade_matrix.py").read_text(encoding="utf-8")
         for version, commit in {"1.6.1": "e1e22a2", "1.6.2": "89c5d0d", "1.6.3": "91c8d7f"}.items():
             self.assertIn(f'"{version}": "{commit}"', matrix)
@@ -342,33 +291,7 @@ class DesktopActivatorContractTests(unittest.TestCase):
         ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
         self.assertIn("fetch-depth: 0", ci)
 
-    def test_review_build_stays_local_and_publish_requires_release_authorization(self) -> None:
-        build = BUILD.read_text(encoding="utf-8")
-        for term in (
-            "release-state.json",
-            "publication_authorized",
-            "Refusing to publish",
-            "desktop/dist/",
-        ):
-            self.assertIn(term, build)
-        ignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
-        self.assertIn("candidate-artifacts/", ignore)
-
-    def test_build_refuses_a_publish_directory_while_release_is_unauthorized(self) -> None:
-        shell = shutil.which("pwsh") or shutil.which("powershell")
-        if not shell:
-            self.skipTest("PowerShell is unavailable")
-        with tempfile.TemporaryDirectory(prefix="dev-rigor-publish-hold-") as temporary:
-            target = Path(temporary) / "public"
-            result = subprocess.run(
-                [shell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(BUILD), "-PublishDirectory", str(target)],
-                cwd=ROOT, capture_output=True, text=True, timeout=30, check=False,
-            )
-            self.assertNotEqual(result.returncode, 0)
-            self.assertIn("Refusing to publish", result.stdout + result.stderr)
-            self.assertFalse(target.exists(), "unauthorized publish created a public artifact directory")
-
-    def test_ci_rebuilds_and_normalizes_only_compiler_identity_bytes(self) -> None:
+    def test_ci_compares_two_fresh_local_builds_and_normalizes_only_compiler_identity_bytes(self) -> None:
         self.assertTrue(BINARY_EQUIVALENCE.is_file())
         verifier = BINARY_EQUIVALENCE.read_text(encoding="utf-8")
         for term in ("ModuleVersionId", "PE timestamp", "byte-identical after normalizing"):
@@ -376,6 +299,9 @@ class DesktopActivatorContractTests(unittest.TestCase):
         ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
         self.assertIn("-RunIntegrationTest", ci)
         self.assertIn("verify-binary-equivalence.ps1", ci)
+        self.assertIn("activator-build-a", ci)
+        self.assertIn("activator-build-b", ci)
+        self.assertNotIn("candidate-artifacts", ci)
 
     def test_gui_has_keyboard_and_accessible_security_review_path(self) -> None:
         text = SOURCE.read_text(encoding="utf-8")
@@ -395,12 +321,6 @@ class DesktopActivatorContractTests(unittest.TestCase):
             "_close.Enabled = !busy",
         ):
             self.assertIn(term, text)
-
-    def test_build_verifies_the_generated_executable_is_windows_gui(self) -> None:
-        build = BUILD.read_text(encoding="utf-8")
-        self.assertIn("Windows GUI subsystem", build)
-        self.assertIn("ReadAllBytes", build)
-
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

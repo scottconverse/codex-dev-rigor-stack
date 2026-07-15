@@ -128,8 +128,9 @@ rewrites.
 ### Codex Desktop — no terminal
 
 1. Do not install or activate 1.7.0 while its independent-review hold is active.
-2. Wait for a tagged release and an explicit owner go/no-go. Candidate artifacts remain
-   outside the GitHub Pages publication tree and are not public downloads.
+2. Wait for a tagged release and an explicit owner go/no-go. No candidate executable is
+   tracked or published. Maintainers create review builds locally in the gitignored
+   `candidate-artifacts/` directory.
 3. After publication is explicitly authorized, follow the tagged release's installation
    and graphical trust instructions. Do not use an artifact recovered from repository history.
 

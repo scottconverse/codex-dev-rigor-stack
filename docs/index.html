@@ -111,9 +111,10 @@
 <div class="callout">
   <p><strong>1.7.0 is under independent review and has not been approved for release.</strong></p>
   <p><strong>Downloads are disabled.</strong> Do not install this candidate or activate its
-  hooks. Reviewers build the candidate locally from the exact public source commit; no
-  executable candidate is retained in the repository or GitHub Pages tree. Installation instructions and a downloadable artifact
-  will return only after a clean independent verdict and the owner's explicit go/no-go.</p>
+  hooks. No candidate executable or checksum is tracked in the repository or served by
+  GitHub Pages. Maintainers create review builds only in a local gitignored directory.
+  Installation instructions and a downloadable artifact will return only after a clean
+  independent verdict and the owner's explicit go/no-go.</p>
 </div>
 
 <h2 id="plain-english">Plain English — what it does</h2>
@@ -124,8 +125,8 @@ exercised the way a real user hits it before anyone calls it finished, and the c
 a release <em>real</em> stays with a human. It installs all 19 entrypoints together:
 thirteen namespaced standalone Codex capabilities plus six backward-compatible names.
 The active Codex hook layer injects compact task-scoped safeguards, routes coding and
-release prompts to the complete matching protocol, records every direct or observed/generated
-artifact change and the resulting typed evidence, and may continue an unproved coding turn once. It never destroys
+release prompts to the complete matching protocol, records important direct/generated
+edits and typed evidence, and may continue an unproved coding turn once. It never destroys
 a proved report because receipt formatting is missing. Circuit releases remain visible as
 proof debt rather than being mislabeled complete.</p>
 
@@ -257,37 +258,17 @@ evidence, but cannot rewrite upstream findings or coverage.</p>
 <strong>core activator</strong> loads the never-shrink safeguards into the coordinator and
 associated subagents. The <strong>router</strong> injects the complete matching protocol and
 recognizes exact task-only owner controls: <code>DevRigorON</code>,
-<code>DevRigorWARN</code>, <code>DevRigorOFF</code>, <code>DevRigorSTATUS</code>, and
-<code>DevRigorREPAIR</code>. REPAIR is deliberately narrow: under the current task lock it
-persists a transaction before resolving a uniquely identified failure occurrence. Normal
-owner-control failures are eligible only when the recorded operation supplies an exact
-ON/WARN/OFF outcome that repair applies; generic failures remain debt. Normal allowlisted
-association markers belong only to their parent task and require child binding, immutable
-edge, and locked parent projection; old resolutions cannot clear a new recurrence. Missing
-or malformed state fails visibly. Its tokens correlate records and reject stale reuse; they are not a
-security boundary against arbitrary local-state edits.
-The <strong>evidence recorder</strong> pairs PreToolUse and PostToolUse repository fingerprints:
-HEAD/tree, symbolic or detached reference, semantic index, complete status, and every
-reported artifact regardless of extension. It catches opaque writes and clean-to-clean
-commits, and distinguishes direct edits, generated changes, inspections, runs/renders,
-tests, builds, and authoritative failures without persisting raw paths, contents, suffixes,
-or sensitive commands. Exact conservative classification prevents version/help/eval,
-composite, unknown, and keyword-lookalike commands from becoming proof. At Stop and
-SubagentStop, the gate evaluates the authoritative current
-turn. In ON mode an unproved observed artifact edit can block once; a retry is released but leaves
+<code>DevRigorWARN</code>, <code>DevRigorOFF</code>, and <code>DevRigorSTATUS</code>.
+The <strong>evidence recorder</strong> pairs PreToolUse and PostToolUse worktree fingerprints
+to catch opaque shell-authored changes, and distinguishes direct edits, generated changes,
+inspections, runs/renders, tests, builds, and authoritative failures without persisting raw
+sensitive commands. At Stop and SubagentStop, the gate evaluates the authoritative current
+turn. In ON mode an unproved important edit can block once; a retry is released but leaves
 unresolved proof debt. Missing receipt formatting after substantive proof is a warning,
 never a destructive block. Compaction preserves task state, and subagent inheritance occurs
-only with authoritative parent identity; otherwise it visibly fails open in WARN with
-release-blocking association debt. Owner-verified cross-process task transactions and
-immutable association edges preserve every concurrent edit and child. Proof, mechanical,
-and association debt remain visible recursively and are never pruned while unresolved.
-Each accepted proof requires matching task/checkpoint state, exact-turn ledger event, and a
-strict <code>evidence-v4-&lt;proof ID&gt;.json</code> record binding hashed edit identity,
-execution fingerprint, privacy-safe semantic descriptor, result, and checkpoint. It stores
-no secrets or raw sensitive command arguments. Missing or tampered canonical evidence is
-release-invalid; tokens provide correlation, not a security boundary. In-flight pending tool
-observations and subagent pending observations remain release-blocking until reconciled.
-<code>DevRigorSTATUS</code> reports blocks, checkpoints, proof/mechanical/association debt IDs, child debt, and observed
+only with authoritative parent identity; otherwise it visibly fails open in WARN.
+Evidence tokens bind the exact execution fingerprint and checkpoint, and
+<code>DevRigorSTATUS</code> reports blocks, checkpoints, debt IDs, child debt, and observed
 delivery without claiming that ledger activity proves hook trust.
 Codex requires the user to review and trust
 non-managed hooks. The Windows graphical activator shows the exact seven commands and hashes,
@@ -388,20 +369,20 @@ installed together. <code>audit-lite</code>/<code>audit-team</code> and
 <table>
   <tr><th>Codex event</th><th>Enforced behavior</th></tr>
   <tr><td><code>SessionStart / SubagentStart</code></td><td>inject compact safeguards; restore mode/routing after compaction; inherit only from an authoritative parent</td></tr>
-  <tr><td><code>UserPromptSubmit</code></td><td>route complete disciplines and apply exact task-only ON/WARN/OFF/STATUS/REPAIR controls</td></tr>
-  <tr><td><code>PreToolUse</code></td><td>capture invocation-bound HEAD/ref/index/status and complete privacy-bounded artifact fingerprints before commands and tools run</td></tr>
-  <tr><td><code>PostToolUse</code></td><td>record every direct/observed artifact change plus exact-classified inspection, run, test, build, and failure evidence</td></tr>
-  <tr><td><code>Stop / SubagentStop</code></td><td>enforce substantive proof once; warn on receipt formatting; preserve proof, mechanical, and association debt without loops</td></tr>
+  <tr><td><code>UserPromptSubmit</code></td><td>route complete disciplines and apply exact task-only ON/WARN/OFF/STATUS controls</td></tr>
+  <tr><td><code>PreToolUse</code></td><td>capture an invocation-bound, privacy-bounded Git worktree fingerprint before commands and tools run</td></tr>
+  <tr><td><code>PostToolUse</code></td><td>record privacy-bounded edit, generated-change, inspection, run, test, build, and failure evidence</td></tr>
+  <tr><td><code>Stop / SubagentStop</code></td><td>enforce substantive proof once; warn on receipt formatting; preserve unresolved proof debt without loops</td></tr>
 </table>
 </div>
 
 <h2 id="maintainer-install">Installation remains withheld</h2>
 <div class="notice">
-  <p><strong>No installation into an active profile is authorized while 1.7.0 is under review.</strong></p>
-  <p>The double-click installer, end-user quick-install instructions, checksums, portable export,
+  <p><strong>No installation path is authorized while 1.7.0 is under review.</strong></p>
+  <p>The double-click installer, scripted maintainer instructions, checksums, portable export,
   and release artifact will appear here only after an independent clean verdict and the owner's
-  explicit go decision. Repository source and isolated maintainer test instructions remain
-  visible for independent review; that visibility is not release authorization.</p>
+  explicit go decision. Repository source remains visible for review; that visibility is not
+  release authorization.</p>
 </div>
 
 <h2>Version model</h2>
@@ -412,9 +393,8 @@ installed together. <code>audit-lite</code>/<code>audit-team</code> and
   monotonically from 1.6.0. Version 1.6.1 repaired Desktop graphical activation.
   Version 1.6.2's prompt-boundary repair was incomplete; 1.6.3 introduced exact Codex
   turn identity and a hard retry circuit breaker. Version 1.7.0 adds task controls, typed
-  evidence, non-destructive receipt handling, complete repository/artifact observation,
-  exact command classification, persistent proof/mechanical/association debt,
-  concurrency-safe compaction/subagent behavior, and transactional migration/uninstall. Versions
+  evidence, non-destructive receipt handling, persistent proof debt, safe
+  compaction/subagent behavior, and transactional migration/uninstall. Versions
   1.6.0–1.6.3 are unsupported and must not be installed.</p>
 </div>
 

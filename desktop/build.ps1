@@ -9,20 +9,25 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $Root = $PSScriptRoot
-# Local review builds remain under desktop/dist/ and are ignored by Git.
-if (-not $OutputDirectory) { $OutputDirectory = Join-Path $Root 'dist' }
+$RepoRoot = Split-Path -Parent $Root
 
 if ($PublishDirectory) {
-  $ReleaseStatePath = Join-Path (Split-Path -Parent $Root) 'release-state.json'
-  if (-not (Test-Path -LiteralPath $ReleaseStatePath)) {
-    throw 'Refusing to publish: release-state.json is missing.'
+  $ReleaseStatePath = Join-Path $RepoRoot 'release-state.json'
+  if (-not (Test-Path -LiteralPath $ReleaseStatePath -PathType Leaf)) {
+    throw 'Publication is not authorized: release-state.json is missing.'
   }
-  try { $ReleaseState = Get-Content -LiteralPath $ReleaseStatePath -Raw | ConvertFrom-Json }
-  catch { throw "Refusing to publish: release-state.json is unreadable: $($_.Exception.Message)" }
-  if ($ReleaseState.publication_authorized -ne $true) {
-    throw 'Refusing to publish: publication_authorized is false. A clean independent verdict and explicit owner GO are required.'
+  try {
+    $ReleaseState = Get-Content -LiteralPath $ReleaseStatePath -Raw | ConvertFrom-Json
+  } catch {
+    throw "Publication is not authorized: release-state.json is invalid: $($_.Exception.Message)"
+  }
+  $PublicationAuthorized = $ReleaseState.publication_authorized
+  if (($PublicationAuthorized -isnot [bool]) -or (-not $PublicationAuthorized)) {
+    throw 'Publication is not authorized by release-state.json.'
   }
 }
+
+if (-not $OutputDirectory) { $OutputDirectory = Join-Path $Root 'dist' }
 New-Item -ItemType Directory -Force -Path $OutputDirectory | Out-Null
 
 $Compiler = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
@@ -41,16 +46,22 @@ $Output = Join-Path $OutputDirectory 'DevRigorHookActivator.exe'
   (Join-Path $Root 'DevRigorHookActivator.cs')
 if ($LASTEXITCODE -ne 0) { throw "Activator build failed with exit code $LASTEXITCODE" }
 
-[byte[]]$PeBytes = [IO.File]::ReadAllBytes($Output)
-if ($PeBytes.Length -lt 256 -or $PeBytes[0] -ne 0x4d -or $PeBytes[1] -ne 0x5a) {
-  throw 'Built activator is not a Windows PE executable.'
+$Image = [System.IO.File]::ReadAllBytes($Output)
+if ($Image.Length -lt 0x40 -or $Image[0] -ne 0x4d -or $Image[1] -ne 0x5a) {
+  throw 'Generated executable is not a valid Windows PE image.'
 }
-$PeOffset = [BitConverter]::ToInt32($PeBytes, 0x3c)
-if ([Text.Encoding]::ASCII.GetString($PeBytes, $PeOffset, 4) -ne "PE`0`0") {
-  throw 'Built activator has no valid PE signature.'
+$PeOffset = [BitConverter]::ToInt32($Image, 0x3c)
+if ($PeOffset -lt 0 -or $PeOffset + 94 -gt $Image.Length) {
+  throw 'Generated executable has an invalid Windows PE header offset.'
 }
-$Subsystem = [BitConverter]::ToUInt16($PeBytes, $PeOffset + 24 + 68)
-if ($Subsystem -ne 2) { throw "Built activator is not a Windows GUI subsystem executable: $Subsystem" }
+if ([BitConverter]::ToUInt32($Image, $PeOffset) -ne 0x00004550) {
+  throw 'Generated executable is missing the Windows PE signature.'
+}
+$OptionalHeader = $PeOffset + 24
+$Subsystem = [BitConverter]::ToUInt16($Image, $OptionalHeader + 68)
+if ($Subsystem -ne 2) {
+  throw "Generated executable must use the Windows GUI subsystem; found subsystem $Subsystem."
+}
 
 $VersionInfo = (Get-Item -LiteralPath $Output).VersionInfo
 if ($VersionInfo.FileVersion -ne '1.7.0.0') { throw "Unexpected FileVersion: $($VersionInfo.FileVersion)" }
