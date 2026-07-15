@@ -92,8 +92,11 @@ jobs:
           npm install --global @openai/codex@0.144.2
           $env:CODEX_HOME = "$env:RUNNER_TEMP\codex-home"
           # The GitHub runner's preinstalled Desktop runtime ignores alternate CODEX_HOME.
-          # Force the just-installed, pinned CLI so this disposable-profile check is real.
-          $env:DEV_RIGOR_CODEX_EXE = (Get-Command codex.cmd -ErrorAction Stop).Source
+          # Force the native executable from the just-installed, pinned CLI so this
+          # disposable-profile check cannot be redirected through a batch wrapper.
+          $codexPackage = Join-Path (Split-Path (Get-Command codex.cmd -ErrorAction Stop).Source -Parent) 'node_modules\@openai\codex'
+          $env:DEV_RIGOR_CODEX_EXE = Get-ChildItem $codexPackage -Recurse -Filter codex.exe | Select-Object -First 1 -ExpandProperty FullName
+          if (-not $env:DEV_RIGOR_CODEX_EXE) { throw 'Pinned Codex native executable was not installed.' }
           .\desktop\build.ps1 -OutputDirectory "$env:RUNNER_TEMP\activator-build-a" -RunIntegrationTest -IntegrationCwd "$env:GITHUB_WORKSPACE"
           .\desktop\build.ps1 -OutputDirectory "$env:RUNNER_TEMP\activator-build-b"
           .\desktop\verify-binary-equivalence.ps1 `
